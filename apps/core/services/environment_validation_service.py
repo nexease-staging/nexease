@@ -123,7 +123,10 @@ class EnvironmentValidationService:
                 "Invalid EMAIL_MODE."
             )
 
-        if is_production:
+        if is_production and not (
+            os.getenv("NEXEASE_STAGING_NO_EMAIL", "").lower() == "true"
+            and email_mode == "development"
+        ):
 
             if (
                 email_mode
