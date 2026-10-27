@@ -1,0 +1,4 @@
+﻿SO Number,Customer Code,Warehouse Code,Order Date,Expected Delivery Date,Product SKU,Quantity,Unit Price,Tax Rate,Discount,Notes
+MIG-SO-001,MIG-CUST-001,MIG-WH-001,2026-09-29,2026-10-05,MIG-PROD-001,2,500.00,18,0,Migration test order one
+MIG-SO-001,MIG-CUST-001,MIG-WH-001,2026-09-29,2026-10-05,MIG-PROD-003,1,1200.00,18,100,Migration test order one
+MIG-SO-002,MIG-CUST-002,MIG-WH-002,2026-09-29,2026-10-07,MIG-PROD-002,5,100.00,12,0,Migration test order two

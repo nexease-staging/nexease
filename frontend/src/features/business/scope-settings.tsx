@@ -1,0 +1,8 @@
+"use client";
+import SearchSelect from "@/components/search-select";
+
+import {useState} from 'react';
+import {useQuery,useQueryClient} from '@tanstack/react-query';
+import {getConfig} from './workspace';
+import {apiRequest} from '@/lib/api/client';
+export default function ScopeSettings(){const qc=useQueryClient();const config=useQuery({queryKey:['business-config'],queryFn:getConfig});const [selection,setSelection]=useState('');const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);async function save(){setBusy(true);try{await apiRequest('/organization/',{method:'PATCH',body:{business_scope:selection||config.data?.scope}});await qc.invalidateQueries({queryKey:['business-config']});setMessage('Business profile updated. Existing records are preserved.');}catch(e){setMessage(e instanceof Error?e.message:'Could not update.');}finally{setBusy(false);}}return <section className="nx-panel mb-6"><h2 className="text-xl font-semibold">Business scope</h2><p className="text-sm text-slate-600 mt-2">Choose the workspace profile. Labour and service businesses focus on sales, finance and workforce; stock businesses also show inventory and purchasing. Permissions continue to control access.</p><SearchSelect className="nx-input mt-4" value={selection||config.data?.scope||'mixed'} onChange={e=>setSelection(e.target.value)}>{Object.entries(config.data?.profiles??{}).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}</SearchSelect><button disabled={busy||!config.data} className="nx-button mt-3" onClick={save}>Save business scope</button>{message&&<p role="status" className="mt-3">{message}</p>}</section>}

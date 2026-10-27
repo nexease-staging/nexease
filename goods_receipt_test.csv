@@ -1,0 +1,2 @@
+﻿Purchase Order Number,Warehouse Code,Product SKU,Quantity Received,Notes
+MIG-PO-004,MIG-WH-002,MIG-PROD-002,5,First GRN migration test

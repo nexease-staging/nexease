@@ -1,0 +1,2 @@
+﻿Invoice Number,Sales Order Number,Invoice Date,Due Date,Notes
+MIG-INV-001,MIG-SO-002,2026-10-01,2026-10-31,Sales invoice migration end-to-end test

@@ -1,0 +1,4 @@
+import {WorkforceBalances} from "@/features/business/automation-panel";
+import BusinessWorkspace from "@/features/business/workspace";
+import PayrollPanel from "@/features/business/payroll-panel";
+export default function Page(){return <><WorkforceBalances/><PayrollPanel/><div className="nx-panel my-6"><h2 className="font-semibold">In-house employees</h2><p>Choose In-house in the employee’s Work location type. Mark their attendance under Labour & client sites → Daily attendance → In-house staff. No client or site assignment is needed. Manual monthly inputs remain available for paid weekly offs, half-days and other attendance policies.</p></div><BusinessWorkspace kinds={['employees', 'attendance', 'policy', 'leave_requests', 'advances']} title="People & payroll" description="Manage employees, monthly inputs and contribution policies." /></>;}

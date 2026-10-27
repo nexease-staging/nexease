@@ -1,0 +1,6 @@
+from .purchase_entry import quick_purchase
+from .taxation import gst_report
+from .direct_entry import direct_invoice
+from django.urls import path
+from . import views, flow_api, pro_api
+urlpatterns=[path("expenses-export/",pro_api.expenses_export),path("lookup/",pro_api.lookup),path("modules/",pro_api.modules),path("payment-accounts/",pro_api.payment_accounts),path("bulk-assign/",pro_api.bulk_assign),path("books-sync/",pro_api.books_sync),path("accountant-export/",pro_api.accountant_export),path("invoices/<str:invoice_id>/descriptions/",pro_api.invoice_descriptions),path("numbers/",flow_api.numbers),path("client-lookup/",flow_api.clients),path("daily-work/",flow_api.daily_work),path("balances/",flow_api.balances),path("labour-invoice/",flow_api.labour_invoice),path("workers/",views.worker_lookup),path("labour/export/",views.labour_export),path("quick-purchases/",quick_purchase),path("gst/export/",gst_report),path("direct-invoices/",direct_invoice),path('configuration/',views.configuration),path('records/<str:kind>/',views.records),path('records/<str:kind>/<str:record_id>/',views.records),path('payroll/',views.payroll),path('payroll/<str:run_id>/export/',views.payroll_export)]

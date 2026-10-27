@@ -1,0 +1,2 @@
+import {ModuleSettings,BooksTools,AccountantExport} from "@/features/business/pro-panels";
+export default function Page(){return <div className="space-y-6"><h1 className="text-3xl font-semibold">Business settings</h1><ModuleSettings/><BooksTools/><AccountantExport/></div>}

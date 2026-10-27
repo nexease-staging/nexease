@@ -1,0 +1,14 @@
+import {render,screen,fireEvent,waitFor} from '@testing-library/react';
+import {useState} from 'react';
+import {useForm} from 'react-hook-form';
+import {describe,it,expect,vi} from 'vitest';
+import SearchSelect from './search-select';
+vi.mock('@/lib/api/client',()=>({apiRequest:vi.fn().mockResolvedValue({data:{records:[]}})}));
+function Controlled(){const [v,setV]=useState('');return <><SearchSelect aria-label="Supplier" value={v} onChange={e=>setV(e.target.value)}><option value="">Choose supplier</option><option value="a">Alpha supply</option><option value="b">Beta supply</option></SearchSelect><output>{v}</output></>}
+describe('Searchable selection',()=>{
+ it('filters suggestions and commits the ID on click',()=>{render(<Controlled/>);const input=screen.getByRole('combobox');fireEvent.focus(input);fireEvent.change(input,{target:{value:'beta'}});expect(screen.queryByRole('option',{name:'Alpha supply'})).not.toBeInTheDocument();fireEvent.click(screen.getByRole('option',{name:'Beta supply'}));expect(screen.getByRole('status')).toHaveTextContent('b');expect(input).toHaveValue('Beta supply');});
+ it('commits with Enter and closes with Escape',()=>{render(<Controlled/>);const input=screen.getByRole('combobox');fireEvent.focus(input);fireEvent.change(input,{target:{value:'alpha'}});fireEvent.keyDown(input,{key:'Enter'});expect(input).toHaveValue('Alpha supply');fireEvent.focus(input);fireEvent.keyDown(input,{key:'Escape'});expect(screen.queryByRole('listbox')).not.toBeInTheDocument();});
+ it('keeps the menu outside overflow containers',()=>{const {container}=render(<div style={{overflow:'hidden'}}><Controlled/></div>);fireEvent.focus(screen.getByRole('combobox'));expect(container.contains(screen.getByRole('listbox'))).toBe(false);});
+ it('supports react-hook-form registered selects',async()=>{const save=vi.fn();function Form(){const {register,handleSubmit}=useForm<{supplier_id:string}>({defaultValues:{supplier_id:''}});return <form onSubmit={handleSubmit(save)}><SearchSelect aria-label="Supplier" {...register('supplier_id',{required:true})}><option value="">Choose</option><option value="a">Alpha</option></SearchSelect><button>Save</button></form>;}render(<Form/>);fireEvent.focus(screen.getByRole('combobox'));fireEvent.click(screen.getByRole('option',{name:'Alpha'}));fireEvent.click(screen.getByText('Save'));await waitFor(()=>expect(save).toHaveBeenCalled());expect(save.mock.calls[0][0]).toEqual({supplier_id:'a'});});
+ it('preserves the saved value when search is abandoned',()=>{render(<Controlled/>);const input=screen.getByRole('combobox');fireEvent.focus(input);fireEvent.click(screen.getByRole('option',{name:'Alpha supply'}));fireEvent.focus(input);fireEvent.change(input,{target:{value:'unmatched'}});fireEvent.keyDown(input,{key:'Escape'});expect(input).toHaveValue('Alpha supply');});
+});

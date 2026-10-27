@@ -1,0 +1,185 @@
+from django.urls import path
+
+from apps.finance import views
+
+
+urlpatterns = [
+    path(
+        "bank-accounts/",
+        views.bank_accounts,
+        name="bank-accounts",
+    ),
+
+    path(
+        "bank-accounts/<str:bank_account_id>/deactivate/",
+        views.deactivate_bank_account,
+        name="deactivate-bank-account",
+    ),
+    
+    path(
+        "bank-transactions/",
+        views.bank_transactions,
+        name="bank-transactions",
+    ),
+
+    path(
+        "bank-statements/<str:statement_id>/lines/"
+        "<str:line_number>/auto-match/",
+        views.auto_match_bank_statement_line,
+        name="auto-match-bank-statement-line",
+    ),
+    path(
+        "bank-statements/<str:statement_id>/lines/"
+        "<str:line_number>/ignore/",
+        views.ignore_bank_statement_line,
+        name="ignore-bank-statement-line",
+    ),
+    path(
+        "bank-statements/<str:statement_id>/lines/"
+        "<str:line_number>/match/"
+        "<str:transaction_id>/",
+        views.manual_match_bank_statement_line,
+        name="manual-match-bank-statement-line",
+    ),
+
+    path(
+        "bank-transactions/<str:transaction_id>/reconcile/",
+        views.reconcile_bank_transaction,
+        name="reconcile-bank-transaction",
+    ),
+    path(
+        "bank-transactions/<str:transaction_id>/",
+        views.bank_transaction_detail,
+        name="bank-transaction-detail",
+    ),
+
+    path(
+        "bank-accounts/<str:bank_account_id>/statement/",
+        views.bank_account_statement,
+        name="bank-account-statement",
+    ),
+    path(
+        "bank-accounts/<str:bank_account_id>/",
+        views.bank_account_detail,
+        name="bank-account-detail",
+    ),
+    path(
+        "bank-payment-suggestions/"
+        "<str:suggestion_id>/confirm/",
+        views.confirm_bank_payment_suggestion,
+        name="confirm-bank-payment-suggestion",
+    ),
+
+    path(
+        "bank-payment-suggestions/"
+        "<str:suggestion_id>/reject/",
+        views.reject_bank_payment_suggestion,
+        name="reject-bank-payment-suggestion",
+    ),
+    path(
+        "bank-payment-suggestions/"
+        "<str:suggestion_id>/execute/",
+        views.execute_bank_payment_suggestion,
+        name="execute-bank-payment-suggestion",
+    ),
+    path(
+        "dashboard/",
+        views.finance_dashboard,
+        name="finance-dashboard",
+    ),
+    path(
+        "reports/cash-flow/",
+        views.cash_flow_report,
+        name="cash-flow-report",
+    ),
+    path(
+        "reports/audit/",
+        views.finance_audit_report,
+        name="finance-audit-report",
+    ),
+    path(
+        "journals/",
+        views.journal_entries,
+        name="journal-entries",
+    ),
+
+    path(
+        "journals/<str:journal_id>/",
+        views.journal_entry_detail,
+        name="journal-entry-detail",
+    ),
+
+    path(
+        "journals/<str:journal_id>/post/",
+        views.post_journal_entry,
+        name="post-journal-entry",
+    ),
+    path(
+        "journals/<str:journal_id>/reverse/",
+        views.reverse_journal_entry,
+        name="reverse-journal-entry",
+    ),
+    path(
+        "general-ledger/<str:account_id>/",
+        views.general_ledger_detail,
+        name="general-ledger-detail",
+    ),
+    path(
+        "trial-balance/",
+        views.trial_balance_report,
+        name="trial-balance-report",
+    ),
+    path(
+        "profit-and-loss/",
+        views.profit_and_loss_report,
+        name="profit-and-loss-report",
+    ),
+    path(
+        "balance-sheet/",
+        views.balance_sheet_report,
+        name="balance-sheet-report",
+    ),
+    path(
+        "accounting-dashboard/",
+        views.accounting_dashboard,
+        name="accounting-dashboard",
+    ),
+    path(
+        "document-access-logs/",
+        views.document_access_logs,
+        name="document-access-logs",
+    ),
+    path(
+        "document-access-logs/summary/",
+        views.document_access_log_summary,
+        name="document-access-log-summary",
+    ),
+    path(
+        "document-access-logs/<str:log_id>/",
+        views.document_access_log_detail,
+        name="document-access-log-detail",
+    ),
+    path(
+        "document-delivery-logs/",
+        views.document_delivery_logs,
+        name="document-delivery-logs",
+    ),
+
+    path(
+        "document-delivery-logs/summary/",
+        views.document_delivery_summary,
+        name="document-delivery-summary",
+    ),
+
+    path(
+        "document-delivery-logs/<str:delivery_log_id>/retry/",
+        views.document_delivery_retry,
+        name="document-delivery-retry",
+    ),
+
+    path(
+        "document-delivery-logs/<str:delivery_log_id>/",
+        views.document_delivery_log_detail,
+        name="document-delivery-log-detail",
+    ),
+]

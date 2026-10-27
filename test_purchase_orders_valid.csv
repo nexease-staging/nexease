@@ -1,0 +1,4 @@
+﻿PO Number,Supplier Code,Order Date,Expected Delivery Date,Product SKU,Quantity,Unit Price,Tax Rate,Discount,Notes
+MIG-PO-001,MIG-SUP-001,2026-09-29,2026-10-05,MIG-PROD-001,2,500,18,0,First PO mouse line
+MIG-PO-001,MIG-SUP-001,2026-09-29,2026-10-05,MIG-PROD-003,1,1200,18,100,First PO bag line
+MIG-PO-002,MIG-SUP-002,2026-09-29,2026-10-07,MIG-PROD-002,5,100,12,0,Second PO notebook line

@@ -1,0 +1,4 @@
+﻿Supplier Code,Supplier Name,Email,Phone,GSTIN,Address,City,State,Country
+MIG-SUP-001,Migration Supplier One,mig.supplier1@example.com,9876510001,,101 Supplier Road,Pune,Maharashtra,India
+MIG-SUP-002,Migration Supplier Two,mig.supplier2@example.com,9876510002,,202 Supplier Road,Mumbai,Maharashtra,India
+MIG-SUP-003,Migration Supplier Three,mig.supplier3@example.com,9876510003,,303 Supplier Road,Bengaluru,Karnataka,India

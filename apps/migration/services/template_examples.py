@@ -1,0 +1,7 @@
+"""Illustrative values only. IDs/codes must be replaced with the user's own masters."""
+EXAMPLES={
+'name':'Example item / party','code':'EXAMPLE-001','sku':'ITEM-001','unit':'PCS','category':'General','brand':'Example','description':'Replace this sample value','cost_price':100,'selling_price':150,'email':'example@example.com','phone':'9000000000','gstin':'','country':'India','state':'Maharashtra','city':'Pune','pincode':'411001','billing_address':'Example address','shipping_address':'Example address','address':'Example address','product_sku':'ITEM-001','warehouse_code':'WH-001','quantity':10,'quantity_received':10,'so_number':'SO-001','customer_code':'CUST-001','po_number':'PO-001','supplier_code':'SUP-001','order_date':'2026-10-01','expected_delivery_date':'2026-10-15','unit_price':100,'tax_rate':0,'discount':0,'invoice_number':'INV-001','sales_order_number':'SO-001','invoice_date':'2026-10-21','due_date':'2026-11-20','purchase_order_number':'PO-001','supplier_invoice_number':'SUPINV-001','bill_date':'2026-10-21','bill_number':'BILL-001','amount':100,'payment_method':'BANK_TRANSFER','bank_account_id':'REPLACE_WITH_EXISTING_BANK_ACCOUNT_ID','payment_date':'2026-10-21','reference_number':'UNIQUE-PAYMENT-001','notes':'Example only; replace before importing.'}
+
+EXAMPLES.update(joining_date="2026-10-01",basis="daily",rate=700,overtime_rate=100,active="true",pf_member="false",esi_member="false",department="Operations",designation="Warehouse worker",bank_account="",ifsc="")
+
+EXAMPLES.update(end_date="",uan="",esi_number="")

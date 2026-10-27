@@ -1,0 +1,4 @@
+﻿Customer Code,Customer Name,Email,Phone,GSTIN,Billing Address,Shipping Address,City,State,Country
+MIG-CUST-001,Migration Customer One,mig.customer1@example.com,9876501001,,101 Test Road Pune,101 Test Road Pune,Pune,Maharashtra,India
+MIG-CUST-002,Migration Customer Two,mig.customer2@example.com,9876501002,,202 Test Road Mumbai,202 Test Road Mumbai,Mumbai,Maharashtra,India
+MIG-CUST-003,Migration Customer Three,mig.customer3@example.com,9876501003,,303 Test Road Bengaluru,303 Test Road Bengaluru,Bengaluru,Karnataka,India

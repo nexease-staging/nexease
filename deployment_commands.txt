@@ -1,0 +1,14 @@
+BUILD:
+python manage.py collectstatic --noinput
+
+WEB:
+gunicorn config.wsgi:application --config gunicorn.conf.py
+
+WORKER:
+python manage.py run_background_worker --sleep 2 --lease-seconds 300
+
+HEALTH:
+GET /health/live/
+
+READINESS:
+GET /health/ready/
