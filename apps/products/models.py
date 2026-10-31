@@ -54,6 +54,18 @@ class Category(Document):
 
 
 class Product(Document):
+    item_type = StringField(default="goods", choices=("goods", "service"))
+    hsn_code = StringField(default="", max_length=8)
+
+    def clean(self):
+        import re
+        from mongoengine import ValidationError
+        if self.item_type not in ("goods","service"):raise ValidationError("Choose goods or service.")
+        if self.hsn_code and not re.fullmatch(r"[0-9]{4}|[0-9]{6}|[0-9]{8}", self.hsn_code):
+            raise ValidationError("HSN/SAC must contain 4, 6 or 8 digits.")
+        if self.item_type == "service" and self.hsn_code and len(self.hsn_code) != 6:
+            raise ValidationError("Enter a six-digit SAC for services.")
+
     organization = ReferenceField(
         Organization,
         required=True,

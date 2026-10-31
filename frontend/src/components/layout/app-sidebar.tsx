@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 import {
-  navigationSections,
+  navigationSections, workforceSections,
 } from "@/config/navigation";
 
 import {
@@ -56,16 +56,19 @@ export default function AppSidebar({
     ??
     [];
 
+  const workforceMode=pathname.startsWith("/workforce");
   const visibleSections =
-    navigationSections
+    (workforceMode?workforceSections:navigationSections)
       .filter(section => section.label !== 'Workforce' || config.data?.modules?.workforce !== false)
+      .filter(section => !['Finance','Taxation','Barcode'].includes(section.label) || config.data?.modules?.[section.label.toLowerCase()] !== false)
       .filter(section => section.label !== 'Expenses' || config.data?.modules?.expenses !== false)
-      .filter(section => section.label === 'Expenses' || !config.data || ["Overview", "Administration"].includes(section.label) || config.data.profile.modules.includes(section.label))
+      .filter(section => section.label === 'Expenses' || !config.data || ["Overview", "Administration", "Barcode"].includes(section.label) || config.data.profile.modules.includes(section.label))
       .map((section) => ({
         ...section,
 
         items: section.items.filter(
           (item) =>
+            (item.href !== '/workforce/accounts' || config.data?.modules?.finance !== false) &&
             hasPermission(
               permissions,
               item.permission,
@@ -132,11 +135,12 @@ export default function AppSidebar({
                 text-white
               "
             >
-              <Boxes size={22} />
+              <img src="/nexease-logo.jpeg" alt="NexEase" className="size-10 rounded-xl object-contain"/>
             </div>
 
             {!collapsed && (
               <div className="min-w-0">
+                {config.data?.logo&&<img src={config.data.logo} alt="Organisation logo" className="h-8 max-w-32 object-contain"/>}
                 <p
                   className="
                     truncate font-bold
@@ -152,7 +156,7 @@ export default function AppSidebar({
                     text-slate-500
                   "
                 >
-                  Business Management
+                  {pathname.startsWith("/workforce")?"Workforce workspace":"Business Management"}
                 </p>
               </div>
             )}
@@ -178,6 +182,7 @@ export default function AppSidebar({
             px-3 py-4
           "
         >
+          {workforceMode && <Link href="/dashboard" className="block mb-5 rounded-xl bg-slate-100 p-3 text-sm">← Back to business</Link>}
           {visibleSections.map(
             (section) => (
               <div
@@ -205,9 +210,7 @@ export default function AppSidebar({
                           ===
                           item.href
                         ||
-                        pathname.startsWith(
-                          `${item.href}/`,
-                        );
+                        (item.href!=="/workforce" && pathname.startsWith(`${item.href}/`));
 
                       const Icon =
                         item.icon;

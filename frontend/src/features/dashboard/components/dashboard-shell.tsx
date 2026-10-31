@@ -1,5 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import {useAuth} from "@/features/auth/auth-context";
+import {hasPermission} from "@/lib/authorization/permissions";
 import {
   useMemo,
   useState,
@@ -61,6 +64,8 @@ function getDefaultEndDate():
 
 
 export default function DashboardShell() {
+  const {authentication}=useAuth();
+  const permissions=authentication?.role.permissions??[];
   const [
     startDate,
     setStartDate,
@@ -104,7 +109,7 @@ export default function DashboardShell() {
     <div
       className="
         min-h-screen
-        bg-slate-50
+        bg-[#f3f6fa]
       "
     >
       <div
@@ -116,6 +121,10 @@ export default function DashboardShell() {
           lg:p-8
         "
       >
+        <section className="relative overflow-hidden rounded-3xl bg-slate-950 px-7 py-8 text-white shadow-xl">
+          <div className="absolute -right-12 -top-16 h-64 w-64 rounded-full bg-emerald-400/10"/>
+          <div className="relative"><p className="text-xs font-semibold uppercase tracking-[.25em] text-emerald-300">NexEase business overview</p><h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Your business, in focus.</h2><p className="mt-3 max-w-xl text-slate-300">Track what matters. Keep your books, customers and team moving together.</p><div className="mt-6 flex flex-wrap gap-3">{[['/invoices','Create an invoice','invoices.create'],['/workforce','Open Workforce','payroll.read'],['/taxation','Taxation reports','taxation.read']].filter(([, ,permission])=>hasPermission(permissions,permission)).map(([href,label])=><Link key={href} href={href} className="rounded-xl border border-slate-600 bg-white/5 px-4 py-2.5 text-sm font-medium hover:bg-white/15">{label} ↗</Link>)}</div></div>
+        </section>
         <header
           className="
             flex
@@ -134,7 +143,7 @@ export default function DashboardShell() {
                 text-slate-500
               "
             >
-              Executive overview
+              Performance overview
             </p>
 
             <h1
@@ -387,7 +396,7 @@ export default function DashboardShell() {
                           text-slate-950
                         "
                       >
-                        Dashboard data loaded
+                        Reporting period
                       </h2>
 
                       <p
@@ -422,7 +431,7 @@ export default function DashboardShell() {
                         text-emerald-700
                       "
                     >
-                      API connected
+                      Current view
                     </span>
                   </div>
                 </section>

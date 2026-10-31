@@ -1,9 +1,12 @@
 "use client";
+import {getConfig} from "./workspace";
 import {useState} from 'react';
-import {useQueryClient} from '@tanstack/react-query';
+import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {apiRequest} from '@/lib/api/client';
 import type {InvoiceDetail} from '@/features/invoices/types';
 export default function InvoiceDescriptions({invoice}:{invoice:InvoiceDetail}){
+ const config=useQuery({queryKey:["business-config"],queryFn:getConfig});
  const qc=useQueryClient();const [items,setItems]=useState(invoice.items.map(i=>({description:i.description??'',show:i.show_description??false})));const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);
+ if(config.data?.can_edit_invoices!==true)return null;
  return <section className="my-5 w-full rounded-xl border border-slate-200 p-4"><h3 className="font-semibold">Item descriptions for this invoice</h3><p className="text-sm text-slate-500 my-2">Save descriptions before issuing or downloading. Tick each description you want printed below its item name.</p>{items.map((item,i)=><div key={i} className="my-3"><label className="block text-sm">Item {i+1}: {invoice.items[i].product.name}<textarea maxLength={2000} className="nx-input" rows={2} value={item.description} onChange={e=>setItems(items.map((x,n)=>n===i?{...x,description:e.target.value}:x))}/></label><label className="text-sm"><input type="checkbox" checked={item.show} onChange={e=>setItems(items.map((x,n)=>n===i?{...x,show:e.target.checked}:x))}/> Include below this item in the PDF</label></div>)}<button type="button" className="nx-button nx-secondary" disabled={busy} onClick={async()=>{setBusy(true);try{await apiRequest(`/business/invoices/${invoice.id}/descriptions/`,{method:'POST',body:{items}});setMessage('Descriptions saved. You can now issue the invoice.');await qc.invalidateQueries({queryKey:['invoices']});}catch(e){setMessage(e instanceof Error?e.message:'Save failed.');}finally{setBusy(false);}}}>Save descriptions</button>{message&&<p role="status" className="mt-2">{message}</p>}</section>
 }

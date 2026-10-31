@@ -227,6 +227,7 @@ class GoodsReceiptService:
         for update in receipt_updates:
 
             product = update["product"]
+            if product.item_type == "service":continue
 
             quantity_received = update[
                 "quantity_received"

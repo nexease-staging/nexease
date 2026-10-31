@@ -1,3 +1,4 @@
+vi.mock("@/features/auth/auth-context",()=>({useAuth:()=>({authentication:{role:{permissions:[]}}})}));
 import {
   fireEvent,
   render,
@@ -340,7 +341,7 @@ describe(
 
         expect(
           screen.getByText(
-            "API connected",
+            "Current view",
           ),
         ).toBeInTheDocument();
 

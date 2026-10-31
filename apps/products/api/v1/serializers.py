@@ -80,6 +80,8 @@ class ProductAPISerializer:
                     product.id
                 )
             ),
+            "item_type": getattr(product,"item_type","goods"),
+            "hsn_code": getattr(product,"hsn_code",""),
             "sku":
                 product.sku,
             "name":

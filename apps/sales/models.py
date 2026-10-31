@@ -3,6 +3,7 @@ from apps.finance.models import (
     BankAccount,
 )
 from mongoengine import (
+    DictField,
     Document,
     EmbeddedDocument,
     EmbeddedDocumentField,
@@ -314,6 +315,10 @@ class SalesOrder(Document):
     }
 
 class InvoiceItem(EmbeddedDocument):
+    item_type = StringField(default="goods", choices=("goods", "service"))
+    hsn_code = StringField(default="", max_length=8)
+    item_name = StringField(default="", max_length=200)
+    unit = StringField(default="", max_length=30)
     description = StringField(default="", max_length=2000)
     show_description = BooleanField(default=False)
     product = ReferenceField(
@@ -365,6 +370,7 @@ class InvoiceItem(EmbeddedDocument):
 
 
 class Invoice(Document):
+    billing_details = DictField(default=dict)
     workforce_billing_key = StringField()
     workforce_timesheet_ids = ListField(StringField(), default=list)
     direct_entry = BooleanField(default=False)

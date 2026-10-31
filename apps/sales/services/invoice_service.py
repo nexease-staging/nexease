@@ -93,6 +93,7 @@ class InvoiceService:
         due_date=None,
         notes="",
         invoice_number=None,
+        billing_details=None,
     ):
         """
         Generate a draft invoice from a fulfilled sales order.
@@ -230,6 +231,7 @@ class InvoiceService:
 
             invoice_items.append(
                 InvoiceItem(
+                    item_type=sales_item.product.item_type, hsn_code=sales_item.product.hsn_code, item_name=sales_item.product.name, unit=sales_item.product.unit,
                     product=sales_item.product,
                     quantity=invoice_quantity,
                     unit_price=sales_item.unit_price,
@@ -281,9 +283,14 @@ class InvoiceService:
                     "Invoice number already exists."
                 )
 
+        details={}
+        if billing_details is not None:
+            from apps.business.billing import clean_details,settings
+            details={**settings(organization),**clean_details(billing_details,organization,invoice_items)}
         return (
             InvoiceRepository
             .create_invoice(
+                **({"billing_details":details} if billing_details is not None else {}),
                 organization=organization,
                 invoice_number=invoice_number,
                 sales_order=sales_order,
@@ -851,6 +858,17 @@ class InvoiceService:
                         tax_amount,
                 }
             )
+
+        from apps.business.billing import invoice_account, tax_heads
+        service_value=sum((i.line_subtotal-i.discount for i in invoice.items if i.item_type=='service'),Decimal(0))
+        if service_value:
+            raw_lines[1]['credit']=revenue_amount-service_value
+            if not raw_lines[1]['credit']:raw_lines.pop(1)
+            raw_lines.append({'account':invoice_account(organization,user,'SERVICE_REVENUE'),'description':'Service revenue '+invoice.invoice_number,'debit':'0.00','credit':service_value})
+        if tax_amount>0 and invoice.billing_details.get('tax_reviewed'):
+            raw_lines=[line for line in raw_lines if line['account'].id!=output_tax.id]
+            for key,value in zip(('OUTPUT_CGST','OUTPUT_SGST','OUTPUT_IGST'),tax_heads(invoice)):
+                if value:raw_lines.append({'account':invoice_account(organization,user,key),'description':key+' '+invoice.invoice_number,'debit':'0.00','credit':value})
 
         journal = (
             JournalEntryService

@@ -47,6 +47,10 @@ def validate(kind, data, org, record_id=None):
     for a,b in [('start_date','end_date'),('joining_date','end_date'),('effective_from','effective_to')]:
         if clean.get(a) and clean.get(b) and clean[b]<clean[a]:raise ValueError('End date precedes start date.')
     guard_source(kind,clean,org,record_id)
+    if kind=='workforce_preferences':
+        if not 0<amount(clean['daily_hours'])<=24:raise ValueError('Daily hours must be greater than 0 and at most 24.')
+        if amount(clean['advance_recovery_percent'])>100:raise ValueError('Recovery cannot exceed 100% of net pay.')
+        if not record_id and Record.objects(organization=org,kind=kind,key='default').first():raise ValueError('Edit the existing settings record.')
     if kind=='timesheets':
         if not clean['site_id']:
             employee=Record.objects(id=clean['employee_id'],organization=org,kind='employees').first()
@@ -79,6 +83,7 @@ def validate(kind, data, org, record_id=None):
     return clean
 
 def key_for(kind,d):
+    if kind=='workforce_preferences':return 'default'
     if kind in ('employees','sites'):return d['code'].upper()
     if kind=='attendance':return d['employee_id']+':'+d['month']
     if kind=='timesheets':return d['employee_id']+':'+d['date']+':'+d['shift'].casefold()
@@ -96,14 +101,18 @@ def audit(req,kind,id,action):BusinessAudit(organization=req.api_organization,ac
 @api_login_required
 @require_http_methods(['GET'])
 def configuration(request):
+    from .enhancements import is_admin
+    from .billing import settings as invoice_settings
     scope=getattr(request.api_organization,'business_scope','mixed')
-    return R.success(data={'schemas':{k:v for k,v in SCHEMAS.items() if permitted(request,v['permission']+'.read')},'profiles':PROFILES,'scope':scope,'profile':PROFILES.get(scope,PROFILES['mixed']),'modules':{'workforce':request.api_organization.workforce_enabled,'expenses':request.api_organization.expenses_enabled}},request=request)
+    return R.success(data={'can_edit_invoices':is_admin(request.api_user) or not getattr(request.api_organization,'invoice_admin_only',True),'logo':invoice_settings(request.api_organization).get('logo',''),'schemas':{k:v for k,v in SCHEMAS.items() if permitted(request,v['permission']+'.read')},'profiles':PROFILES,'scope':scope,'profile':PROFILES.get(scope,PROFILES['mixed']),'modules':{k:getattr(request.api_organization,k+'_enabled',True) for k in ['workforce','expenses','taxation','finance','barcode','ai']}},request=request)
 
 @api_login_required
 @require_http_methods(['GET','POST','PATCH'])
 @write_lock
 def records(request,kind,record_id=None):
     if kind not in SCHEMAS:return R.not_found(message='Unknown collection.',request=request)
+    module='expenses' if kind=='expenses' else 'taxation' if kind.startswith('gst_') else 'workforce'
+    if not getattr(request.api_organization,module+'_enabled',True):return R.forbidden(message=module.title()+' is disabled by your organisation administrator.',request=request)
     perm=SCHEMAS[kind]['permission']+('.read' if request.method=='GET' else '.manage')
     if not permitted(request,perm):return R.forbidden(message='Permission denied.',request=request)
     org=request.api_organization
@@ -203,7 +212,7 @@ def payroll_export(request,run_id):
     bank=[['Employee','Bank account','IFSC','Net payable','Payroll month','Status']]
     for x in run_data(run)['data']['rows']:
         e=x['employee'];r=x['result'];rows.append([e['code'],e['name'],*[float(r[k]) for k in ['gross','pf','esi','deductions','net','employer_pf','employer_esi']],run.data['status'],x['paid'],x['outstanding'],x['advance_outstanding']]);bank.append([e['name'],e.get('bank_account',''),e.get('ifsc',''),float(r['net']),run.key,run.data['status']])
-    return workbook_response({'Payroll register':rows,'Payment workpaper':bank,'Read me':[['Payroll export'],['Bank-specific upload format and statutory returns require separate review.'],['Marking paid records an external payment; it does not transfer funds or post a bank journal.']]},'NexEase-Payroll-'+run.key)
+    return workbook_response({'Payroll register':rows,'Payment workpaper':bank,'Read me':[['Payroll export'],['Bank-specific upload format and statutory returns require separate review.'],['Recording payment does not transfer funds. Approved payroll and recorded salary payments post to the configured ledger control accounts.']]},'NexEase-Payroll-'+run.key)
 
 @api_login_required
 @require_http_methods(['GET'])

@@ -39,6 +39,7 @@ def daily_work(request):
     org=request.api_organization
     try:
         p=payload(request) if request.method=='POST' else request.GET;when=date.fromisoformat(p.get('date','')).isoformat()
+        prefs=Record.objects(organization=org,kind='workforce_preferences',key='default').first();default_hours=prefs.data.get('daily_hours','8') if prefs else '8'
         assignments=list(Record.objects(organization=org,kind='assignments',data__status='active',data__start_date__lte=when,data__end_date__gte=when))
         available={};rows=[]
         for a in assignments:
@@ -46,13 +47,13 @@ def daily_work(request):
             if not e or not site or not e.data.get('active') or e.data['joining_date']>when or (e.data.get('end_date') and e.data['end_date']<when):continue
             available[str(a.id)]=a
             existing=Record.objects(organization=org,kind='timesheets',key=a.data['employee_id']+':'+when+':'+a.data['shift'].casefold()).first()
-            rows.append({'site_id':str(site.id),'yesterday':bool(Record.objects(organization=org,kind='timesheets',data__employee_id=str(e.id),data__site_id=str(site.id),data__date=(date.fromisoformat(when)-timedelta(days=1)).isoformat(),data__status='approved').first()),'assignment_id':str(a.id),'employee':e.data['name'],'site':site.data['name'],'shift':a.data['shift'],'hours':'8','overtime_hours':'0','billable_units':'1','recorded':bool(existing)})
+            rows.append({'site_id':str(site.id),'yesterday':bool(Record.objects(organization=org,kind='timesheets',data__employee_id=str(e.id),data__site_id=str(site.id),data__date=(date.fromisoformat(when)-timedelta(days=1)).isoformat(),data__status='approved').first()),'assignment_id':str(a.id),'employee':e.data['name'],'site':site.data['name'],'shift':a.data['shift'],'hours':default_hours,'overtime_hours':'0','billable_units':'1','recorded':bool(existing)})
         for e in Record.objects(organization=org,kind='employees',data__active=True,data__employment_type='inhouse'):
             if e.data['joining_date']>when or (e.data.get('end_date') and e.data['end_date']<when):continue
             aid='internal:'+str(e.id)
             available[aid]=type('Internal',(),{'data':{'employee_id':str(e.id),'site_id':'','shift':'OFFICE','billing_rate':'0'}})()
             existing=Record.objects(organization=org,kind='timesheets',key=str(e.id)+':'+when+':office').first()
-            rows.append({'site_id':'internal','assignment_id':aid,'employee':e.data['name'],'site':'In-house staff','shift':'OFFICE','hours':'8','overtime_hours':'0','billable_units':'0','recorded':bool(existing),'yesterday':bool(Record.objects(organization=org,kind='timesheets',data__employee_id=str(e.id),data__date=(date.fromisoformat(when)-timedelta(days=1)).isoformat(),data__status='approved').first())})
+            rows.append({'site_id':'internal','assignment_id':aid,'employee':e.data['name'],'site':'In-house staff','shift':'OFFICE','hours':default_hours,'overtime_hours':'0','billable_units':'0','recorded':bool(existing),'yesterday':bool(Record.objects(organization=org,kind='timesheets',data__employee_id=str(e.id),data__date=(date.fromisoformat(when)-timedelta(days=1)).isoformat(),data__status='approved').first())})
         if request.method=='GET':
             if p.get('site_id'):rows=[r for r in rows if r['site_id']==p['site_id']]
             return R.success(data={'rows':rows},request=request)
@@ -62,7 +63,7 @@ def daily_work(request):
         for row in incoming:
             aid=row.get('assignment_id');a=available.get(aid)
             if not a or aid in seen:raise ValueError('Invalid or duplicate assignment.')
-            seen.add(aid);d={'employee_id':a.data['employee_id'],'site_id':a.data['site_id'],'date':when,'shift':a.data['shift'],'hours':row.get('hours','8'),'overtime_hours':row.get('overtime_hours','0'),'billable_units':row.get('billable_units','1'),'billing_rate':a.data.get('billing_rate','0'),'status':'approved','notes':'Daily attendance board'}
+            seen.add(aid);d={'employee_id':a.data['employee_id'],'site_id':a.data['site_id'],'date':when,'shift':a.data['shift'],'hours':row.get('hours',default_hours),'overtime_hours':row.get('overtime_hours','0'),'billable_units':row.get('billable_units','1'),'billing_rate':a.data.get('billing_rate','0'),'status':'approved','notes':'Daily attendance board'}
             d=validate('timesheets',d,org);key=key_for('timesheets',d)
             if Record.objects(organization=org,kind='timesheets',key=key).first():raise ValueError('Work already recorded. Reload the board.')
             eid=d['employee_id'];hours[eid]=hours.get(eid,Decimal(0))+amount(d['hours'])+amount(d['overtime_hours'])
@@ -120,12 +121,16 @@ def labour_invoice(request):
         if not product:
             if not permitted(request,'products.create'):raise ValueError('Ask an administrator to create the LABOUR-SERVICE product.')
             category=Category.objects(organization=org,name='Labour services').first() or Category(organization=org,name='Labour services').save()
-            product=Product(organization=org,sku='LABOUR-SERVICE',name='Labour supply services',category=category,unit='MONTH').save()
+            product=Product(organization=org,sku='LABOUR-SERVICE',name='Labour supply services',category=category,unit='MONTH',item_type='service',hsn_code=p.get('hsn_code','')).save()
+        if product.item_type!='service':raise ValueError('LABOUR-SERVICE must be migrated to a service master by the upgrade command.')
+        from .billing import clean_details,settings
+        line=InvoiceItem(product=product,item_type='service',item_name=product.name,hsn_code=p.get('hsn_code') or product.hsn_code,unit='MONTH',quantity=1,unit_price=subtotal,tax_rate=rate,line_subtotal=subtotal,line_tax=tax,line_total=total)
+        details={**settings(org),**clean_details({**p['billing_details'],'site_name':site.data['name'],'service_from':first.isoformat(),'service_to':last.isoformat()},org,[line])} if 'billing_details' in p else {}
         selected=choice.get();number=allocate(org,'Invoice',selected.get('number','') if selected and selected.get('mode')=='manual' else None)
         if Invoice.objects(organization=org,invoice_number=number).first():raise ValueError('Number exists. Choose another number or higher sequence.')
         token=choice.set(None)
         try:
-            invoice=Invoice(organization=org,invoice_number=number,workforce_billing_key=key,workforce_timesheet_ids=[str(w.id) for w in work],customer=customer,invoice_date=when,due_date=due,items=[InvoiceItem(product=product,quantity=1,unit_price=subtotal,tax_rate=rate,line_subtotal=subtotal,line_tax=tax,line_total=total)],subtotal=subtotal,tax_amount=tax,total_amount=total,balance_due=total,billing_name=customer.name,billing_address=customer.billing_address,billing_state=customer.state,customer_gstin=customer.gstin,created_by=request.api_user,direct_entry=True,stock_review_required=False,notes='Labour services: '+site.data['name']+' / '+month+'. Approved timesheets linked; no stock movement.').save()
+            invoice=Invoice(organization=org,invoice_number=number,workforce_billing_key=key,workforce_timesheet_ids=[str(w.id) for w in work],customer=customer,invoice_date=when,due_date=due,items=[line],billing_details=details,subtotal=subtotal,tax_amount=tax,total_amount=total,balance_due=total,billing_name=customer.name,billing_address=customer.billing_address,billing_state=customer.state,customer_gstin=customer.gstin,created_by=request.api_user,direct_entry=True,stock_review_required=False,notes='Labour services: '+site.data['name']+' / '+month+'. Approved timesheets linked; no stock movement.').save()
         finally:choice.reset(token)
         audit(request,'labour_invoice',invoice.id,'draft-from-work')
         return R.success(data={'invoice_number':invoice.invoice_number,'existing':False},request=request)

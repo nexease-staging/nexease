@@ -31,7 +31,7 @@ def require(org,feature=None,write=False):
 
 def feature_for(path):
  if any(s in path for s in ['/business/gst/','/business/records/gst_']):return 'gst'
- if any(s in path for s in ['/business/payroll','/business/daily-work/','/business/bulk-assign/','/business/labour','/business/workers/','/business/balances/']):return 'workforce'
+ if any(s in path for s in ['/business/workforce/','/business/payroll','/business/daily-work/','/business/bulk-assign/','/business/labour','/business/workers/','/business/balances/']):return 'workforce'
  if '/business/records/' in path and path.split('/business/records/')[1].split('/')[0] not in ('expenses','gst_settings','gst_adjustments'):return 'workforce'
  if any(s in path for s in ['/accounting-reports/','/business/accountant-export/','/cash-flow/','/finance-audit/','/finance-dashboard/','/accounting-dashboard/','/exports/']):return 'advanced_reports'
  return None
@@ -88,7 +88,7 @@ def install_guards():
     if isinstance(self,Product) and not old:key='products'
     if isinstance(self,Warehouse) and self.is_active and (not old or not old.is_active):key='warehouses'
     if isinstance(self,BusinessRecord):
-     feature='gst' if self.kind.startswith('gst_') else ('workforce' if self.kind!='expenses' else None)
+     feature='gst' if self.kind.startswith('gst_') else ('workforce' if self.kind not in ('expenses','invoice_settings') else None)
      if feature:require(org,feature,True)
      if self.kind=='employees' and self.data.get('active') and (not old or not old.data.get('active')):key='employees'
     if key:check_capacity(org,key)

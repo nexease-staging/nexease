@@ -23,10 +23,12 @@ def modules(request):
     try:
         if request.method=='POST':
             p=payload(request)
-            for name in ['workforce','expenses']:
+            for name in ['workforce','expenses','taxation','finance','barcode','ai','invoice_admin_only']:
+                if name not in p:p[name]=getattr(org,name if name=='invoice_admin_only' else name+'_enabled',True)
                 if not isinstance(p.get(name),bool):raise ValueError('Module switches must be true or false.')
-            org.workforce_enabled=p['workforce'];org.expenses_enabled=p['expenses'];org.save();audit(request,'modules',org.id,'configure')
-        return R.success(data={'workforce':org.workforce_enabled,'expenses':org.expenses_enabled},request=request)
+            for name in ['workforce','expenses','taxation','finance','barcode','ai']:setattr(org,name+'_enabled',p[name])
+            org.invoice_admin_only=p['invoice_admin_only'];org.save();audit(request,'modules',org.id,'configure')
+        return R.success(data={**{k:getattr(org,k+'_enabled',True) for k in ['workforce','expenses','taxation','finance','barcode','ai']},'invoice_admin_only':getattr(org,'invoice_admin_only',True)},request=request)
     except (ValueError,ValidationError) as e:return R.validation_error(message=str(e),request=request)
 
 @api_login_required
@@ -105,6 +107,8 @@ def books_sync(request):
 @require_http_methods(['POST'])
 def invoice_descriptions(request,invoice_id):
     if not permitted(request,'invoices.issue'):return R.forbidden(message='Invoice issue permission required.',request=request)
+    from .enhancements import is_admin
+    if getattr(request.api_organization,'invoice_admin_only',True) and not is_admin(request.api_user):return R.forbidden(message='Only a system Admin can edit invoice descriptions.',request=request)
     from apps.sales.models import Invoice
     try:
         inv=Invoice.objects(id=invoice_id,organization=request.api_organization).first()
@@ -193,11 +197,11 @@ def lookup(request):
     if not permitted(request,kind+'.read'):return R.forbidden(message='Permission denied.',request=request)
     q=request.GET.get('q','').strip()[:100];code='sku' if kind=='products' else 'code'
     query=models[kind].objects(organization=request.api_organization,is_active=True)
-    if q:query=query.filter(Q(name__icontains=q)|Q(**{code+'__icontains':q}))
+    if q:query=query.filter(Q(name__icontains=q)|Q(**{code+'__icontains':q})|Q(**{('barcode' if kind=='products' else 'gstin')+'__icontains':q}))
     rows=[]
     for x in query.order_by('name').limit(40):
         d={'id':str(x.id),'name':x.name,'code':getattr(x,code)}
-        fields=['unit','cost_price','selling_price'] if kind=='products' else ['phone','email','billing_address','address','gstin','state']
+        fields=['unit','cost_price','selling_price','item_type','hsn_code'] if kind=='products' else ['phone','email','billing_address','address','gstin','state']
         d.update({f:str(getattr(x,f,'') or '') for f in fields});rows.append(d)
     return R.success(data={'records':rows},request=request)
 

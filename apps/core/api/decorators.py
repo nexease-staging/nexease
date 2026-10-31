@@ -65,6 +65,11 @@ def api_login_required(
             ]
         )
 
+        from apps.business.enhancements import module_for
+        module = module_for(request.path)
+        if module and not getattr(request.api_organization, module + '_enabled', True):
+            return APIResponseService.forbidden(message=module.title() + ' is disabled by your organisation administrator.', request=request)
+
         return view_function(
             request,
             *args,

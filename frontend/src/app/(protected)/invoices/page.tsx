@@ -1,4 +1,5 @@
 "use client";
+import {InvoiceZip} from "@/features/business/operations-panels";
 import SearchSelect from "@/components/search-select";
 
 import DirectInvoice from "@/features/business/direct-invoice";
@@ -384,7 +385,7 @@ export default function InvoicesPage() {
 
   return (
     <>
-<DirectInvoice />
+<DirectInvoice /><InvoiceZip invoices={invoices}/>
       <section className="space-y-5">
         <div
           className="

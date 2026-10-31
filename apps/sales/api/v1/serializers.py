@@ -575,6 +575,8 @@ class InvoiceAPISerializer:
             ),
             "description": getattr(item,"description",""),
             "show_description": getattr(item,"show_description",False),
+            "item_type": getattr(item,"item_type","goods"),
+            "hsn_code": getattr(item,"hsn_code","") or getattr(item.product,"hsn_code",""),
             "quantity":
                 str(
                     item.quantity

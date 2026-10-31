@@ -58,6 +58,8 @@ const optionalPriceSchema = z
   );
 
 const productSchema = z.object({
+  item_type:z.enum(["goods","service"]),
+  hsn_code:z.string().regex(/^(?:[0-9]{4}|[0-9]{6}|[0-9]{8})?$/, "Enter 4, 6 or 8 digits."),
   sku: z
     .string()
     .trim()
@@ -137,6 +139,7 @@ type ProductFormValues =
   z.infer<typeof productSchema>;
 
 const emptyValues: ProductFormValues = {
+  item_type:"goods", hsn_code:"",
   sku: "AUTO",
   name: "",
   category_id: "",
@@ -258,6 +261,7 @@ export default function ProductDialog({
       productQuery.data;
 
     reset({
+      item_type:product.item_type??"goods", hsn_code:product.hsn_code??"",
       sku:
         product.sku,
       name:
@@ -348,6 +352,7 @@ export default function ProductDialog({
     values: ProductFormValues,
   ): Promise<void> {
     const input = {
+      item_type:values.item_type, hsn_code:values.hsn_code,
       sku:
         values.sku,
       name:
@@ -536,13 +541,14 @@ export default function ProductDialog({
           </div>
         ) : (
           <form
-            onSubmit={(event) => {
+            onSubmit={(event) =>
+ {
               void handleSubmit(
                 submit,
               )(event);
             }}
             className="space-y-5 p-5"
-          >
+          ><div className="grid grid-cols-2 gap-4 p-5"><label>Goods / Service<select className="nx-input" disabled={isEditing} {...register("item_type")}><option value="goods">Goods — stock tracked</option><option value="service">Service — no stock</option></select></label><label>HSN / SAC<input className="nx-input" placeholder="HSN for goods / 6-digit SAC for services" {...register("hsn_code")}/>{errors.hsn_code&&<p role="alert">{errors.hsn_code.message}</p>}</label></div>
             <div
               className="
                 grid gap-4 md:grid-cols-2

@@ -7,6 +7,7 @@ from django.test import RequestFactory
 from mongoengine.connection import get_db
 from apps.organizations.models import Organization
 from apps.accounts.models import User
+from apps.authorization.models import Role
 from apps.business.models import BusinessRecord as Record
 from apps.business.books import ensure_accounts,sync_record,payment_account
 from apps.business.pro_api import bulk_assign,modules,invoice_descriptions,accountant_export,lookup
@@ -23,6 +24,7 @@ class ProfessionalTests(unittest.TestCase):
  def setUp(self):
   for c in get_db().list_collection_names():get_db().drop_collection(c)
   self.org=Organization(name='Pro test',email='pro@example.com').save();self.user=User(organization=self.org,email='admin@example.com',password='test',first_name='Pro',last_name='Test').save()
+  self.user.role=Role(organization=self.org,name='Admin',is_system=True).save();self.user.save()
   self.other=Organization(name='Other',email='other@example.com').save()
  def record(self,kind,key,data):return Record(organization=self.org,created_by=self.user,kind=kind,key=key,data=data).save()
  def employee(self,code='E1',internal=False):return self.record('employees',code,dict(code=code,name=code,joining_date='2026-01-01',basis='daily',rate='500',active=True,employment_type='inhouse' if internal else 'site'))

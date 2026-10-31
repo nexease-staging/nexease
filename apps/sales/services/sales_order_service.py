@@ -677,6 +677,8 @@ class SalesOrderService:
                     f"{product.sku}"
                 )
 
+            if product.item_type=='service':continue
+
             inventory = (
                 InventoryRepository
                 .get_by_product_and_warehouse(
@@ -896,6 +898,8 @@ class SalesOrderService:
 
             if quantity_to_release <= 0:
                 continue
+
+            if item.product.item_type=='service':continue
 
             inventory = (
                 InventoryRepository
@@ -1150,6 +1154,10 @@ class SalesOrderService:
                     f"Remaining: {remaining_quantity}."
                 )
 
+            if product.item_type=='service':
+                fulfilments.append({'product':product,'order_item':order_item,'inventory':None,'quantity':quantity_to_fulfill})
+                continue
+
             inventory = (
                 InventoryRepository
                 .get_by_product_and_warehouse(
@@ -1203,6 +1211,9 @@ class SalesOrderService:
         # ---------------------------------------------
 
         for fulfilment in fulfilments:
+            if fulfilment["product"].item_type=="service":
+                fulfilment["order_item"].fulfilled_quantity += fulfilment["quantity"]
+                continue
 
             inventory = fulfilment[
                 "inventory"

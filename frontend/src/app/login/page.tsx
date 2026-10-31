@@ -43,7 +43,7 @@ export default function LoginPage() {
         px-4 py-12
       "
     >
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md"><img src="/nexease-logo.jpeg" alt="NexEase" className="mx-auto mb-6 size-20 rounded-2xl"/>
         <Suspense
           fallback={
             <LoginFormFallback />

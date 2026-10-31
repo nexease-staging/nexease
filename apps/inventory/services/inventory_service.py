@@ -82,6 +82,9 @@ class InventoryService:
                 "Product is required."
             )
 
+        if getattr(product,"item_type","goods") == "service":
+            raise ValueError("Services do not have stock movements. Use service invoicing.")
+
         if product.organization.id != organization.id:
             raise PermissionError(
                 "Product does not belong to this organization."

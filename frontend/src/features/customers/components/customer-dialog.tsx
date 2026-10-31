@@ -1,4 +1,5 @@
 "use client";
+import GstLookup from "@/features/business/gst-lookup";
 
 import {
   useEffect,
@@ -229,6 +230,7 @@ export default function CustomerDialog({
     updateMutation.reset;
 
   const {
+    setValue,
     register,
     handleSubmit,
     reset,
@@ -584,7 +586,7 @@ export default function CustomerDialog({
               )(event);
             }}
             className="space-y-5 p-5"
-          >
+          ><div className="p-4"><GstLookup onSelect={r=>{for(const k of ['name','gstin','state','email','phone'] as const){if(r[k])setValue(k,r[k],{shouldValidate:true});}if(r.address)setValue('billing_address',r.address,{shouldValidate:true});}}/></div>
             <div
               className="
                 grid gap-4 md:grid-cols-2
