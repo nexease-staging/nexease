@@ -49,7 +49,7 @@ class ProductAPIService:
         "unit",
         "cost_price",
         "selling_price",
-        "barcode",
+        "barcode", "item_type", "hsn_code",
     }
 
     UPDATE_FIELDS = {
@@ -61,7 +61,7 @@ class ProductAPIService:
         "unit",
         "cost_price",
         "selling_price",
-        "barcode",
+        "barcode", "item_type", "hsn_code",
     }
 
     REQUIRED_CREATE_FIELDS = {
@@ -473,6 +473,8 @@ class ProductAPIService:
         )
 
         return {
+            "item_type": payload.get("item_type", "goods"),
+            "hsn_code": payload.get("hsn_code", ""),
             "sku":
                 sku,
             "name":
@@ -615,6 +617,8 @@ class ProductAPIService:
                 )
             )
 
+        for key in ("item_type", "hsn_code"):
+            if key in payload: updates[key] = payload[key]
         return updates
 
     @staticmethod
@@ -660,6 +664,9 @@ class ProductAPIService:
 
         current_time = datetime.utcnow()
 
+        if values['item_type'] not in ('goods','service'):raise ProductAPIValidationError(message='Choose goods or service.')
+        try: Product(item_type=values['item_type'],hsn_code=values['hsn_code']).clean()
+        except Exception as exc:raise ProductAPIValidationError(message=str(exc))
         product = Product(
             organization=organization,
             sku=values["sku"],
@@ -676,6 +683,7 @@ class ProductAPIService:
             selling_price=values[
                 "selling_price"
             ],
+            item_type=values["item_type"], hsn_code=values["hsn_code"],
             barcode=values["barcode"],
             is_active=True,
             created_at=current_time,
@@ -770,6 +778,12 @@ class ProductAPIService:
             )
         )
 
+        if "item_type" in updates and updates["item_type"] != product.item_type:
+            raise ProductAPIValidationError(message="Goods/service type cannot be changed after creation. Create a separate master to preserve stock history.")
+        for key in ("item_type", "hsn_code"):
+            if key in updates: setattr(product,key,updates[key])
+        try: product.clean()
+        except Exception as exc: raise ProductAPIValidationError(message=str(exc))
         if "sku" in updates:
 
             if (

@@ -43,8 +43,10 @@ class InvoiceRepository:
         notes,
         created_by,
         status="DRAFT",
+        billing_details=None,
     ):
         invoice = Invoice(
+            billing_details=billing_details or {},
             organization=organization,
             invoice_number=invoice_number,
             sales_order=sales_order,

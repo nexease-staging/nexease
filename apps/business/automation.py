@@ -61,7 +61,10 @@ def payrow(org,employee,month,policy,mode):
         if days&paid:raise ValueError('Work overlaps paid leave: '+employee.data['name'])
         d.update(employee_id=eid,month=month,period_days=str(last.day),paid_days=str(len(days|paid)),hours=money(sum((amount(w.data['hours']) for w in work),Decimal(0))),overtime_hours=money(sum((amount(w.data.get('overtime_hours',0)) for w in work),Decimal(0))),advance_recovery='0')
         source.update(timesheet_ids=[str(w.id) for w in work],paid_leave_days=len(paid),worked_days=len(days))
-        d['advance_recovery']=money(min(amount(calculate(employee.data,d,policy)['net']),sum((amount(a['outstanding']) for a in advances(org,eid,last.isoformat())),Decimal(0))))
+        prefs=Record.objects(organization=org,kind='workforce_preferences',key='default').first()
+        recovery_percent=amount(prefs.data.get('advance_recovery_percent','100')) if prefs else Decimal(100)
+        source['advance_recovery_percent']=str(recovery_percent)
+        d['advance_recovery']=money(min(amount(calculate(employee.data,d,policy)['net'])*recovery_percent/100,sum((amount(a['outstanding']) for a in advances(org,eid,last.isoformat())),Decimal(0))))
     else:raise ValueError('Choose automatic or manual payroll inputs.')
     remaining=amount(d.get('advance_recovery',0));allocations=[]
     for a in advances(org,eid,last.isoformat()):

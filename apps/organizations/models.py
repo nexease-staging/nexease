@@ -10,6 +10,11 @@ from mongoengine import (
 
 
 class Organization(Document):
+    taxation_enabled = BooleanField(default=True)
+    finance_enabled = BooleanField(default=True)
+    barcode_enabled = BooleanField(default=True)
+    ai_enabled = BooleanField(default=True)
+    invoice_admin_only = BooleanField(default=True)
     workforce_enabled = BooleanField(default=True)
     expenses_enabled = BooleanField(default=True)
     business_scope = StringField(default="mixed", choices=("retailer","wholesaler","labour_supply","manufacturer","services","construction","mixed"))

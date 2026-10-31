@@ -17,6 +17,8 @@ export interface ProductCategoryDetail
 }
 
 export interface ProductSummary {
+  item_type?: "goods"|"service";
+  hsn_code?: string;
   id: string;
   sku: string;
   name: string;
@@ -60,6 +62,8 @@ export interface ProductListParameters {
 }
 
 export interface CreateProductInput {
+  item_type?: "goods"|"service";
+  hsn_code?: string;
   sku: string;
   name: string;
   category_id: string;
@@ -72,6 +76,8 @@ export interface CreateProductInput {
 }
 
 export interface UpdateProductInput {
+  item_type?: "goods"|"service";
+  hsn_code?: string;
   sku?: string;
   name?: string;
   category_id?: string;

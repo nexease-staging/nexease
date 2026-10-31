@@ -66,6 +66,7 @@ class InvoiceAPIStateError(
 class InvoiceAPIService:
 
     CREATE_FIELDS = {
+        "billing_details",
         "sales_order_id",
         "invoice_date",
         "due_date",
@@ -518,6 +519,7 @@ class InvoiceAPIService:
             )
 
         return {
+            **({"billing_details":payload["billing_details"]} if "billing_details" in payload else {}),
             "sales_order":
                 sales_order,
             "invoice_date":

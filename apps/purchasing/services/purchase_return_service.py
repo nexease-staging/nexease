@@ -232,6 +232,7 @@ class PurchaseReturnService:
                 "product"
             )
 
+
             if not product:
                 raise ValueError(
                     "Product is required."
@@ -594,6 +595,8 @@ class PurchaseReturnService:
                     "Return quantity exceeds "
                     "available received quantity."
                 )
+
+            if getattr(product,'item_type','goods')=='service':continue
 
             inventory = (
                 InventoryRepository

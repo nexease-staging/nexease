@@ -36,6 +36,8 @@ export interface InvoiceProductSummary {
 }
 
 export interface InvoiceItem {
+  item_type?:string;
+  hsn_code?:string;
   description?: string;
   show_description?: boolean;
   product: InvoiceProductSummary;
@@ -117,6 +119,7 @@ export interface InvoiceListParameters {
 }
 
 export interface CreateInvoiceInput {
+  billing_details?:Record<string,string>;
   sales_order_id: string;
   invoice_date?: string;
   due_date?: string;

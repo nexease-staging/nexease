@@ -151,13 +151,10 @@ class DocumentAPIService:
         if not document:
             return None
 
-        delivery_data = (
-            DocumentEmailConfigService
-            .get_delivery_data(
-                document_type=normalized_type,
-                document=document,
-            )
-        )
+        # PDF generation needs document identity, not a deliverable email address.
+        delivery_data = {
+            'document_number': getattr(document, config['number_attribute']),
+        }
 
         return {
             "document_type":

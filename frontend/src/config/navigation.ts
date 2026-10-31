@@ -47,8 +47,9 @@ export interface NavigationSection {
 
 export const navigationSections:
   NavigationSection[] = [
+    {label:"Barcode",items:[{label:"Barcode inventory",href:"/barcode",icon:Boxes,permission:"inventory.read"}]},
     {label:"Expenses",items:[{label:"Daily expenses",href:"/expenses",icon:ReceiptText,permission:"expenses.read"}]},
-    {label:"Workforce",items:[{label:"Employees & payroll",href:"/payroll",icon:Users,permission:"payroll.read"},{label:"Labour & sites",href:"/labour",icon:Building2,permission:"labour.read"}]},
+    {label:"Workforce",items:[{label:"Workforce dashboard",href:"/workforce",icon:Users,permission:"payroll.read"},{label:"Sites & attendance",href:"/workforce/sites",icon:Building2,permission:"labour.read"}]},
     {label:"Taxation",items:[{label:"GST & tax workpapers",href:"/taxation",icon:ReceiptText,permission:"taxation.read"}]},
     {
       label: "Overview",
@@ -268,6 +269,12 @@ export const navigationSections:
       label: "Administration",
       items: [
         {
+          label: "Invoice formats & logo",
+          href: "/settings/invoices",
+          icon: FileText,
+          permission: "organizations.update",
+        },
+        {
           label: "Organization",
           href: "/settings/organization",
           icon: Building2,
@@ -321,3 +328,9 @@ export const navigationSections:
       ],
     },
   ];
+export const workforceSections: NavigationSection[] = [{label:'Workforce',items:[
+ {label:'Dashboard',href:'/workforce',icon:LayoutDashboard},
+ ...([
+ ['Employees','employees','payroll.read'],['Client sites','sites','labour.read'],['Assignments','assignments','labour.read'],['Daily attendance','attendance','labour.read'],['Timesheets','timesheets','labour.read'],['Leave & approvals','leave','payroll.read'],['Monthly pay inputs','inputs','payroll.read'],['Pay runs','payruns','payroll.read'],['Payslips','payslips','payroll.read'],['Advances','advances','payroll.read'],['Client billing','billing','labour.read'],['Accounts','accounts','accounting_reports.read'],['Reports','reports','payroll.read'],['Settings','settings','payroll.read']
+ ]).map(([label,path,permission])=>({label,href:'/workforce/'+path,permission,icon:path==='settings'?Settings:ClipboardList}))
+]}];

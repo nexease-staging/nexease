@@ -179,11 +179,11 @@ export default function DashboardKPIGrid({
                   card.label
                 }
                 className={`
-                  rounded-2xl
+                  relative rounded-2xl
                   border
                   bg-white
                   p-5
-                  shadow-sm
+                  shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md
                   ${
                     index === 6
                       ? "xl:col-span-2"
@@ -211,7 +211,7 @@ export default function DashboardKPIGrid({
                   >
                     <p
                       className="
-                        text-sm
+                        pr-9 text-sm
                         font-medium
                         text-slate-500
                       "
@@ -224,8 +224,7 @@ export default function DashboardKPIGrid({
                     <p
                       className="
                         mt-3
-                        truncate
-                        text-2xl
+                        text-xl
                         font-bold
                         tracking-tight
                         text-slate-950
@@ -255,9 +254,9 @@ export default function DashboardKPIGrid({
 
                   <div
                     className={`
-                      flex
-                      h-11
-                      w-11
+                      absolute right-4 top-4 flex
+                      h-8
+                      w-8
                       shrink-0
                       items-center
                       justify-center
@@ -269,8 +268,8 @@ export default function DashboardKPIGrid({
                             text-amber-700
                           `
                           : `
-                            bg-slate-100
-                            text-slate-700
+                            bg-emerald-50
+                            text-emerald-700
                           `
                       }
                     `}

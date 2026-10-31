@@ -32,3 +32,8 @@ SCHEMAS['expenses']={'label':'Daily expenses','permission':'expenses','fields':{
 'description':field('Description',required=True),'payee':field('Paid to',required=True),'amount':field('Total paid (including tax)','number',True),
 'payment_mode':field('Payment mode','select',True,['Cash','Bank transfer','UPI','Debit card','Credit card']),'payment_account':field('Payment ledger account (optional)','accounts'),
 'reference':field('Receipt / payment reference',required=True),'notes':field('Notes')}}
+SCHEMAS['workforce_preferences']={'label':'Attendance & recovery defaults','permission':'payroll','fields':{
+ 'daily_hours':field('Default daily attendance hours','number',True),
+ 'advance_recovery_percent':field('Maximum automatic advance recovery (% of net pay)','number',True),
+ 'payslip_footer':field('Payslip footer / HR contact'),
+ 'notes':field('Internal policy notes')}}

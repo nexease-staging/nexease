@@ -428,7 +428,8 @@ class CreditNoteService:
         # DR SALES REVENUE
         # ----------------------------------------------
 
-        if credit_note.subtotal > 0:
+        revenue_reversal=credit_note.total_amount-credit_note.tax_amount
+        if revenue_reversal > 0:
             raw_lines.append(
                 {
                     "account":
@@ -440,7 +441,7 @@ class CreditNoteService:
                     ),
 
                     "debit":
-                        credit_note.subtotal,
+                        revenue_reversal,
 
                     "credit":
                         "0.00",
@@ -495,6 +496,26 @@ class CreditNoteService:
         # ==============================================
         # CREATE JOURNAL
         # ==============================================
+
+        # Reverse the same revenue/tax controls as the source invoice.
+        source_details=getattr(credit_note.invoice,'billing_details',{}) or {}
+        from apps.business.billing import invoice_account
+        from apps.business.payroll import money
+        service_ids={str(i.product.id) for i in credit_note.invoice.items if getattr(i,'item_type','goods')=='service'}
+        service_value=sum((i.line_total-i.line_tax for i in credit_note.items if str(i.product.id) in service_ids),Decimal(0))
+        if service_value:
+            for line in raw_lines:
+                if line['account'].id==sales_revenue.id:line['debit']=revenue_reversal-service_value
+            raw_lines=[line for line in raw_lines if Decimal(str(line['debit'])) or Decimal(str(line['credit']))]
+            raw_lines.append({'account':invoice_account(organization,user,'SERVICE_REVENUE'),'description':'Service credit '+credit_note.credit_note_number,'debit':service_value,'credit':'0.00'})
+        if credit_note.tax_amount>0 and source_details.get('tax_reviewed'):
+            raw_lines=[line for line in raw_lines if line['account'].id!=output_tax_payable.id]
+            tax=credit_note.tax_amount
+            if source_details.get('supplier_state')==source_details.get('place_of_supply'):
+                cgst=sum((Decimal(money(i.line_tax/2)) for i in credit_note.items),Decimal(0));heads=(cgst,tax-cgst,Decimal(0))
+            else:heads=(Decimal(0),Decimal(0),tax)
+            for key,value in zip(('OUTPUT_CGST','OUTPUT_SGST','OUTPUT_IGST'),heads):
+                if value:raw_lines.append({'account':invoice_account(organization,user,key),'description':'Tax credit '+credit_note.credit_note_number,'debit':value,'credit':'0.00'})
 
         journal = (
             JournalEntryService

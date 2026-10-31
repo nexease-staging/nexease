@@ -38,21 +38,23 @@ def quick_purchase(request):
             product=Product.objects(organization=org,sku=sku).first()
             if product and not product.is_active:raise ValueError('Product is inactive.')
             if not product and not AuthorizationService.has_permission(user,'products.create'):raise PermissionError('products.create is required for a new product.')
+            item_type=product.item_type if product else raw.get('item_type','goods');hsn=product.hsn_code if product else raw.get('hsn_code','')
+            Product(item_type=item_type,hsn_code=hsn).clean()
             qty=amount(raw.get('quantity'));price=amount(raw.get('unit_price'));rate=amount(raw.get('tax_rate',0),maximum='100');discount=amount(raw.get('discount',0))
             if any(v!=v.quantize(Decimal('.01')) for v in [price,rate,discount]):raise ValueError('Price, tax rate and discount support at most two decimal places.')
             if qty<=0 or qty!=qty.quantize(Decimal('.01')):raise ValueError('Quantity must be positive with at most two decimals.')
             sub=Decimal(money(qty*price))
             if discount>sub:raise ValueError('Discount exceeds line subtotal.')
             tax=Decimal(money((sub-discount)*rate/100))
-            normalized.append((product,sku,name_p,unit,dict(quantity=qty,unit_price=price,tax_rate=rate,discount=discount),sub,tax,sub-discount+tax))
+            normalized.append((product,sku,name_p,unit,item_type,hsn,dict(quantity=qty,unit_price=price,tax_rate=rate,discount=discount),sub,tax,sub-discount+tax))
         created=[]
         if not supplier:
             supplier=Supplier(organization=org,code=code,name=name,address=text(supplier_data,'address',limit=500),gstin=text(supplier_data,'gstin',limit=20)).save();created.append('Supplier '+code)
         items=[];subtotal=tax_total=discount_total=total=Decimal(0)
-        for product,sku,name_p,unit,values,sub,tax,line in normalized:
+        for product,sku,name_p,unit,item_type,hsn,values,sub,tax,line in normalized:
             if not product:
                 category=Category.objects(organization=org,name='Pending review').first() or Category(organization=org,name='Pending review').save()
-                product=Product(organization=org,sku=sku,name=name_p,unit=unit,category=category,cost_price=values['unit_price']).save();created.append('Product '+sku)
+                product=Product(organization=org,sku=sku,name=name_p,unit=unit,item_type=item_type,hsn_code=hsn,category=category,cost_price=values['unit_price']).save();created.append('Product '+sku)
             values.update(product=product)
             if is_bill:values.update(line_subtotal=sub,line_tax=tax,line_total=line);items.append(VendorBillItem(**values))
             else:values.update(subtotal=sub,tax_amount=tax,total=line);items.append(PurchaseOrderItem(**values))

@@ -693,7 +693,7 @@ export default function ProductsPage() {
                             text-slate-900
                           "
                         >
-                          {product.name}
+                          {product.name}<span className="block text-xs font-normal text-slate-500">{product.item_type==="service"?"Service":"Goods"} · HSN/SAC: {product.hsn_code||"Not set"}</span>
                         </p>
 
                         <p

@@ -1,3 +1,11 @@
+# October operations update
+
+Start with **OCT31_OPERATIONS_UPDATE.md** for installation, feature scope and GST provider setup.
+
+## Goods, services and Workforce upgrade
+
+Start with **UPGRADE_WORKFORCE_AND_BILLING.md** for installation, supported features and boundaries. Validation results are in **VALIDATION_WORKFORCE_UPGRADE.md**. Preserve existing environment files.
+
 > **SaaS Edition:** Start with [START_HERE_SAAS.md](START_HERE_SAAS.md). It describes owner setup, subscriptions, AI, payment configuration and current limits.
 
 > **Professional Update (24 October 2026):** Start with [UPDATE_PROFESSIONAL.md](UPDATE_PROFESSIONAL.md). It supersedes older workflow/accounting limitations below where explicitly described.

@@ -263,6 +263,7 @@ class SalesReturnService:
                 "product"
             )
 
+
             if not product:
                 raise ValueError(
                     "Return item product "
@@ -634,6 +635,7 @@ class SalesReturnService:
         # Now restore physical inventory.
         #
         for return_item in sales_return.items:
+            if getattr(return_item.product,"item_type","goods")=="service":continue
             InventoryService.record_business_movement(
                 user=user,
                 organization=organization,

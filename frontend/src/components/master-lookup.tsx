@@ -1,7 +1,7 @@
 "use client";
 import {useEffect,useId,useState} from 'react';
 import {apiRequest} from '@/lib/api/client';
-export type Master={id:string;name:string;code:string;unit?:string;cost_price?:string;selling_price?:string;billing_address?:string;address?:string;gstin?:string;state?:string};
+export type Master={id:string;email?:string;phone?:string;item_type?:string;hsn_code?:string;name:string;code:string;unit?:string;cost_price?:string;selling_price?:string;billing_address?:string;address?:string;gstin?:string;state?:string};
 export default function MasterLookup({kind,onSelect,label='Find existing record'}:{kind:'products'|'customers'|'suppliers';onSelect:(row:Master)=>void;label?:string}){
  const [q,setQ]=useState('');const [rows,setRows]=useState<Master[]>([]);const [open,setOpen]=useState(false);const [error,setError]=useState('');const [active,setActive]=useState(0);const id=useId();
  useEffect(()=>{let live=true;const timer=setTimeout(()=>{apiRequest<{records:Master[]}>(`/business/lookup/?kind=${kind}&q=${encodeURIComponent(q)}`).then(r=>{if(live){setRows(r.data.records);setError('');}}).catch(e=>{if(live)setError(e.message);});},200);return()=>{live=false;clearTimeout(timer);};},[kind,q]);

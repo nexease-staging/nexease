@@ -1,5 +1,6 @@
 "use client";
 
+import {InvoiceDetails} from "@/features/business/invoice-settings";
 import InvoiceDescriptions from "@/features/business/invoice-descriptions";
 import DocumentActions from "@/features/documents/components/document-actions";
 
@@ -442,7 +443,7 @@ export default function InvoiceDetailDialog({
                   flex flex-wrap gap-2
                 "
               >
-                {canIssue && invoice.status === "DRAFT" && <InvoiceDescriptions key={invoice.id} invoice={invoice}/>}
+                {canIssue && invoice.status === "DRAFT" && <><InvoiceDetails key={invoice.id+"details"} id={invoice.id}/><InvoiceDescriptions key={invoice.id} invoice={invoice}/></>}
                 <DocumentActions
                   documentType="INVOICE"
                   documentId={invoice.id}
@@ -808,7 +809,7 @@ export default function InvoiceDetailDialog({
                                 text-slate-500
                               "
                             >
-                              {item.product.sku}
+                              {item.product.sku} · {item.item_type??"goods"} · HSN/SAC: {item.hsn_code||"—"}
                             </p>
                           </td>
 
