@@ -19,3 +19,32 @@ uploads/
 media/
 backups/
 *.pem
+
+# Device configuration and private signing/service-account files
+frontend/android/app/google-services.json
+GoogleService-Info.plist
+*service-account*.json
+*.jks
+*.keystore
+*.p12
+
+# Private configuration and generated outputs
+.env
+.env.local
+.env.*.local
+google-services.json
+*.jks
+*.keystore
+*.apk
+*.aab
+*.bak
+*.tsbuildinfo
+.venv/
+node_modules/
+.next/
+out/
+.gradle/
+local.properties
+frontend/android/**/build/
+frontend/android/app/src/main/assets/public/
+frontend/ios/App/App/public/

@@ -302,7 +302,7 @@ export default function RolesPage() {
           </button>
 
           {canCreate ? (
-            <button
+            <button title="Create Role"
               type="button"
               onClick={() => {
                 setCreateDialogOpen(true);
@@ -316,16 +316,13 @@ export default function RolesPage() {
                 hover:bg-blue-700
               "
             >
-              <Plus size={16} />
-
-              Create Role
-            </button>
+              <Plus size={16} /><span className="sr-only">Create Role</span></button>
           ) : null}
         </div>
       </div>
 
       <div
-        className="
+        className="nx-list-filters
           grid gap-4 rounded-2xl
           border border-slate-200
           bg-white p-4 shadow-sm

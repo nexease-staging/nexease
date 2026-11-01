@@ -239,7 +239,7 @@ export default function GoodsReceiptsPage() {
 
           {canCreate
             ? (
-              <button
+              <button title="Receive goods"
                 type="button"
                 onClick={() => {
                   setDetailOpen(false);
@@ -255,9 +255,7 @@ export default function GoodsReceiptsPage() {
                   hover:bg-blue-700
                 "
               >
-                <Plus size={18} />
-                Receive goods
-              </button>
+                <Plus size={18} /><span className="sr-only">Receive goods</span></button>
             )
             : null}
         </header>
@@ -270,7 +268,7 @@ export default function GoodsReceiptsPage() {
           "
         >
           <div
-            className="
+            className="nx-list-filters
               grid gap-3
               md:grid-cols-[minmax(0,1fr)_220px]
             "
@@ -472,7 +470,7 @@ export default function GoodsReceiptsPage() {
               &&
               !search
                 ? (
-                  <button
+                  <button title="Receive goods"
                     type="button"
                     onClick={() => {
                       setCreateOpen(true);
@@ -486,9 +484,7 @@ export default function GoodsReceiptsPage() {
                       hover:bg-blue-700
                     "
                   >
-                    <Plus size={18} />
-                    Receive goods
-                  </button>
+                    <Plus size={18} /><span className="sr-only">Receive goods</span></button>
                 )
                 : null}
             </section>

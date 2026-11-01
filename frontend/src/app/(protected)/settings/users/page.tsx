@@ -1,4 +1,5 @@
 "use client";
+import {confirmAction} from "@/components/nex-feedback";
 import SearchSelect from "@/components/search-select";
 
 
@@ -224,7 +225,7 @@ export default function UsersPage() {
     user: UserSummary,
   ): Promise<void> {
     const confirmed =
-      window.confirm(
+      await confirmAction(
         (
           `Activate ${user.full_name || user.email}?`
           +
@@ -259,7 +260,7 @@ export default function UsersPage() {
     user: UserSummary,
   ): Promise<void> {
     const confirmed =
-      window.confirm(
+      await confirmAction(
         (
           `Deactivate ${user.full_name || user.email}?`
           +
@@ -368,7 +369,7 @@ export default function UsersPage() {
           </button>
 
           {canCreate ? (
-            <button
+            <button title="New user"
               type="button"
               onClick={
                 openCreateDialog
@@ -382,16 +383,13 @@ export default function UsersPage() {
                 hover:bg-blue-700
               "
             >
-              <Plus size={17} />
-
-              New user
-            </button>
+              <Plus size={17} /><span className="sr-only">New user</span></button>
           ) : null}
         </div>
       </div>
 
       <div
-        className="
+        className="nx-list-filters
           grid gap-4 rounded-2xl
           border border-slate-200
           bg-white p-4 shadow-sm
@@ -584,7 +582,7 @@ export default function UsersPage() {
             </p>
 
             {canCreate ? (
-              <button
+              <button title="Create user"
                 type="button"
                 onClick={
                   openCreateDialog
@@ -598,10 +596,7 @@ export default function UsersPage() {
                   hover:bg-blue-700
                 "
               >
-                <Plus size={16} />
-
-                Create user
-              </button>
+                <Plus size={16} /><span className="sr-only">Create user</span></button>
             ) : null}
           </div>
         ) : (

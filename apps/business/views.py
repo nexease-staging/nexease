@@ -104,7 +104,7 @@ def configuration(request):
     from .enhancements import is_admin
     from .billing import settings as invoice_settings
     scope=getattr(request.api_organization,'business_scope','mixed')
-    return R.success(data={'can_edit_invoices':is_admin(request.api_user) or not getattr(request.api_organization,'invoice_admin_only',True),'logo':invoice_settings(request.api_organization).get('logo',''),'schemas':{k:v for k,v in SCHEMAS.items() if permitted(request,v['permission']+'.read')},'profiles':PROFILES,'scope':scope,'profile':PROFILES.get(scope,PROFILES['mixed']),'modules':{k:getattr(request.api_organization,k+'_enabled',True) for k in ['workforce','expenses','taxation','finance','barcode','ai']}},request=request)
+    return R.success(data={'can_read_cost':permitted(request,'products.read_cost'),'can_edit_issued_invoices':is_admin(request.api_user),'can_edit_invoices':is_admin(request.api_user) or not getattr(request.api_organization,'invoice_admin_only',True),'logo':invoice_settings(request.api_organization).get('logo',''),'schemas':{k:v for k,v in SCHEMAS.items() if permitted(request,v['permission']+'.read')},'profiles':PROFILES,'scope':scope,'profile':PROFILES.get(scope,PROFILES['mixed']),'modules':{k:getattr(request.api_organization,k+'_enabled',True) for k in ['workforce','expenses','taxation','finance','barcode','ai']}},request=request)
 
 @api_login_required
 @require_http_methods(['GET','POST','PATCH'])

@@ -42,6 +42,7 @@ export default function AppSidebar({
   onToggleCollapsed,
 }: AppSidebarProps) {
   const pathname = usePathname();
+  const compact = collapsed && !mobileOpen;
   const config = useQuery({queryKey:["business-config"],queryFn:getConfig});
   const [closed, setClosed] = useState<Record<string, boolean>>(Object.fromEntries(navigationSections.map(s => [s.label, true])));
 
@@ -108,7 +109,7 @@ export default function AppSidebar({
               : "-translate-x-full lg:translate-x-0"
           }
           ${
-            collapsed
+            compact
               ? "lg:w-20"
               : "lg:w-72"
           }
@@ -138,7 +139,7 @@ export default function AppSidebar({
               <img src="/nexease-logo.jpeg" alt="NexEase" className="size-10 rounded-xl object-contain"/>
             </div>
 
-            {!collapsed && (
+            {!compact && (
               <div className="min-w-0">
                 {config.data?.logo&&<img src={config.data.logo} alt="Organisation logo" className="h-8 max-w-32 object-contain"/>}
                 <p
@@ -189,7 +190,7 @@ export default function AppSidebar({
                 key={section.label}
                 className="mb-6"
               >
-                {!collapsed && (
+                {!compact && (
                   <button type="button" aria-expanded={!closed[section.label]} onClick={() => setClosed({...closed,[section.label]:!closed[section.label]})}
                     className="
                       mb-2 px-3 text-xs
@@ -202,7 +203,7 @@ export default function AppSidebar({
                   </button>
                 )}
 
-                <div className="space-y-1" hidden={!collapsed && !!closed[section.label]}>
+                <div className="space-y-1" hidden={!compact && !!closed[section.label]}>
                   {section.items.map(
                     (item) => {
                       const active =
@@ -220,7 +221,7 @@ export default function AppSidebar({
                           key={item.href}
                           href={item.href}
                           title={
-                            collapsed
+                            compact
                               ? item.label
                               : undefined
                           }
@@ -233,7 +234,7 @@ export default function AppSidebar({
                             text-sm font-medium
                             transition
                             ${
-                              collapsed
+                              compact
                                 ? "lg:justify-center"
                                 : "gap-3"
                             }
@@ -249,7 +250,7 @@ export default function AppSidebar({
                             className="shrink-0"
                           />
 
-                          {!collapsed && (
+                          {!compact && (
                             <span>
                               {item.label}
                             </span>
@@ -283,7 +284,7 @@ export default function AppSidebar({
               hover:bg-slate-100
             "
           >
-            {collapsed ? (
+            {compact ? (
               <PanelLeftOpen size={19} />
             ) : (
               <>

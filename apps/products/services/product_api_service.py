@@ -662,6 +662,9 @@ class ProductAPIService:
                 },
             )
 
+        if values["barcode"] and Product.objects(organization=organization, barcode=values["barcode"]).first():
+            raise ProductAPIValidationError(message="This barcode is already assigned to another product.", details={"barcode":["Use a different barcode or leave blank for automatic numbering."]})
+
         current_time = datetime.utcnow()
 
         if values['item_type'] not in ('goods','service'):raise ProductAPIValidationError(message='Choose goods or service.')
@@ -811,6 +814,11 @@ class ProductAPIService:
                         ],
                     },
                 )
+
+        if "barcode" in updates:
+            updates["barcode"] = updates["barcode"] or Product.automatic_barcode(product.id)
+            if Product.objects(organization=organization, barcode=updates["barcode"], id__ne=product.id).first():
+                raise ProductAPIValidationError(message="This barcode is already assigned to another product.", details={"barcode":["Use a different barcode."]})
 
         mongo_updates = {
             f"set__{field_name}":

@@ -482,7 +482,7 @@ const canCreateProduct =
           </button>
 
           {canCreate ? (
-            <button
+            <button title="New Sales Order"
               type="button"
               onClick={
                 openCreateDialog
@@ -496,15 +496,13 @@ const canCreateProduct =
                 hover:bg-blue-700
               "
             >
-              <Plus size={17} />
-              New Sales Order
-            </button>
+              <Plus size={17} /><span className="sr-only">New Sales Order</span></button>
           ) : null}
         </div>
       </div>
 
       <div
-        className="
+        className="nx-list-filters
           grid gap-4 rounded-2xl
           border border-slate-200
           bg-white p-4 shadow-sm
@@ -769,7 +767,7 @@ const canCreateProduct =
             </p>
 
             {canCreate ? (
-              <button
+              <button title="Create Sales Order"
                 type="button"
                 onClick={
                   openCreateDialog
@@ -782,9 +780,7 @@ const canCreateProduct =
                   font-semibold text-white
                 "
               >
-                <Plus size={16} />
-                Create Sales Order
-              </button>
+                <Plus size={16} /><span className="sr-only">Create Sales Order</span></button>
             ) : null}
           </div>
         ) : (

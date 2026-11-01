@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">NexEase</string>
+    <string name="title_activity_main">NexEase</string>
+    <string name="package_name">com.nexease.business</string>
+    <string name="custom_url_scheme">com.nexease.business</string>
+</resources>

@@ -1,4 +1,5 @@
 "use client";
+import {confirmAction} from "@/components/nex-feedback";
 
 import {
   useState,
@@ -181,7 +182,7 @@ export default function VendorDebitNoteDetailDialog({
     }
 
     const accepted =
-      window.confirm(
+      await confirmAction(
         (
           "Issue this vendor debit note? "
           +
@@ -221,7 +222,7 @@ export default function VendorDebitNoteDetailDialog({
     }
 
     const accepted =
-      window.confirm(
+      await confirmAction(
         "Cancel this draft vendor debit note?",
       );
 

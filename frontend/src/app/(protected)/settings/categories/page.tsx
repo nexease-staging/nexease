@@ -1,4 +1,5 @@
 "use client";
+import {confirmAction} from "@/components/nex-feedback";
 import SearchSelect from "@/components/search-select";
 
 
@@ -224,7 +225,7 @@ export default function CategoriesPage() {
     category: CategorySummary,
   ): Promise<void> {
     const confirmed =
-      window.confirm(
+      await confirmAction(
         (
           `Activate ${category.name}?`
           +
@@ -260,7 +261,7 @@ export default function CategoriesPage() {
     category: CategorySummary,
   ): Promise<void> {
     const confirmed =
-      window.confirm(
+      await confirmAction(
         (
           `Deactivate ${category.name}?`
           +
@@ -408,7 +409,7 @@ export default function CategoriesPage() {
           </button>
 
           {canCreate ? (
-            <button
+            <button title="New category"
               type="button"
               onClick={
                 openCreateDialog
@@ -422,16 +423,13 @@ export default function CategoriesPage() {
                 hover:bg-blue-700
               "
             >
-              <Plus size={17} />
-
-              New category
-            </button>
+              <Plus size={17} /><span className="sr-only">New category</span></button>
           ) : null}
         </div>
       </div>
 
       <div
-        className="
+        className="nx-list-filters
           grid gap-4 rounded-2xl
           border border-slate-200
           bg-white p-4 shadow-sm
@@ -634,7 +632,7 @@ export default function CategoriesPage() {
             {canCreate
             && !search
             && activeFilter === "all" ? (
-              <button
+              <button title="Create category"
                 type="button"
                 onClick={
                   openCreateDialog
@@ -648,10 +646,7 @@ export default function CategoriesPage() {
                   hover:bg-blue-700
                 "
               >
-                <Plus size={16} />
-
-                Create category
-              </button>
+                <Plus size={16} /><span className="sr-only">Create category</span></button>
             ) : null}
           </div>
         ) : (

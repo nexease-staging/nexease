@@ -1,3 +1,4 @@
+from django.conf import settings
 from apps.accounts.models import User
 from apps.accounts.session_models import (
     MongoSession,
@@ -28,6 +29,9 @@ class AuthenticationService:
             user.id
         )
 
+        if (getattr(settings, 'NEXEASE_MOBILE_ENABLED', False)
+                and request.META.get('HTTP_ORIGIN') == 'https://localhost'):
+            request.session.set_expiry(60 * 60 * 24 * 30)
         request.session.modified = True
         request.session.save()
 
@@ -196,6 +200,9 @@ class AuthenticationService:
         if not user:
             return 0
 
+        from apps.core.device_models import NotificationDevice
+        NotificationDevice.objects(user=user).delete()
+
         user_id = str(
             user.id
         )
@@ -302,6 +309,9 @@ class AuthenticationService:
     ):
         if not user:
             return 0
+
+        from apps.core.device_models import NotificationDevice
+        NotificationDevice.objects(user=user).delete()
 
         user_id = str(
             user.id

@@ -1,4 +1,5 @@
 "use client";
+import DeviceNotificationSettings from "@/components/mobile/device-notification-settings";
 
 import {
   useEffect,
@@ -260,12 +261,15 @@ export default function NotificationMenu() {
       }
     }
 
+    const escape = (event: KeyboardEvent) => { if(event.key === "Escape") setOpen(false); };
+    document.addEventListener("keydown", escape);
     document.addEventListener(
       "mousedown",
       handlePointerDown,
     );
 
     return () => {
+      document.removeEventListener("keydown", escape);
       document.removeEventListener(
         "mousedown",
         handlePointerDown,
@@ -340,7 +344,7 @@ export default function NotificationMenu() {
       {open && (
         <div
           className="
-            absolute right-0 top-11
+            fixed right-3 top-[calc(4.5rem+env(safe-area-inset-top))] sm:absolute sm:right-0 sm:top-11
             z-50 w-[min(24rem,calc(100vw-2rem))]
             overflow-hidden rounded-xl
             border border-slate-200
@@ -379,10 +383,11 @@ export default function NotificationMenu() {
 
           <div
             className="
-              max-h-[28rem]
+              max-h-[min(28rem,calc(100dvh-10rem))]
               overflow-y-auto
             "
           >
+            <div className="px-3 pb-3"><DeviceNotificationSettings/></div>
             {notificationsQuery.isLoading && (
               <div
                 className="

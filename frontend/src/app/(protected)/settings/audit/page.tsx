@@ -279,7 +279,7 @@ export default function AuditPage() {
       </div>
 
       <div
-        className="
+        className="nx-list-filters
           grid gap-4 rounded-2xl
           border border-slate-200
           bg-white p-4 shadow-sm

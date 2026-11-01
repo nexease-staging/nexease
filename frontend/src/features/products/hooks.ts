@@ -106,6 +106,7 @@ export function useCreateProduct() {
         product,
       );
 
+      await queryClient.invalidateQueries({queryKey:["barcode-catalog"]});
       await queryClient.invalidateQueries({
         queryKey:
           productQueryKeys.lists(),
@@ -141,6 +142,7 @@ export function useUpdateProduct() {
         product,
       );
 
+      await queryClient.invalidateQueries({queryKey:["barcode-catalog"]});
       await queryClient.invalidateQueries({
         queryKey:
           productQueryKeys.lists(),
@@ -171,6 +173,7 @@ export function useActivateProduct() {
         product,
       );
 
+      await queryClient.invalidateQueries({queryKey:["barcode-catalog"]});
       await queryClient.invalidateQueries({
         queryKey:
           productQueryKeys.lists(),
@@ -201,6 +204,7 @@ export function useDeactivateProduct() {
         product,
       );
 
+      await queryClient.invalidateQueries({queryKey:["barcode-catalog"]});
       await queryClient.invalidateQueries({
         queryKey:
           productQueryKeys.lists(),

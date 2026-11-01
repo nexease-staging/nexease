@@ -1,4 +1,5 @@
 "use client";
+import {confirmAction} from "@/components/nex-feedback";
 
 import {
   Pencil,
@@ -202,7 +203,7 @@ export default function SalesOrderDetailDialog({
     }
 
     const accepted =
-      window.confirm(
+      await confirmAction(
         (
           `Confirm ${salesOrder.so_number}? `
           +
@@ -232,7 +233,7 @@ export default function SalesOrderDetailDialog({
     }
 
     const accepted =
-      window.confirm(
+      await confirmAction(
         (
           `Cancel ${salesOrder.so_number}? `
           +

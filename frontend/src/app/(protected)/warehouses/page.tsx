@@ -345,7 +345,7 @@ export default function WarehousesPage() {
           </button>
 
           {canCreate ? (
-            <button
+            <button title="New warehouse"
               type="button"
               onClick={
                 openCreateDialog
@@ -359,16 +359,13 @@ export default function WarehousesPage() {
                 hover:bg-blue-700
               "
             >
-              <Plus size={17} />
-
-              New warehouse
-            </button>
+              <Plus size={17} /><span className="sr-only">New warehouse</span></button>
           ) : null}
         </div>
       </div>
 
       <div
-        className="
+        className="nx-list-filters
           grid gap-3 rounded-2xl
           border border-slate-200
           bg-white p-4 shadow-sm
@@ -540,7 +537,7 @@ export default function WarehousesPage() {
             </p>
 
             {canCreate ? (
-              <button
+              <button title="Create warehouse"
                 type="button"
                 onClick={
                   openCreateDialog
@@ -554,10 +551,7 @@ export default function WarehousesPage() {
                   hover:bg-blue-700
                 "
               >
-                <Plus size={16} />
-
-                Create warehouse
-              </button>
+                <Plus size={16} /><span className="sr-only">Create warehouse</span></button>
             ) : null}
           </div>
         ) : (

@@ -347,7 +347,7 @@ export default function ChartOfAccountsPage() {
           </div>
 
           {canCreate ? (
-            <button
+            <button title="Create account"
               type="button"
               onClick={openCreate}
               className="
@@ -359,9 +359,7 @@ export default function ChartOfAccountsPage() {
                 hover:bg-blue-700
               "
             >
-              <Plus size={18} />
-              Create account
-            </button>
+              <Plus size={18} /><span className="sr-only">Create account</span></button>
           ) : null}
         </header>
 
@@ -373,7 +371,7 @@ export default function ChartOfAccountsPage() {
           "
         >
           <div
-            className="
+            className="nx-list-filters
               grid gap-3
               md:grid-cols-2
               xl:grid-cols-4

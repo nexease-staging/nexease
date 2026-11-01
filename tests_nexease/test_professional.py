@@ -82,11 +82,11 @@ class ProfessionalTests(unittest.TestCase):
   inv=self.invoice()
   with patch('apps.authorization.services.AuthorizationService.has_permission',return_value=True):InvoiceService.issue_invoice(user=self.user,organization=self.org,invoice_id=str(inv.id))
   inv.reload();self.assertEqual(inv.status,'ISSUED');self.assertEqual(JournalEntry.objects(source_type='SALES_INVOICE',status='POSTED').count(),1)
- def test_descriptions_pdf_and_draft_guard(self):
+ def test_descriptions_pdf_and_admin_issued_edit(self):
   inv=self.invoice();r=self.call(invoice_descriptions,{'items':[{'description':'Packing service <checked>','show':True}]},invoice_id=str(inv.id));self.assertEqual(r.status_code,200,r.content);inv.reload();self.assertTrue(inv.items[0].show_description)
   pdf=InvoicePDF.generate(invoice=inv) if hasattr(InvoicePDF,'generate') else None
   self.assertTrue(pdf and pdf.startswith(b'%PDF'))
-  inv.status='ISSUED';inv.save();self.assertEqual(self.call(invoice_descriptions,{'items':[{'description':'New','show':False}]},invoice_id=str(inv.id)).status_code,400)
+  inv.status='ISSUED';inv.save();self.assertEqual(self.call(invoice_descriptions,{'items':[{'description':'New','show':False}]},invoice_id=str(inv.id)).status_code,200)
  def test_export_contains_books_and_escapes_formulas(self):
   self.invoice();x=self.record('expenses','X',dict(date='2026-09-02',category='Travel',description='=danger',payee='Taxi',amount='250',payment_mode='Cash',reference='R'));sync_record(x,self.user)
   r=self.call(accountant_export,{'from':'2026-09-01','to':'2026-09-30'},'GET');self.assertEqual(r.status_code,200,r.content[:200]);z=zipfile.ZipFile(io.BytesIO(r.content));self.assertIn('Sales.csv',z.namelist());self.assertIn('General_ledger.csv',z.namelist());self.assertIn("'=danger",z.read('expenses.csv').decode());self.assertIn('250.00',z.read('Trial_balance.csv').decode())

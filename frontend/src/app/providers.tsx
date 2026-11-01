@@ -1,4 +1,8 @@
 "use client";
+import MobileGate from "@/components/mobile/mobile-gate";
+import NativeStart from "@/components/mobile/native-start";
+import DeviceNotifications from "@/components/mobile/device-notifications";
+import MobileRuntime from "@/components/mobile/mobile-runtime";
 
 import {NumberDialog} from "@/features/business/numbering-ui";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -69,9 +73,9 @@ export default function Providers({
     <QueryClientProvider
       client={queryClient}
     >
-      <ThemeProvider><AuthProvider>
-        {children}<NumberDialog/>
-      </AuthProvider></ThemeProvider>
+      <ThemeProvider><MobileGate><MobileRuntime/><AuthProvider>
+        <NativeStart>{children}</NativeStart><DeviceNotifications/><NumberDialog/>
+      </AuthProvider></MobileGate></ThemeProvider>
     </QueryClientProvider>
   );
 }

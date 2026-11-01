@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -242,7 +243,7 @@ const warehouse = {
   name: "Main Warehouse",
 };
 
-function renderDialog({
+async function renderDialog({
   canCreateCustomer = true,
   canCreateProduct = true,
 }: {
@@ -252,7 +253,7 @@ function renderDialog({
   const onClose =
     vi.fn();
 
-  render(
+  await act(async () => { render(
     <SalesOrderDialog
       open
       salesOrderId={null}
@@ -264,7 +265,7 @@ function renderDialog({
       }
       onClose={onClose}
     />,
-  );
+  ); });
 
   return {
     onClose,
@@ -318,8 +319,8 @@ describe(
 
     it(
       "does not search customers below three characters",
-      () => {
-        renderDialog();
+      async () => {
+        await renderDialog();
 
         changeControl(
           screen.getByPlaceholderText(
@@ -349,8 +350,8 @@ describe(
 
     it(
       "searches customers after three characters",
-      () => {
-        renderDialog();
+      async () => {
+        await renderDialog();
 
         changeControl(
           screen.getByPlaceholderText(
@@ -380,7 +381,7 @@ describe(
 
     it(
       "selects an existing customer",
-      () => {
+      async () => {
         mockUseCustomerList
           .mockReturnValue({
             data: {
@@ -392,7 +393,7 @@ describe(
             isPending: false,
           });
 
-        renderDialog();
+        await renderDialog();
 
         const input =
           screen.getByPlaceholderText(
@@ -428,8 +429,8 @@ describe(
 
     it(
       "opens inline customer creation when permitted",
-      () => {
-        renderDialog({
+      async () => {
+        await renderDialog({
           canCreateCustomer: true,
         });
 
@@ -484,8 +485,8 @@ describe(
 
     it(
       "hides inline customer creation without permission",
-      () => {
-        renderDialog({
+      async () => {
+        await renderDialog({
           canCreateCustomer: false,
         });
 
@@ -518,8 +519,8 @@ describe(
 
     it(
       "selects an existing product and autofills unit price",
-      () => {
-        renderDialog();
+      async () => {
+        await renderDialog();
 
         fireEvent.click(
           screen.getByRole(
@@ -550,8 +551,8 @@ describe(
 
     it(
       "creates a product inline and attaches it to the row",
-      () => {
-        renderDialog();
+      async () => {
+        await renderDialog();
 
         fireEvent.click(
           screen.getByRole(
@@ -598,8 +599,8 @@ describe(
 
     it(
       "keeps product creation hidden without permission",
-      () => {
-        renderDialog({
+      async () => {
+        await renderDialog({
           canCreateProduct: false,
         });
 
@@ -627,8 +628,8 @@ describe(
 
     it(
       "keeps product rows isolated during inline creation",
-      () => {
-        renderDialog();
+      async () => {
+        await renderDialog();
 
         fireEvent.click(
           screen.getByRole(
@@ -718,7 +719,7 @@ describe(
 
         const {
           onClose,
-        } = renderDialog();
+        } = await renderDialog();
 
         const customerInput =
           screen.getByPlaceholderText(

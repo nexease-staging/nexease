@@ -1,4 +1,5 @@
 "use client";
+import {confirmAction} from "@/components/nex-feedback";
 
 import {
   useState,
@@ -173,7 +174,7 @@ export default function SalesReturnDetailDialog({
     }
 
     const accepted =
-      window.confirm(
+      await confirmAction(
         (
           "Confirm this sales return? "
           +
@@ -213,7 +214,7 @@ export default function SalesReturnDetailDialog({
     }
 
     const accepted =
-      window.confirm(
+      await confirmAction(
         (
           "Cancel this draft sales return? "
           +

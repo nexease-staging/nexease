@@ -1,3 +1,7 @@
+import {notify} from "@/components/nex-feedback";
+import { apiFetch } from "./transport";
+import { Capacitor } from "@capacitor/core";
+import { savedServer } from "@/lib/mobile-config";
 import {askNumber,numberKind} from "./number-choice";
 import type {
   APIErrorResponse,
@@ -6,17 +10,11 @@ import type {
   CSRFData,
 } from "@/lib/api/types";
 
-const configuredBaseURL =
-  process.env.NEXT_PUBLIC_API_BASE_URL;
-
-if (!configuredBaseURL) {
-  throw new Error(
-    "NEXT_PUBLIC_API_BASE_URL is not configured.",
-  );
+const configuredBaseURL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+export const API_BASE_URL = (savedServer() || configuredBaseURL).replace(/\/+$/, '');
+function mobileHeaders(): Record<string, string> {
+  return Capacitor.isNativePlatform() ? { Origin: 'https://localhost' } : {};
 }
-
-export const API_BASE_URL =
-  configuredBaseURL.replace(/\/+$/, "");
 
 const UNSAFE_METHODS = new Set([
   "POST",
@@ -61,7 +59,7 @@ function buildURL(path: string): string {
     ? path
     : `/${path}`;
 
-  return `${API_BASE_URL}${normalizedPath}`;
+  return `${savedServer() || API_BASE_URL}${normalizedPath}`;
 }
 
 function isUnsafeMethod(method: string): boolean {
@@ -99,14 +97,14 @@ export async function getCSRFToken(
     return cachedCSRFToken;
   }
 
-  const response = await fetch(
+  const response = await apiFetch(
     buildURL("/auth/csrf/"),
     {
       method: "GET",
       credentials: "include",
       cache: "no-store",
       headers: {
-        Accept: "application/json",
+        Accept: "application/json", ...mobileHeaders(),
       },
     },
   );
@@ -176,6 +174,7 @@ export async function apiRequest<T>(
     headers.set('X-NexEase-Numbering',JSON.stringify(await askNumber(kind,options.body)));
     options={...options,headers};
   }
+  if (Capacitor.isNativePlatform()) headers.set("Origin", "https://localhost");
   headers.set(
     "Accept",
     "application/json",
@@ -212,7 +211,7 @@ export async function apiRequest<T>(
     );
   }
 
-  const response = await fetch(
+  const response = await apiFetch(
     buildURL(path),
     {
       ...options,
@@ -247,6 +246,7 @@ export async function apiRequest<T>(
       );
     }
 
+    if(isUnsafeMethod(method) && !path.startsWith("/auth/")) notify(errorBody.error?.message ?? "Could not save. Please try again.", response.status===403?"warning":"error");
     throw new APIRequestError({
       status: response.status,
       code:
@@ -260,6 +260,7 @@ export async function apiRequest<T>(
     });
   }
 
+  if(isUnsafeMethod(method) && !/\/(auth|ai|ocr|lookup|preview|validate|subscription|owner|notifications)\//.test(path)) notify(body.message || "Your changes were saved successfully.");
   return body;
 }
 
@@ -362,7 +363,7 @@ export async function apiBinaryRequest(
     new Headers(
       options.headers,
     );
-
+  if (Capacitor.isNativePlatform()) headers.set("Origin", "https://localhost");
   headers.set(
     "Accept",
     "*/*",
@@ -402,7 +403,7 @@ export async function apiBinaryRequest(
   }
 
   const response =
-    await fetch(
+    await apiFetch(
       buildURL(path),
       {
         ...options,
@@ -414,6 +415,7 @@ export async function apiBinaryRequest(
           options.cache ??
           "no-store",
       },
+      true,
     );
 
   if (!response.ok) {

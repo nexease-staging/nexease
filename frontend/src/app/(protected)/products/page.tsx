@@ -1,4 +1,5 @@
 "use client";
+import {confirmAction} from "@/components/nex-feedback";
 import SearchSelect from "@/components/search-select";
 
 
@@ -232,7 +233,7 @@ export default function ProductsPage() {
     product: ProductSummary,
   ): Promise<void> {
     const confirmed =
-      window.confirm(
+      await confirmAction(
         (
           `Activate ${product.name}?`
           +
@@ -267,7 +268,7 @@ export default function ProductsPage() {
     product: ProductSummary,
   ): Promise<void> {
     const confirmed =
-      window.confirm(
+      await confirmAction(
         (
           `Deactivate ${product.name}?`
           +
@@ -377,7 +378,7 @@ export default function ProductsPage() {
           </button>
 
           {canCreate ? (
-            <button
+            <button title="New product"
               type="button"
               onClick={
                 openCreateDialog
@@ -391,16 +392,13 @@ export default function ProductsPage() {
                 hover:bg-blue-700
               "
             >
-              <Plus size={17} />
-
-              New product
-            </button>
+              <Plus size={17} /><span className="sr-only">New product</span></button>
           ) : null}
         </div>
       </div>
 
       <div
-        className="
+        className="nx-list-filters
           grid gap-4 rounded-2xl
           border border-slate-200
           bg-white p-4 shadow-sm
@@ -599,7 +597,7 @@ export default function ProductsPage() {
             </p>
 
             {canCreate ? (
-              <button
+              <button title="Create product"
                 type="button"
                 onClick={
                   openCreateDialog
@@ -613,10 +611,7 @@ export default function ProductsPage() {
                   hover:bg-blue-700
                 "
               >
-                <Plus size={16} />
-
-                Create product
-              </button>
+                <Plus size={16} /><span className="sr-only">Create product</span></button>
             ) : null}
           </div>
         ) : (
@@ -735,9 +730,7 @@ export default function ProductsPage() {
                         "
                       >
                         {
-                          formatCurrency(
-                            product.cost_price,
-                          )
+                          product.cost_price == null ? "Restricted" : formatCurrency(product.cost_price)
                         }
                       </td>
 

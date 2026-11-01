@@ -345,7 +345,7 @@ export default function PurchaseReturnsPage() {
 
           {canCreate
             ? (
-              <button
+              <button title="New purchase return"
                 type="button"
                 onClick={() => {
                   setCreateOpen(true);
@@ -361,9 +361,7 @@ export default function PurchaseReturnsPage() {
                   hover:bg-blue-700
                 "
               >
-                <Plus size={18} />
-                New purchase return
-              </button>
+                <Plus size={18} /><span className="sr-only">New purchase return</span></button>
             )
             : null}
         </header>
@@ -376,7 +374,7 @@ export default function PurchaseReturnsPage() {
           "
         >
           <div
-            className="
+            className="nx-list-filters
               grid gap-3
               md:grid-cols-2
               xl:grid-cols-4

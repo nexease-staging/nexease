@@ -1,3 +1,9 @@
+Latest mobile/web update (1 November 2026): read MOBILE_UPDATE_NOV01.md for the updated APK build, account menu, notification setup and device acceptance checks.
+
+# Latest complete package
+
+Start with `COMPLETE_UPDATE_README.md` and run `INSTALL_COMBINED_UPDATE.cmd` after extraction. This release combines web/UI and mobile dependencies; older partial-upgrade instructions below are historical. Environment files are not included.
+
 # October operations update
 
 Start with **OCT31_OPERATIONS_UPDATE.md** for installation, feature scope and GST provider setup.

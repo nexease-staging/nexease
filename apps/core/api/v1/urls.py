@@ -4,7 +4,7 @@ from django.urls import (
     path,
 )
 
-from apps.core.api.v1 import views
+from apps.core.api.v1 import views, device_views
 from apps.core.api.v1 import (
     background_job_views,
     notification_views,
@@ -15,6 +15,7 @@ app_name = "api_v1"
 
 
 urlpatterns = [
+    path("notifications/device/", device_views.notification_device_api, name="notification_device"),
     path("saas/", include("apps.saas.urls")),
     path("business/", include("apps.business.urls")),
     path(

@@ -1090,7 +1090,7 @@ export default function SalesOrderDialog({
                   </p>
                 </div>
 
-                <button
+                <button title="Add item"
                   type="button"
                   disabled={isPending}
                   onClick={() => {
@@ -1107,9 +1107,7 @@ export default function SalesOrderDialog({
                     disabled:opacity-50
                   "
                 >
-                  <Plus size={17} />
-                  Add item
-                </button>
+                  <Plus size={17} /><span className="sr-only">Add item</span></button>
               </div>
 
               <div className="space-y-3">

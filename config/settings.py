@@ -1311,3 +1311,9 @@ ENABLE_INTERNAL_API_TEST_ENDPOINTS = (
 )
 from corsheaders.defaults import default_headers
 CORS_ALLOW_HEADERS = list(default_headers) + ["x-nexease-numbering"]
+
+# Native app origins are explicit and opt-in; ordinary web origins remain unchanged.
+NEXEASE_MOBILE_ENABLED = os.getenv("NEXEASE_MOBILE_ENABLED", "false").lower() == "true"
+if NEXEASE_MOBILE_ENABLED:
+    CSRF_TRUSTED_ORIGINS = list(dict.fromkeys([*CSRF_TRUSTED_ORIGINS, "https://localhost"]))
+    CORS_ALLOWED_ORIGINS = list(dict.fromkeys([*CORS_ALLOWED_ORIGINS, "https://localhost"]))

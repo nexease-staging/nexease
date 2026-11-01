@@ -1,4 +1,5 @@
 ACTION_LABELS = {
+    "read_cost": "Read cost price",
     "manage": "Manage",
     "read": "View",
     "create": "Create",
@@ -89,6 +90,7 @@ PERMISSION_DEFINITIONS = [
         "products",
         "Products",
         (
+            "read_cost",
             "read",
             "create",
             "update",
