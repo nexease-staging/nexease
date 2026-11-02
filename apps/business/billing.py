@@ -1,7 +1,7 @@
 """Invoice snapshots and reviewed outward-tax classification. No automatic filing."""
 import re, base64
 from io import BytesIO
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from django.views.decorators.http import require_http_methods
 from mongoengine.errors import ValidationError
@@ -103,13 +103,28 @@ def invoice_details(request,invoice_id):
         if request.method=='POST':
             from .enhancements import is_admin
             if getattr(request.api_organization,'invoice_admin_only',True) and not is_admin(request.api_user):return R.forbidden(message='Only a system Admin can edit invoice details.',request=request)
-            if inv.status!='DRAFT':raise ValueError('Issued invoice details are locked.')
-            clean=clean_details(payload(request),request.api_organization,inv.items)
-            branding=settings(request.api_organization)
-            inv.billing_details={**branding,**clean}
-            changed=Invoice.objects(organization=request.api_organization,id=inv.id,status='DRAFT').update_one(set__billing_details=inv.billing_details,set__items=inv.items)
+            if inv.status not in ('DRAFT','ISSUED','PARTIALLY_PAID','PAID'):raise ValueError('This invoice cannot be edited.')
+            raw=payload(request)
+            before=dict(inv.billing_details)
+            if inv.status!='DRAFT':
+                if not is_admin(request.api_user):return R.forbidden(message='Only a system Admin can edit an issued invoice.',request=request)
+                allowed=set(TEXT_FIELDS)-{'place_of_supply','supply_type'}
+                if not isinstance(raw,dict):raise ValueError('Invalid details.')
+                for key,value in raw.items():
+                    if key in ('place_of_supply','supply_type') and value!=before.get(key,''):raise ValueError('Issued tax classification cannot be changed. Use the correction workflow.')
+                    if key not in allowed and key not in ('place_of_supply','supply_type'):raise ValueError('Unknown field.')
+                    if key in allowed:
+                        if not isinstance(value,str) or len(value)>TEXT_FIELDS[key]:raise ValueError('Invalid '+key)
+                        if key in ('po_date','service_from','service_to') and value:date.fromisoformat(value)
+                        if key=='template' and value not in [t[0] for t in TEMPLATES]:raise ValueError('Choose a template.')
+                        inv.billing_details[key]=value.strip()
+            else:
+                clean=clean_details(raw,request.api_organization,inv.items)
+                inv.billing_details={**settings(request.api_organization),**clean}
+            changed=Invoice.objects(organization=request.api_organization,id=inv.id,status=inv.status,updated_at=inv.updated_at).update_one(set__billing_details=inv.billing_details,set__items=inv.items,set__updated_at=datetime.utcnow())
             if not changed:raise ValueError('Invoice changed while editing. Reload before continuing.')
-            audit(request,'invoice',inv.id,'details')
+            from .models import BusinessAudit
+            BusinessAudit(organization=request.api_organization,actor=request.api_user,kind='invoice',record_id=str(inv.id),action='details',details={'before':before,'after':inv.billing_details}).save()
         return R.success(data={'details':inv.billing_details,'templates':[{'id':i,'name':n} for i,n,_,_ in TEMPLATES]},request=request)
     except (ValueError,TypeError,ValidationError) as e:return R.validation_error(message=str(e),request=request)
 

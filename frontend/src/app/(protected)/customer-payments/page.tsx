@@ -368,7 +368,7 @@ export default function CustomerPaymentsPage() {
 
         <div
           className="
-            grid gap-4 rounded-2xl
+            nx-list-filters grid gap-4 rounded-2xl
             border border-slate-200
             bg-white p-4
             sm:grid-cols-2

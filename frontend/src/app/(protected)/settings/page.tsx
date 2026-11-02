@@ -1,4 +1,5 @@
 "use client";
+import MailboxSettings from "@/features/business/mailbox-settings";
 import { ThemeToggle } from "@/components/theme-provider";
 
 import Link from "next/link";
@@ -119,7 +120,7 @@ export default function SettingsPage() {
 
   return (
     <section className="space-y-6">
-<section className="nx-panel mb-6"><h2 className="text-lg font-semibold mb-3">Appearance</h2><ThemeToggle /></section>
+<MailboxSettings/><section className="nx-panel mb-6"><h2 className="text-lg font-semibold mb-3">Appearance</h2><ThemeToggle /></section>
       <div>
         <div
           className="

@@ -1,4 +1,5 @@
 "use client";
+import {confirmAction} from "@/components/nex-feedback";
 
 import DocumentActions from "@/features/documents/components/document-actions";
 
@@ -268,7 +269,7 @@ export default function VendorBillDetailDialog({
     }
 
     const accepted =
-      window.confirm(
+      await confirmAction(
         (
           `Post vendor bill `
           +
@@ -303,7 +304,7 @@ export default function VendorBillDetailDialog({
     }
 
     const accepted =
-      window.confirm(
+      await confirmAction(
         (
           `Cancel vendor bill `
           +

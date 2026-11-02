@@ -423,7 +423,7 @@ export default function JournalEntriesPage() {
           </div>
 
           {canCreate ? (
-            <button
+            <button title="Create journal"
               type="button"
               onClick={openCreate}
               className="
@@ -435,9 +435,7 @@ export default function JournalEntriesPage() {
                 hover:bg-blue-700
               "
             >
-              <Plus size={18} />
-              Create journal
-            </button>
+              <Plus size={18} /><span className="sr-only">Create journal</span></button>
           ) : null}
         </header>
 
@@ -449,7 +447,7 @@ export default function JournalEntriesPage() {
           "
         >
           <div
-            className="
+            className="nx-list-filters
               grid gap-3
               md:grid-cols-2
               xl:grid-cols-4

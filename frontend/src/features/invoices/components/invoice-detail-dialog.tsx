@@ -1,4 +1,5 @@
 "use client";
+import {confirmAction} from "@/components/nex-feedback";
 
 import {InvoiceDetails} from "@/features/business/invoice-settings";
 import InvoiceDescriptions from "@/features/business/invoice-descriptions";
@@ -238,7 +239,7 @@ export default function InvoiceDetailDialog({
     }
 
     const accepted =
-      window.confirm(
+      await confirmAction(
         (
           `Issue ${invoice.invoice_number}? `
           +
@@ -267,7 +268,7 @@ export default function InvoiceDetailDialog({
     }
 
     const accepted =
-      window.confirm(
+      await confirmAction(
         (
           `Cancel ${invoice.invoice_number}? `
           +
@@ -443,7 +444,7 @@ export default function InvoiceDetailDialog({
                   flex flex-wrap gap-2
                 "
               >
-                {canIssue && invoice.status === "DRAFT" && <><InvoiceDetails key={invoice.id+"details"} id={invoice.id}/><InvoiceDescriptions key={invoice.id} invoice={invoice}/></>}
+                {canIssue && ["DRAFT","ISSUED","PARTIALLY_PAID","PAID"].includes(invoice.status) && <><InvoiceDetails key={invoice.id+"details"} id={invoice.id} issued={invoice.status!=="DRAFT"}/><InvoiceDescriptions key={invoice.id} invoice={invoice}/></>}
                 <DocumentActions
                   documentType="INVOICE"
                   documentId={invoice.id}

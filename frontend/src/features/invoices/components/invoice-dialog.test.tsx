@@ -8,10 +8,10 @@ vi.mock('@/lib/api/client',()=>({apiRequest:vi.fn()}));
 vi.mock('@/features/invoices/api',()=>({createInvoice:vi.fn()}));
 vi.mock('@/features/sales-orders/hooks',()=>({useSalesOrderList:()=>({data:{sales_orders:[{id:'so1',so_number:'SO-001',customer:{name:'QA Client'}}]}})}));
 vi.mock('@/components/master-lookup',()=>({default:()=>null}));
-vi.mock('@/features/business/barcode-scan',()=>({default:()=>null}));
+vi.mock('@/features/business/barcode-scan',()=>({default:({renderInput}:{renderInput?:Function})=>renderInput?.(()=>{},{current:null},false)??null}));
 vi.mock('@/features/business/gst-lookup',()=>({default:()=>null}));
 beforeAll(()=>{HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','')};HTMLDialogElement.prototype.close=function(){this.removeAttribute('open')}});
-beforeEach(()=>{vi.clearAllMocks();vi.mocked(apiRequest).mockResolvedValue({data:{id:'invoice1'}} as never);vi.mocked(createInvoice).mockResolvedValue({id:'invoice2'} as never)});
+beforeEach(()=>{vi.clearAllMocks();vi.mocked(apiRequest).mockImplementation(async path=>({data:path.includes('/lookup/')?{records:[]}:{id:'invoice1'}} as never));vi.mocked(createInvoice).mockResolvedValue({id:'invoice2'} as never)});
 function mount(mode:'direct'|'order'='direct'){const onClose=vi.fn(),onCreated=vi.fn();render(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><InvoiceDialog open initialMode={mode} onClose={onClose} onCreated={onCreated}/></QueryClientProvider>);return {onClose,onCreated}}
 describe('Shared invoice creation',()=>{
  it('requires customer and items but not code/email/PO on direct invoices',()=>{mount();expect(screen.getByLabelText('Customer name *')).toBeRequired();expect(screen.getByLabelText('Customer code (automatic if blank)')).not.toBeRequired();expect(screen.getByLabelText('Email')).not.toBeRequired();expect(screen.getByLabelText('sku line 1')).not.toBeRequired();expect(screen.getByLabelText('PO number')).not.toBeRequired()});

@@ -8,7 +8,7 @@ class Command(BaseCommand):
     help='Prepare goods/services, dedicated Workforce and invoice formats.'
     def handle(self,*args,**options):
         call_command('seed_permissions')
-        codes=['payroll.read','payroll.manage','labour.read','labour.manage','taxation.read','taxation.manage','expenses.read','expenses.manage']
+        codes=['products.read_cost','payroll.read','payroll.manage','labour.read','labour.manage','taxation.read','taxation.manage','expenses.read','expenses.manage']
         permissions=list(Permission.objects(code__in=codes,is_active=True))
         count=0
         for role in Role.objects(name='Admin',is_system=True,is_active=True):

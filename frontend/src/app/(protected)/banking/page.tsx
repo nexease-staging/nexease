@@ -350,7 +350,7 @@ export default function BankingPage() {
           </div>
 
           {tab === "accounts" && canCreateAccount ? (
-            <button
+            <button title="New account"
               type="button"
               onClick={() => {
                 setEditingAccount(null);
@@ -358,27 +358,21 @@ export default function BankingPage() {
               }}
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
             >
-              <Plus size={17} />
-              New account
-            </button>
+              <Plus size={17} /><span className="sr-only">New account</span></button>
           ) : tab === "transactions" && canCreateTransaction ? (
-            <button
+            <button title="New transaction"
               type="button"
               onClick={() => setTransactionFormOpen(true)}
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
             >
-              <Plus size={17} />
-              New transaction
-            </button>
+              <Plus size={17} /><span className="sr-only">New transaction</span></button>
           ) : tab === "transfers" && canCreateTransfer ? (
-            <button
+            <button title="New transfer"
               type="button"
               onClick={() => setTransferFormOpen(true)}
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
             >
-              <Plus size={17} />
-              New transfer
-            </button>
+              <Plus size={17} /><span className="sr-only">New transfer</span></button>
           ) : tab === "statements" && canCreateStatement ? (
             <button
               type="button"
@@ -425,7 +419,7 @@ export default function BankingPage() {
         </nav>
 
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-col gap-3 border-b border-slate-200 p-5 lg:flex-row lg:items-center">
+          <div className="nx-list-filters flex flex-col gap-3 border-b border-slate-200 p-5 lg:flex-row lg:items-center">
             <label className="relative flex-1">
               <Search
                 size={17}

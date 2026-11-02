@@ -821,7 +821,7 @@ export default function PurchaseOrderDialog({
                   </p>
                 </div>
 
-                <button
+                <button title="Add Item"
                   type="button"
                   disabled={pending}
                   onClick={() => {
@@ -839,9 +839,7 @@ export default function PurchaseOrderDialog({
                     hover:bg-blue-100
                   "
                 >
-                  <Plus size={16} />
-                  Add Item
-                </button>
+                  <Plus size={16} /><span className="sr-only">Add Item</span></button>
               </div>
 
               <div className="mt-4 space-y-4">

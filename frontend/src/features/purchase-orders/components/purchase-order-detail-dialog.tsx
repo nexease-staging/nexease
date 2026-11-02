@@ -1,4 +1,5 @@
 "use client";
+import {confirmAction} from "@/components/nex-feedback";
 
 import {
   useState,
@@ -299,7 +300,7 @@ export default function PurchaseOrderDetailDialog({
     }
 
     const accepted =
-      window.confirm(
+      await confirmAction(
         (
           `Confirm purchase order `
           +
@@ -332,7 +333,7 @@ export default function PurchaseOrderDetailDialog({
     }
 
     const accepted =
-      window.confirm(
+      await confirmAction(
         (
           `Cancel purchase order `
           +

@@ -358,7 +358,7 @@ export default function StockTransfersPage() {
           </button>
 
           {canTransfer ? (
-            <button
+            <button title="New transfer"
               type="button"
               onClick={() => {
                 setTransferDialogOpen(
@@ -374,16 +374,13 @@ export default function StockTransfersPage() {
                 hover:bg-blue-700
               "
             >
-              <Plus size={17} />
-
-              New transfer
-            </button>
+              <Plus size={17} /><span className="sr-only">New transfer</span></button>
           ) : null}
         </div>
       </div>
 
       <div
-        className="
+        className="nx-list-filters
           grid gap-4 rounded-2xl
           border border-slate-200
           bg-white p-4 shadow-sm
@@ -671,7 +668,7 @@ export default function StockTransfersPage() {
             </p>
 
             {canTransfer ? (
-              <button
+              <button title="Create stock transfer"
                 type="button"
                 onClick={() => {
                   setTransferDialogOpen(
@@ -687,10 +684,7 @@ export default function StockTransfersPage() {
                   hover:bg-blue-700
                 "
               >
-                <Plus size={16} />
-
-                Create stock transfer
-              </button>
+                <Plus size={16} /><span className="sr-only">Create stock transfer</span></button>
             ) : null}
           </div>
         ) : (

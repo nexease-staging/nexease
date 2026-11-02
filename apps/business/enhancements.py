@@ -84,7 +84,8 @@ def barcode_lookup(request):
     if not permitted(request,'products.read') or not permitted(request,'inventory.read'):return R.forbidden(message='Product and inventory read permissions required.',request=request)
     code=request.GET.get('code','').strip()
     if not code or len(code)>100:return R.validation_error(message='Scan a barcode or enter a SKU.',request=request)
-    rows=list(Product.objects(Q(barcode=code)|Q(sku=code),organization=request.api_organization,is_active=True).limit(2))
+    rows=list(Product.objects(barcode=code,organization=request.api_organization,is_active=True).limit(2))
+    if not rows:rows=list(Product.objects(sku=code,organization=request.api_organization,is_active=True).limit(2))
     if len(rows)!=1:return R.validation_error(message='No unique active product matches. Assign the barcode on Products first.',request=request)
     p=rows[0];stock=[{'warehouse':x.warehouse.name,'quantity':str(x.quantity),'reserved':str(x.reserved_quantity),'available':str(x.quantity-x.reserved_quantity)} for x in Inventory.objects(organization=request.api_organization,product=p)]
     return R.success(data={'id':str(p.id),'name':p.name,'code':p.sku,'barcode':p.barcode,'item_type':p.item_type,'hsn_code':p.hsn_code,'unit':p.unit,'selling_price':str(p.selling_price),'stock':stock},request=request)
@@ -101,7 +102,7 @@ def barcode_labels(request):
     try:
         ids=request.GET.get('ids','').split(',');copies=int(request.GET.get('copies','1'))
         if not 1<=len(ids)<=50 or not 1<=copies<=20 or len(ids)*copies>200:raise ValueError('Maximum 50 products, 20 copies each and 200 labels total.')
-        products=list(Product.objects(organization=request.api_organization,id__in=ids,is_active=True))
+        products=list(Product.objects(organization=request.api_organization,id__in=ids))
         if len(products)!=len(set(ids)):raise ValueError('Product not found.')
         for p in products:
             value=p.barcode or p.sku

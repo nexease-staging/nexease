@@ -1,4 +1,5 @@
 "use client";
+import {confirmAction} from "@/components/nex-feedback";
 
 import {
   useState,
@@ -170,7 +171,7 @@ export default function PurchaseReturnDetailDialog({
     }
 
     const accepted =
-      window.confirm(
+      await confirmAction(
         (
           "Confirm this purchase return? "
           +
@@ -208,7 +209,7 @@ export default function PurchaseReturnDetailDialog({
     }
 
     const accepted =
-      window.confirm(
+      await confirmAction(
         "Cancel this draft purchase return?",
       );
 

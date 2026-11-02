@@ -164,6 +164,10 @@ export function AuthProvider({
 
   async function signOut():
     Promise<void> {
+    if (typeof window !== "undefined") {
+      const {disableDeviceNotifications} = await import("@/lib/device-notifications");
+      await disableDeviceNotifications();
+    }
     try {
       await logoutMutation.mutateAsync();
 
@@ -184,6 +188,10 @@ export function AuthProvider({
 
   async function signOutAll():
     Promise<void> {
+    if (typeof window !== "undefined") {
+      const {disableDeviceNotifications} = await import("@/lib/device-notifications");
+      await disableDeviceNotifications();
+    }
     try {
       await logoutAllMutation.mutateAsync();
 

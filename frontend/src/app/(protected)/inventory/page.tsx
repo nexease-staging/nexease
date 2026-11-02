@@ -299,7 +299,7 @@ export default function InventoryPage() {
           </button>
 
           {canCreate ? (
-            <button
+            <button title="Opening inventory"
               type="button"
               onClick={() => {
                 setOpeningDialogOpen(
@@ -315,10 +315,7 @@ export default function InventoryPage() {
                 hover:bg-blue-700
               "
             >
-              <Plus size={17} />
-
-              Opening inventory
-            </button>
+              <Plus size={17} /><span className="sr-only">Opening inventory</span></button>
           ) : null}
         </div>
       </div>
@@ -548,7 +545,7 @@ export default function InventoryPage() {
               product and warehouse.
             </p>
             {canCreate ? (
-              <button
+              <button title="Create opening inventory"
                 type="button"
                 onClick={() => {
                   setOpeningDialogOpen(
@@ -564,10 +561,7 @@ export default function InventoryPage() {
                   hover:bg-blue-700
                 "
               >
-                <Plus size={16} />
-
-                Create opening inventory
-              </button>
+                <Plus size={16} /><span className="sr-only">Create opening inventory</span></button>
             ) : null}
           </div>
         ) : (

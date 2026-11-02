@@ -65,6 +65,20 @@ class Product(Document):
             raise ValidationError("HSN/SAC must contain 4, 6 or 8 digits.")
         if self.item_type == "service" and self.hsn_code and len(self.hsn_code) != 6:
             raise ValidationError("Enter a six-digit SAC for services.")
+        # The document ID provides a stable, unique internal barcode; supplied codes
+        # (including leading zeroes) are never replaced on a subsequent save.
+        if self.organization and not (self.barcode or "").strip():
+            from bson import ObjectId
+            if self.id is None:
+                self.id = ObjectId()
+            self.barcode = self.automatic_barcode(self.id)
+        elif self.barcode:
+            self.barcode = self.barcode.strip()
+
+
+    @staticmethod
+    def automatic_barcode(product_id):
+        return "NX" + str(product_id).upper()
 
     organization = ReferenceField(
         Organization,

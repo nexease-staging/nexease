@@ -428,7 +428,7 @@ export default function PurchaseOrdersPage() {
           "
         >
           <div
-            className="
+            className="nx-list-filters
               grid gap-3
               md:grid-cols-2
               xl:grid-cols-4

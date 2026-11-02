@@ -113,15 +113,19 @@ def invoice_descriptions(request,invoice_id):
     try:
         inv=Invoice.objects(id=invoice_id,organization=request.api_organization).first()
         if not inv:return R.not_found(message='Invoice not found.',request=request)
-        if inv.status!='DRAFT':raise ValueError('Descriptions can only be changed on draft invoices.')
+        if inv.status not in ('DRAFT','ISSUED','PARTIALLY_PAID','PAID'):raise ValueError('This invoice cannot be edited.')
+        if inv.status!='DRAFT' and not is_admin(request.api_user):return R.forbidden(message='Only a system Admin can edit an issued invoice.',request=request)
+        before=[{'description':i.description,'show':i.show_description} for i in inv.items]
         p=payload(request);items=p.get('items',[])
         if not isinstance(items,list) or len(items)!=len(inv.items):raise ValueError('Reload the invoice; item count changed.')
         for item,d in zip(inv.items,items):
             if not isinstance(d,dict) or not isinstance(d.get('description',''),str) or len(d.get('description',''))>2000 or not isinstance(d.get('show',False),bool):raise ValueError('Invalid description. Maximum 2000 characters per line.')
             item.description=d.get('description','').strip();item.show_description=d.get('show',False)
-        updated=Invoice.objects(id=inv.id,organization=request.api_organization,status='DRAFT',updated_at=inv.updated_at).update_one(set__items=inv.items,set__updated_at=datetime.utcnow())
+        updated=Invoice.objects(id=inv.id,organization=request.api_organization,status=inv.status,updated_at=inv.updated_at).update_one(set__items=inv.items,set__updated_at=datetime.utcnow())
         if not updated:raise ValueError('Invoice changed. Reload before saving.')
-        audit(request,'invoice_description',inv.id,'update');return R.success(data={'saved':True},request=request)
+        from .models import BusinessAudit
+        BusinessAudit(organization=request.api_organization,actor=request.api_user,kind='invoice_description',record_id=str(inv.id),action='update',details={'before':before,'after':items}).save()
+        return R.success(data={'saved':True},request=request)
     except (ValueError,ValidationError) as e:return R.validation_error(message=str(e),request=request)
 
 def csv_bytes(rows):

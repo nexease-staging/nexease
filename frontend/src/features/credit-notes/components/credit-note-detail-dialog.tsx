@@ -1,4 +1,5 @@
 "use client";
+import {confirmAction} from "@/components/nex-feedback";
 
 import {
   useState,
@@ -175,7 +176,7 @@ export default function CreditNoteDetailDialog({
     }
 
     const accepted =
-      window.confirm(
+      await confirmAction(
         (
           "Issue this credit note? "
           +
@@ -217,7 +218,7 @@ export default function CreditNoteDetailDialog({
     }
 
     const accepted =
-      window.confirm(
+      await confirmAction(
         (
           "Cancel this draft credit note? "
           +

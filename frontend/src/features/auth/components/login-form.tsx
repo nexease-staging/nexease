@@ -6,6 +6,7 @@ import {
 } from "react";
 
 import Link from "next/link";
+import { Capacitor } from "@capacitor/core";
 
 import {
   useRouter,
@@ -98,7 +99,7 @@ export default function LoginForm() {
   useEffect(() => {
     if (isAuthenticated) {
       router.replace(
-        "/dashboard",
+        Capacitor.isNativePlatform() ? "/home" : "/dashboard",
       );
     }
   }, [
@@ -115,7 +116,7 @@ export default function LoginForm() {
       await signIn(values);
 
       router.replace(
-        "/dashboard",
+        Capacitor.isNativePlatform() ? "/home" : "/dashboard",
       );
 
       router.refresh();

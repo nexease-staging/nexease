@@ -1,4 +1,5 @@
 "use client";
+import {confirmAction} from "@/components/nex-feedback";
 import SearchSelect from "@/components/search-select";
 
 
@@ -203,7 +204,7 @@ export default function SuppliersPage() {
     supplier: SupplierSummary,
   ): Promise<void> {
     if (
-      !window.confirm(
+      !await confirmAction(
         `Activate ${supplier.name}?`,
       )
     ) {
@@ -231,7 +232,7 @@ export default function SuppliersPage() {
     supplier: SupplierSummary,
   ): Promise<void> {
     if (
-      !window.confirm(
+      !await confirmAction(
         (
           `Deactivate ${supplier.name}?`
           +
@@ -331,7 +332,7 @@ export default function SuppliersPage() {
           </button>
 
           {canCreate ? (
-            <button
+            <button title="New supplier"
               type="button"
               onClick={
                 openCreateDialog
@@ -345,16 +346,13 @@ export default function SuppliersPage() {
                 hover:bg-blue-700
               "
             >
-              <Plus size={17} />
-
-              New supplier
-            </button>
+              <Plus size={17} /><span className="sr-only">New supplier</span></button>
           ) : null}
         </div>
       </div>
 
       <div
-        className="
+        className="nx-list-filters
           grid gap-4 rounded-2xl
           border border-slate-200
           bg-white p-4 shadow-sm
@@ -527,7 +525,7 @@ export default function SuppliersPage() {
             </p>
 
             {canCreate ? (
-              <button
+              <button title="Create supplier"
                 type="button"
                 onClick={
                   openCreateDialog
@@ -540,10 +538,7 @@ export default function SuppliersPage() {
                   font-semibold text-white
                 "
               >
-                <Plus size={16} />
-
-                Create supplier
-              </button>
+                <Plus size={16} /><span className="sr-only">Create supplier</span></button>
             ) : null}
           </div>
         ) : (

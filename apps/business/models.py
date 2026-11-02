@@ -20,5 +20,6 @@ class BusinessAudit(Document):
     kind = StringField(required=True)
     record_id = StringField(required=True)
     action = StringField(required=True)
+    details = DictField(default=dict)
     at = DateTimeField(default=datetime.utcnow)
     meta = {'collection':'nexease_business_audit','indexes':[('organization','-at')]}

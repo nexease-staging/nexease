@@ -483,6 +483,54 @@ class BackgroundJobRepositoryTests(
             2,
         )
 
+    def test_worker_requeues_projected_job_without_losing_metadata(self):
+        from apps.core.management.commands.run_background_worker import Command
+
+        job = self.create_job()
+        job.status = "RETRYING"
+        job.attempts = 2
+        job.last_error = "temporary SMTP failure"
+        job.available_at = datetime.utcnow() - timedelta(seconds=10)
+        job.save()
+        job.reload()  # MongoDB stores dates with millisecond precision.
+        before = job.to_mongo().to_dict()
+
+        Command._requeue_due_retries()
+
+        job.reload()
+        self.assertEqual(job.status, "PENDING")
+        after = job.to_mongo().to_dict()
+        for field in before:
+            if field not in ("status", "updated_at"):
+                self.assertEqual(after[field], before[field], field)
+        job.validate()
+
+    def test_stale_retry_cannot_reset_claimed_job(self):
+        job = self.create_job()
+        job.update(set__status="RETRYING")
+        stale = BackgroundJob.objects(id=job.id).only("status", "available_at").get()
+        BackgroundJobRepository.requeue(job=stale)
+        claimed = BackgroundJobRepository.claim_next(worker_id="other-worker")
+        self.assertEqual(claimed.id, job.id)
+
+        result = BackgroundJobRepository.requeue(job=stale)
+
+        self.assertEqual(result.status, "RUNNING")
+        self.assertEqual(result.worker_id, "other-worker")
+        self.assertEqual(result.attempts, 1)
+
+    def test_stale_retry_cannot_override_rescheduled_job(self):
+        job = self.create_job()
+        job.update(set__status="RETRYING")
+        stale = BackgroundJob.objects(id=job.id).only("status", "available_at").get()
+        future = datetime.utcnow() + timedelta(hours=1)
+        job.update(set__available_at=future)
+
+        result = BackgroundJobRepository.requeue(job=stale)
+
+        self.assertEqual(result.status, "RETRYING")
+        self.assertGreater(result.available_at, datetime.utcnow())
+
     # ==================================================
     # MANUAL RETRY
     # ==================================================

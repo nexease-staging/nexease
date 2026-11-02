@@ -838,7 +838,7 @@ export default function JournalEntryFormDialog({
                 </p>
               </div>
 
-              <button
+              <button title="Add line"
                 type="button"
                 disabled={pending}
                 onClick={() => {
@@ -857,9 +857,7 @@ export default function JournalEntryFormDialog({
                   disabled:opacity-50
                 "
               >
-                <Plus size={16} />
-                Add line
-              </button>
+                <Plus size={16} /><span className="sr-only">Add line</span></button>
             </div>
 
             {accountQuery.isError ? (

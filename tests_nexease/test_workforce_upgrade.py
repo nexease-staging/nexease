@@ -72,8 +72,8 @@ class UpgradeTests(unittest.TestCase):
   with patch('apps.authorization.services.AuthorizationService.has_permission',return_value=True):InvoiceService._post_invoice_accounting(user=self.user,organization=self.org,invoice=inv)
   j=JournalEntry.objects(source_type='SALES_INVOICE').get();self.assertEqual(j.total_debit,j.total_credit)
   keys={l.account.system_key for l in j.lines};self.assertTrue({'SERVICE_REVENUE','OUTPUT_CGST','OUTPUT_SGST'}.issubset(keys))
- def test_details_locked_and_permission_guard(self):
-  inv=self.invoice(status='ISSUED');self.assertEqual(self.call(invoice_details,'POST',{},invoice_id=str(inv.id)).status_code,400)
+ def test_issued_admin_details_and_permission_guard(self):
+  inv=self.invoice(status='ISSUED');self.assertEqual(self.call(invoice_details,'POST',{},invoice_id=str(inv.id)).status_code,200)
   self.assertEqual(self.call(invoice_details,invoice_id=str(inv.id),allowed=False).status_code,403)
   other=Organization(name='Other',email='other@example.com').save();req=self.req();req.api_organization=other
   with patch('apps.authorization.services.AuthorizationService.has_permission',return_value=True):self.assertEqual(invoice_details.__wrapped__(req,invoice_id=str(inv.id)).status_code,404)

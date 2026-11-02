@@ -1,4 +1,7 @@
 "use client";
+import {useQuery} from "@tanstack/react-query";
+import {getConfig} from "@/features/business/workspace";
+import BarcodeScan from "@/features/business/barcode-scan";
 import SearchSelect from "@/components/search-select";
 
 
@@ -184,6 +187,8 @@ export default function ProductDialog({
   onClose,
   onCreated,
 }: ProductDialogProps) {
+  const costConfig=useQuery({queryKey:["business-config"],queryFn:getConfig});
+  const canReadCost=costConfig.data?.can_read_cost===true;
   const isEditing =
     Boolean(productId);
 
@@ -213,6 +218,7 @@ export default function ProductDialog({
     handleSubmit,
     reset,
     setError,
+    setValue,
     formState: {
       errors,
     },
@@ -279,7 +285,7 @@ export default function ProductDialog({
         ??
         "",
       cost_price:
-        product.cost_price,
+        product.cost_price ?? "",
       selling_price:
         product.selling_price,
       description:
@@ -365,10 +371,7 @@ export default function ProductDialog({
         values.brand,
       barcode:
         values.barcode,
-      cost_price:
-        values.cost_price
-        ||
-        "0.00",
+      ...(canReadCost?{cost_price:values.cost_price || "0.00"}:{}),
       selling_price:
         values.selling_price
         ||
@@ -726,15 +729,17 @@ export default function ProductDialog({
                 ) : null}
               </label>
 
-              <label className="space-y-1.5">
+              <div className="space-y-1.5">
                 <span className="text-sm font-semibold">
                   Barcode
                 </span>
 
                 <input
                   {...register("barcode")}
+                  aria-label="Product barcode"
                   type="text"
-                  placeholder="Optional barcode"
+                  placeholder="Scan, type, or leave blank for automatic barcode"
+                  onKeyDown={event=>{if(event.key==="Enter"){event.preventDefault();event.stopPropagation();}}}
                   disabled={isPending}
                   className="
                     h-10 w-full rounded-lg
@@ -755,9 +760,11 @@ export default function ProductDialog({
                     {errors.barcode.message}
                   </p>
                 ) : null}
-              </label>
+                <p className="text-xs text-slate-500">Use your supplier’s barcode, or leave blank to assign an internal barcode when saved. Enter from a hardware scanner fills this field without saving the form.</p>
+                {!isPending&&<details><summary className="cursor-pointer text-sm font-semibold text-emerald-700">Scan barcode into product</summary><BarcodeScan onCapture={value=>setValue("barcode",value,{shouldDirty:true,shouldValidate:true})}/></details>}
+              </div>
 
-              <label className="space-y-1.5">
+              {canReadCost&&<label className="space-y-1.5">
                 <span className="text-sm font-semibold">
                   Cost price
                 </span>
@@ -789,7 +796,7 @@ export default function ProductDialog({
                     {errors.cost_price.message}
                   </p>
                 ) : null}
-              </label>
+              </label>}
 
               <label className="space-y-1.5">
                 <span className="text-sm font-semibold">

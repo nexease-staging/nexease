@@ -224,7 +224,7 @@ export default function GeneralLedgerPage() {
         "
       >
         <div
-          className="
+          className="nx-list-filters
             grid gap-4
             md:grid-cols-2
             xl:grid-cols-4
