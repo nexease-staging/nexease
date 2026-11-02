@@ -278,12 +278,17 @@ class BackgroundJobRepository:
         *,
         job,
     ):
-        job.status = "PENDING"
-        job.updated_at = datetime.utcnow()
-
-        job.save()
-
-        return job
+        # The worker passes a projected document. Never save it: required
+        # fields are intentionally absent from that in-memory instance.
+        # Check the stored state atomically so a stale retry cannot reset a
+        # job that another worker has already claimed or rescheduled.
+        now = datetime.utcnow()
+        updated = BackgroundJob.objects(
+            id=job.id,
+            status="RETRYING",
+            available_at__lte=now,
+        ).modify(new=True, set__status="PENDING", set__updated_at=now)
+        return updated or BackgroundJob.objects(id=job.id).first()
 
     @staticmethod
     def retry_failed(
@@ -314,7 +319,7 @@ class BackgroundJobRepository:
         job.save()
 
         return job
-    
+
     @staticmethod
     def mark_failed(
         *,

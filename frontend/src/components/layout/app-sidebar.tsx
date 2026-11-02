@@ -44,7 +44,7 @@ export default function AppSidebar({
   const pathname = usePathname();
   const compact = collapsed && !mobileOpen;
   const config = useQuery({queryKey:["business-config"],queryFn:getConfig});
-  const [closed, setClosed] = useState<Record<string, boolean>>(Object.fromEntries(navigationSections.map(s => [s.label, true])));
+  const [closed, setClosed] = useState<Record<string, boolean>>(Object.fromEntries(navigationSections.map(s => [s.label, false])));
 
   const {
     authentication,

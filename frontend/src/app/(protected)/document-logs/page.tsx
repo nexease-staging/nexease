@@ -555,7 +555,7 @@ export default function DocumentLogsPage() {
 
       {activeTab === "access"
         ? (
-            
+
             <>
             <SummarySection
               title="Access Summary"

@@ -395,6 +395,7 @@ class Day53DocumentEmailIsolationTests(
         }
 
         with (
+            patch("apps.core.services.user_mailbox_service.delivery_options", return_value={"from_email": self.user.email, "reply_to": [self.user.email]}),
             patch.object(
                 DocumentAttachmentService,
                 "generate",

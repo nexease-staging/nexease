@@ -125,7 +125,7 @@ class DocumentEmailDeliveryService:
                     "sent_count":
                         1,
                 }
-            
+
         # ==================================================
         # GENERATE PDF ATTACHMENT
         # ==================================================
@@ -183,6 +183,8 @@ class DocumentEmailDeliveryService:
             # CREATE EMAIL
             # ==================================================
 
+            from apps.core.services.user_mailbox_service import delivery_options
+            sender = delivery_options(user, organization)
             email = EmailMessage(
                 subject=(
                     message_data[
@@ -196,9 +198,7 @@ class DocumentEmailDeliveryService:
                     ]
                 ),
 
-                from_email=(
-                    settings.DEFAULT_FROM_EMAIL
-                ),
+                **sender,
 
                 to=[
                     recipient_email
@@ -228,9 +228,7 @@ class DocumentEmailDeliveryService:
             # ==================================================
 
             sent_count = (
-                email.send(
-                    using="default"
-                )
+                email.send(fail_silently=False)
             )
 
             if sent_count != 1:

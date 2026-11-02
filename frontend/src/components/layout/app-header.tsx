@@ -31,6 +31,7 @@ export default function AppHeader({onOpenMobile}:{onOpenMobile:()=>void}) {
  {open&&<div id="account-menu" className="fixed right-3 top-[calc(4.5rem+env(safe-area-inset-top))] z-50 w-[min(20rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-6rem)] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-xl sm:absolute sm:right-0 sm:top-12">
  <div className="border-b p-2"><p className="font-semibold">{user.full_name||`${user.first_name} ${user.last_name}`}</p><p className="break-all text-xs text-slate-500">{user.email}</p></div>
  <button className="nx-account-item" onClick={()=>{setOpen(false);setProfile(true)}}><UserRound size={18}/>My profile</button>
+ <Link className="nx-account-item" href="/settings#my-email" onClick={()=>setOpen(false)}><Settings size={18}/>My email</Link>
  <Link className="nx-account-item" href="/subscription" onClick={()=>setOpen(false)}><CreditCard size={18}/>Subscription & usage</Link>
  {hasPermission(role.permissions,'organizations.update')&&<Link className="nx-account-item" href="/settings/invoices" onClick={()=>setOpen(false)}><Settings size={18}/>Business logo & invoice settings</Link>}
  <button className="nx-account-item text-red-700" disabled={busy} onClick={()=>void logout()}><LogOut size={18}/>{busy?'Signing out…':'Log out'}</button>{error&&<p role="alert">{error}</p>}

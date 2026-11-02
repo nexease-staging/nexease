@@ -29,7 +29,7 @@ export default function AppShell({
   const [
     collapsed,
     setCollapsed,
-  ] = useState(true);
+  ] = useState(false);
 
   return (
     <RequireAuth>
