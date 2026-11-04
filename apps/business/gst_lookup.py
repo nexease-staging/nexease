@@ -19,8 +19,12 @@ def lookup(request):
     if not re.fullmatch(r'\d{2}[A-Z]{5}\d{4}[A-Z][A-Z0-9]Z[A-Z0-9]',gstin):return R.validation_error(message='Enter a valid 15-character GSTIN.',request=request)
     if os.getenv('GST_LOOKUP_PROVIDER','adapter')=='sandbox':
         try:
-            from .gst_provider import sandbox_lookup
+            from .gst_provider import sandbox_lookup, GSTLookupError
             return R.success(data=sandbox_lookup(gstin),request=request)
+        except GSTLookupError as exc:
+            import logging
+            logging.getLogger(__name__).warning('GST lookup failed code=%s stage=%s http_status=%s reference=%s',exc.code,exc.stage,exc.status,exc.reference)
+            return R.validation_error(message=exc.public_message(),request=request)
         except (URLError,HTTPError,ValueError,TimeoutError,OSError,TypeError):
             return R.validation_error(message='GST lookup failed. Check provider credentials, access, environment and GSTIN, or retry later. No records were changed.',request=request)
     from apps.sales.models import Customer
