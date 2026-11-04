@@ -371,7 +371,7 @@ export default function DataMigrationPage() {
       into your organization.
      </p>
     </div>
-    <button
+    <button title="Refresh"
      type="button"
      disabled={
       migrationQuery.isFetching
@@ -400,7 +400,7 @@ export default function DataMigrationPage() {
         : undefined
       }
      />
-     Refresh
+     <span className="sr-only">Refresh</span>
     </button>
    </div>
    <div

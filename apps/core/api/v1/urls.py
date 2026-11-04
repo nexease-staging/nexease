@@ -45,7 +45,7 @@ urlpatterns = [
             "apps.authorization.api.v1.urls"
         ),
     ),
-
+    
     path(
         "users/",
         include(

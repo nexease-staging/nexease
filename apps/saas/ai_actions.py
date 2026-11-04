@@ -4,7 +4,8 @@ from apps.business.schema import SCHEMAS
 RECORD_KINDS={'employee':'employees','site':'sites','assignment':'assignments','attendance':'attendance','timesheet':'timesheets','leave_request':'leave_requests'}
 EXTRA_PERMISSIONS={k:SCHEMAS[v]['permission']+'.manage' for k,v in RECORD_KINDS.items()}
 EXTRA_PERMISSIONS.update(category='products.create',product='products.create',purchase_order='purchase_orders.create')
-EXTRA_FIELDS=sorted({k for kind in RECORD_KINDS.values() for k in SCHEMAS[kind]['fields']}|{'name','category_id','item_type','hsn_code','unit','sku','selling_price','cost_price','supply_type','place_of_supply','po_number','po_date','service_from','service_to','site_name'})
+EXTRA_PERMISSIONS['stock_adjustment']='inventory.adjust'
+EXTRA_FIELDS=sorted({k for kind in RECORD_KINDS.values() for k in SCHEMAS[kind]['fields']}|{'name','category_id','item_type','hsn_code','unit','sku','selling_price','cost_price','supply_type','place_of_supply','po_number','po_date','service_from','service_to','site_name','product_id','product_name','warehouse_id','warehouse_name','quantity_change'})
 
 def confirm_extended(request,proposal):
     from apps.business.views import records

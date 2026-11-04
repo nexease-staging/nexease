@@ -70,6 +70,14 @@ def api_login_required(
         if module and not getattr(request.api_organization, module + '_enabled', True):
             return APIResponseService.forbidden(message=module.title() + ' is disabled by your organisation administrator.', request=request)
 
+        # Enforce tier policy after resolving the actual API tenant, including native clients.
+        from apps.saas.entitlements import require, feature_for
+        from mongoengine.errors import ValidationError
+        if not request.path.startswith(('/api/v1/saas/','/api/v1/auth/')):
+            try:
+                require(request.api_organization,feature_for(request.path),request.method not in ('GET','HEAD','OPTIONS'))
+            except ValidationError as exc:
+                return APIResponseService.error(code='PLAN_REQUIRED',message=str(exc),status=403,request=request)
         return view_function(
             request,
             *args,

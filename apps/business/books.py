@@ -16,13 +16,16 @@ MODES=['Cash','Bank transfer','UPI','Debit card','Credit card']
 def ensure_accounts(org,user):
     defaults=[dict(d) for d in ChartOfAccountService.DEFAULT_ACCOUNTS]
     defaults += [dict(account_code=c,account_name=n,account_type=t,account_subtype='CURRENT_ASSET' if t=='ASSET' else 'CURRENT_LIABILITY' if t=='LIABILITY' else 'OPERATING_EXPENSE',normal_balance='DEBIT' if t in ('ASSET','EXPENSE') else 'CREDIT',system_key=k,description='NexEase automatic business posting',is_system_account=True,allow_manual_posting=False) for c,n,t,k in [(f'NX-{i+1:03}',n,t,k) for i,(c,n,t,k) in enumerate(EXTRA)]]
+    existing_accounts=list(ChartOfAccount.objects(organization=org))
+    by_key={a.system_key:a for a in existing_accounts if a.system_key}
+    by_code={a.account_code:a for a in existing_accounts}
     for d in defaults:
-        a=ChartOfAccount.objects(organization=org,system_key=d['system_key']).first() if d['system_key'] else None
+        a=by_key.get(d['system_key']) if d['system_key'] else None
         if a:
             if not a.is_active:raise ValueError('System account is inactive: '+d['system_key']+'. Ask your accountant to review it.')
             if a.account_type!=d['account_type']:raise ValueError('System account type mismatch: '+d['system_key'])
             continue
-        existing=ChartOfAccount.objects(organization=org,account_code=d['account_code']).first()
+        existing=by_code.get(d['account_code'])
         if existing:
             if existing.system_key!=d['system_key']:raise ValueError('Account code '+d['account_code']+' is already used. Review the chart of accounts before setup.')
             continue

@@ -117,7 +117,7 @@ export default function DocumentActions({
         >
           <button
             type="button"
-            disabled={actionDisabled}
+            aria-label="Download PDF" title="Download PDF" disabled={actionDisabled}
             onClick={() => {
               void handleDownload();
             }}
@@ -136,14 +136,12 @@ export default function DocumentActions({
           >
             <Download size={16} />
 
-            {downloadMutation.isPending
-              ? "Downloading..."
-              : "PDF"}
+            <span className="sr-only">{downloadMutation.isPending ? "Downloading..." : "PDF"}</span>
           </button>
 
           <button
             type="button"
-            disabled={disabled}
+            aria-label="Email" title="Email" disabled={disabled}
             onClick={
               handleOpenEmail
             }
@@ -160,7 +158,7 @@ export default function DocumentActions({
             "
           >
             <Mail size={16} />
-            Email
+            <span className="sr-only">Email</span>
           </button>
         </div>
 

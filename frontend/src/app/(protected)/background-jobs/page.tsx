@@ -1,4 +1,5 @@
 "use client";
+import WorkerStatus from "@/features/business/worker-status";
 
 import {
   AlertTriangle,
@@ -344,7 +345,7 @@ export default function BackgroundJobsPage() {
       className="
         space-y-6
       "
-    >
+    ><WorkerStatus/>
       <div
         className="
           flex flex-col gap-3
@@ -374,7 +375,7 @@ export default function BackgroundJobsPage() {
           </p>
         </div>
 
-        <button
+        <button title="Refresh"
           type="button"
           onClick={() => {
             void jobsQuery.refetch();
@@ -401,7 +402,7 @@ export default function BackgroundJobsPage() {
             }
           />
 
-          Refresh
+          <span className="sr-only">Refresh</span>
         </button>
       </div>
 

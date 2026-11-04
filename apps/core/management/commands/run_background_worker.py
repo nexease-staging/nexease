@@ -117,6 +117,11 @@ class Command(BaseCommand):
                 )
                 return
 
+            from mongoengine.connection import get_db
+            from datetime import datetime
+            from apps.core.quotation import deliver_one
+            get_db().nexease_worker_health.update_one({'_id':'background'},{'$set':{'at':datetime.utcnow()}},upsert=True)
+            deliver_one()
             BackgroundJobService.recover_expired_jobs()
 
             self._requeue_due_retries()

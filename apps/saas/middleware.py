@@ -6,10 +6,10 @@ from .entitlements import enabled,require,feature_for
 from apps.core.services.api_response_service import APIResponseService as R
 class SaaSMiddleware(MiddlewareMixin):
  def process_view(self,request,view_func,args,kwargs):
-  if not enabled() or not request.path.startswith('/api/v1/'):return
+  if not enabled() or not (request.path.startswith('/api/v1/') or request.path.startswith('/finance/')):return
   user=getattr(request,'user',None)
   if not user or not user.is_authenticated:return
-  if request.path.startswith(('/api/v1/saas/','/api/v1/auth/')):return
+  if request.path.startswith(('/api/v1/saas/','/api/v1/auth/','/api/v1/public/')):return
   try:require(user.organization,feature_for(request.path),request.method not in ('GET','HEAD','OPTIONS'))
   except ValidationError as e:return R.error(code='PLAN_REQUIRED',message=str(e),status=403,request=request)
  def process_response(self,request,response):

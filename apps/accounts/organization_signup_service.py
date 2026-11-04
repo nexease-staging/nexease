@@ -268,6 +268,9 @@ class OrganizationSignupService:
                 force_insert=True
             )
 
+            from apps.saas.entitlements import grant_signup_trial
+            grant_signup_trial(organization)
+
             return {
                 "organization":
                     organization,
@@ -325,6 +328,8 @@ class OrganizationSignupService:
 
         if organization is not None:
             try:
+                from apps.saas.models import Membership
+                Membership.objects(organization_id=str(organization.id)).delete()
                 organization.delete()
             except Exception:
                 pass

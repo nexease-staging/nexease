@@ -1,4 +1,5 @@
 "use client";
+import GstLookup from "@/features/business/gst-lookup";
 
 import {
   useEffect,
@@ -213,6 +214,7 @@ export default function SupplierDialog({
 
   const {
     register,
+    setValue,
     handleSubmit,
     reset,
     setError,
@@ -556,6 +558,7 @@ export default function SupplierDialog({
             }}
             className="space-y-5 p-5"
           >
+            <GstLookup onSelect={r=>{for(const k of ['name','gstin','state','email','phone'] as const){if(r[k])setValue(k,r[k],{shouldValidate:true,shouldDirty:true});}if(r.address)setValue('address',r.address,{shouldValidate:true,shouldDirty:true});}}/>
             <div
               className="
                 grid gap-4 md:grid-cols-2

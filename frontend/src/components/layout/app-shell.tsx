@@ -7,6 +7,7 @@ import {
 
 import {EasyNav} from "@/components/mobile/easy-workspace";
 import NexFeedback from "@/components/nex-feedback";
+import PlanAccessGate from "@/features/saas/plan-access-gate";
 import Assistant from "@/features/saas/assistant";
 import QuickCreate from "@/components/layout/quick-create";
 import CommandPalette from "@/components/layout/command-palette";
@@ -65,7 +66,7 @@ export default function AppShell({
 
           <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
             <div className="mb-3 text-right"><Link href="/subscription" className="text-sm font-semibold text-emerald-800">Subscription & usage</Link></div>
-            {children}
+            <PlanAccessGate>{children}</PlanAccessGate>
           </main><div className="md:hidden"><EasyNav/></div>
         </div>
       </div>

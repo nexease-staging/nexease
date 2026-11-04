@@ -57,6 +57,7 @@ class UpgradeTests(unittest.TestCase):
   inv=Invoice.objects.get();self.assertFalse(inv.stock_review_required);self.assertEqual(inv.items[0].hsn_code,'998519')
   self.product.hsn_code='998518';self.product.save();inv.reload();self.assertEqual(inv.items[0].hsn_code,'998519')
  def test_templates_render_hsn_po_and_long_invoice(self):
+  Record(organization=self.org,created_by=self.user,kind='invoice_settings',key='default',data={'template':'classic','accent_color':'#7c3aed'}).save()
   inv=self.invoice()
   for t in TEMPLATES:
    inv.billing_details['template']=t[0];pdf=invoice_pdf(inv);reader=PdfReader(io.BytesIO(pdf));text=''.join(p.extract_text() for p in reader.pages);self.assertIn('998519',text);self.assertIn('PO-42',text);self.assertIn('CGST',text)

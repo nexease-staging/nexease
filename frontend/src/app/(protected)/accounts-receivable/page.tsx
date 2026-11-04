@@ -304,7 +304,7 @@ export default function AccountsReceivablePage() {
           </div>
         </div>
 
-        <button
+        <button title="Refresh"
           type="button"
           onClick={() => {
             void refresh();
@@ -329,7 +329,7 @@ export default function AccountsReceivablePage() {
             }
           />
 
-          Refresh
+          <span className="sr-only">Refresh</span>
         </button>
       </div>
 

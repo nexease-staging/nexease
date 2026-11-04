@@ -19,6 +19,7 @@ def is_admin(user):
 
 def module_for(path):
     if '/saas/ai' in path:return 'ai'
+    if '/business/gst-lookup/' in path:return None
     if '/business/barcode' in path:return 'barcode'
     if any(x in path for x in ['/business/gst','/business/records/gst_']):return 'taxation'
     if any(x in path for x in ['/business/expenses','/business/records/expenses']):return 'expenses'

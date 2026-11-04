@@ -15,11 +15,11 @@ from apps.organizations.models import Organization
 from apps.accounts.models import User
 from .models import Plan,Membership,Checkout,PlatformOwner,OwnerAudit
 from .security import owner_required,current_owner,rate,verify_totp,log
-from .entitlements import seed,state,usage,resource_count,org_lock,DEFAULTS
+from .entitlements import seed,state,usage,resource_count,org_lock,DEFAULTS,effective_features
 from . import gateway
 
 def plan_json(p):return dict(code=p.code,name=p.name,price=p.price_paise/100,limits=p.limits,features=p.features,published=p.published)
-def membership_json(m):return None if not m else dict(plan=m.plan,status=('expired' if m.end<=datetime.utcnow() and m.status in ('active','trial') else m.status),start=m.start.isoformat(),end=m.end.isoformat(),suspended=m.suspended,limits=m.limits,features=m.features,subscription_id=m.subscription_id)
+def membership_json(m):return None if not m else dict(plan=m.plan,status=('expired' if m.end<=datetime.utcnow() and m.status in ('active','trial') else m.status),start=m.start.isoformat(),end=m.end.isoformat(),suspended=m.suspended,limits=m.limits,features=effective_features(m),subscription_id=m.subscription_id)
 def json_safe(obj):return json.loads(json.dumps(obj,default=str))
 
 @require_http_methods(['GET'])

@@ -125,7 +125,7 @@ class DocumentEmailDeliveryService:
                     "sent_count":
                         1,
                 }
-
+            
         # ==================================================
         # GENERATE PDF ATTACHMENT
         # ==================================================

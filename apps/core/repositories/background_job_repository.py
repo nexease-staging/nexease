@@ -319,7 +319,7 @@ class BackgroundJobRepository:
         job.save()
 
         return job
-
+    
     @staticmethod
     def mark_failed(
         *,

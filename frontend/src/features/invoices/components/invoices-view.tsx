@@ -93,7 +93,7 @@ export default function InvoicesView() {
       <PageHeader eyebrow="Sales" title="Invoices" description="Bill customers, track what is owed and record payments."
         actions={<div className="hidden items-center gap-2 md:flex">{createButtons}</div>} />
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-3 gap-2">
         <StatCard label="Receivables" icon={CircleDollarSign} tone="info" loading={dash.isPending}
           value={formatCompactMoney(dash.data?.kpis.receivables)} title={formatMoney(dash.data?.kpis.receivables)} hint="Owed to you" />
         <StatCard label="Overdue invoices" icon={AlertTriangle} tone={dash.data?.alerts.overdue_invoices ? "warning" : "success"} loading={dash.isPending}
@@ -216,7 +216,7 @@ export default function InvoicesView() {
 
       <InvoiceZip invoices={invoices} />
 
-      {canCreate ? <div className="nx-sticky-bar md:hidden">{createButtons}</div> : null}
+      {canCreate ? <div className="nx-inline-actions flex gap-2 md:hidden">{createButtons}</div> : null}
 
       <InvoiceDialog open={createMode !== null} initialMode={createMode === "direct" ? "direct" : undefined}
         onClose={() => setCreateMode(null)} onCreated={(id) => setDetailId(id)} />

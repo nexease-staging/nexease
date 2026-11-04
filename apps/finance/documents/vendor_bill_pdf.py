@@ -1,3 +1,4 @@
+from .branding import themed_document, themed_color, logo_story
 from io import BytesIO
 
 from reportlab.lib import colors
@@ -481,7 +482,7 @@ class VendorBillPDF:
                         "BACKGROUND",
                         (0, 0),
                         (0, -1),
-                        colors.HexColor(
+                        themed_color(
                             "#F2F2F2"
                         ),
                     ),
@@ -489,7 +490,7 @@ class VendorBillPDF:
                         "BACKGROUND",
                         (2, 0),
                         (2, -1),
-                        colors.HexColor(
+                        themed_color(
                             "#F2F2F2"
                         ),
                     ),
@@ -498,7 +499,7 @@ class VendorBillPDF:
                         (0, 0),
                         (-1, -1),
                         0.3,
-                        colors.HexColor(
+                        themed_color(
                             "#D9D9D9"
                         ),
                     ),
@@ -662,7 +663,7 @@ class VendorBillPDF:
                         (0, 0),
                         (-1, -1),
                         0.5,
-                        colors.HexColor(
+                        themed_color(
                             "#D0D0D0"
                         ),
                     ),
@@ -670,7 +671,7 @@ class VendorBillPDF:
                         "BACKGROUND",
                         (0, 0),
                         (-1, 0),
-                        colors.HexColor(
+                        themed_color(
                             "#F4F4F4"
                         ),
                     ),
@@ -920,7 +921,7 @@ class VendorBillPDF:
                         "BACKGROUND",
                         (0, 0),
                         (-1, 0),
-                        colors.HexColor(
+                        themed_color(
                             "#E8E8E8"
                         ),
                     ),
@@ -929,7 +930,7 @@ class VendorBillPDF:
                         (0, 0),
                         (-1, -1),
                         0.35,
-                        colors.HexColor(
+                        themed_color(
                             "#CCCCCC"
                         ),
                     ),
@@ -1103,7 +1104,7 @@ class VendorBillPDF:
         canvas_object.saveState()
 
         canvas_object.setStrokeColor(
-            colors.HexColor(
+            themed_color(
                 "#DDDDDD"
             )
         )
@@ -1125,7 +1126,7 @@ class VendorBillPDF:
         )
 
         canvas_object.setFillColor(
-            colors.HexColor(
+            themed_color(
                 "#666666"
             )
         )
@@ -1142,6 +1143,7 @@ class VendorBillPDF:
         canvas_object.restoreState()
 
     @staticmethod
+    @themed_document
     def generate(
         *,
         vendor_bill,
@@ -1313,6 +1315,7 @@ class VendorBillPDF:
             )
         )
 
+        story[0:0] = logo_story()
         document.build(
             story,
             onFirstPage=(

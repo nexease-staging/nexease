@@ -374,7 +374,7 @@ export default function SalesReturnsPage() {
           "
         >
           <div
-            className="nx-list-filters
+            className="nx-list-filters 
               grid gap-3
               md:grid-cols-2
               xl:grid-cols-4
@@ -951,7 +951,7 @@ export default function SalesReturnsPage() {
                                 text-right
                               "
                             >
-                              <button
+                              <button title="View"
                                 type="button"
                                 onClick={() => {
                                   openDetail(
@@ -970,7 +970,7 @@ export default function SalesReturnsPage() {
                                 "
                               >
                                 <Eye size={15} />
-                                View
+                                <span className="sr-only">View</span>
                               </button>
                             </td>
                           </tr>

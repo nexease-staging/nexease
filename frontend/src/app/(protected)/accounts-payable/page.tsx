@@ -1,4 +1,5 @@
 "use client";
+import EmployeePayables from "@/features/business/employee-payables";
 
 import {
   useState,
@@ -149,7 +150,7 @@ export default function AccountsPayablePage() {
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="space-y-6"><EmployeePayables/>
         <header>
           <p
             className="

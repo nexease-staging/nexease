@@ -1,0 +1,226 @@
+{
+  "Software + GST": [
+    [
+      "NexEase + GST",
+      1748,
+      1599
+    ],
+    [
+      "Plus + GST",
+      1998,
+      1799
+    ],
+    [
+      "Pro + GST",
+      2298,
+      1999
+    ]
+  ],
+  "Managed packages": [
+    [
+      "NexEase Managed · NexEase + GST + bookkeeping",
+      3747,
+      3299
+    ],
+    [
+      "Plus Managed · Plus + GST + bookkeeping",
+      3997,
+      3499
+    ],
+    [
+      "Pro Finance · Pro + GST + bookkeeping + MIS",
+      5296,
+      4499
+    ],
+    [
+      "Pro Business · Pro + GST + bookkeeping + MIS + payroll",
+      6295,
+      5299
+    ]
+  ],
+  "Service combos": [
+    [
+      "Accounts Essential · GST + bookkeeping",
+      2998,
+      2699
+    ],
+    [
+      "Business Finance · GST + bookkeeping + MIS",
+      3997,
+      3499
+    ],
+    [
+      "Business Complete · GST + bookkeeping + MIS + payroll",
+      4996,
+      4299
+    ]
+  ],
+  "Monthly services": [
+    [
+      "GST compliance",
+      "₹999/month",
+      "One GSTIN; up to 100 sales and purchase invoices combined"
+    ],
+    [
+      "Bookkeeping & accounting",
+      "₹1,999/month",
+      "100 accounting entries; one bank reconciliation; basic monthly accounts"
+    ],
+    [
+      "Bank reconciliation only",
+      "₹699/month",
+      "One account; 100 statement transactions"
+    ],
+    [
+      "Customer/vendor reconciliation",
+      "₹999/month",
+      "10 party accounts; 100 combined ledger transactions"
+    ],
+    [
+      "MIS & cash-flow report",
+      "₹999/month",
+      "Standard reports + monthly review; completed books required"
+    ],
+    [
+      "Payroll processing",
+      "₹999/month",
+      "10 employees; salary and payslips using supplied attendance"
+    ],
+    [
+      "TDS calculation working",
+      "₹499/month",
+      "20 deductee records; quarterly returns additional"
+    ],
+    [
+      "PF & ESI support",
+      "From ₹999/month",
+      "10 employees; registrations and applicability reviewed"
+    ]
+  ],
+  "Filings & registrations": [
+    [
+      "GST registration assistance",
+      "₹999",
+      "Per straightforward application"
+    ],
+    [
+      "GST amendment assistance",
+      "From ₹499",
+      "Per application"
+    ],
+    [
+      "LUT filing assistance",
+      "₹799",
+      "Per application/year"
+    ],
+    [
+      "GST cancellation & final-return support",
+      "From ₹1,999",
+      "Pending returns and liabilities reviewed"
+    ],
+    [
+      "GST annual return assistance",
+      "From ₹2,499",
+      "Per return/year; additional reconciliation/certification quoted separately"
+    ],
+    [
+      "Salaried individual ITR",
+      "From ₹999",
+      "Per straightforward return"
+    ],
+    [
+      "Business / professional ITR",
+      "From ₹2,499",
+      "Per return; completed books required"
+    ],
+    [
+      "Quarterly TDS / TCS return",
+      "₹1,499",
+      "Per form/quarter; 20 deductee records"
+    ],
+    [
+      "TDS return correction",
+      "From ₹999",
+      "Per statement"
+    ],
+    [
+      "PAN / TAN assistance",
+      "₹499",
+      "Per application; official charges extra"
+    ],
+    [
+      "Financial year-end cleanup",
+      "From ₹1,999",
+      "Records reviewed before quotation"
+    ],
+    [
+      "Notices, tax audit, ROC, Form 15CA/15CB & specialist advisory",
+      "Custom quote",
+      "Based on complexity and professional involvement"
+    ]
+  ],
+  "Setup & automation": [
+    [
+      "NexEase onboarding",
+      "₹999 once",
+      "One organisation setup + one training session"
+    ],
+    [
+      "Data import / migration",
+      "From ₹1,499",
+      "500 clean rows in an agreed template"
+    ],
+    [
+      "Additional training",
+      "₹499/session",
+      "45 minutes"
+    ],
+    [
+      "Excel reconciliation / automation",
+      "From ₹2,999",
+      "Per project; one defined workflow"
+    ],
+    [
+      "Custom MIS dashboard",
+      "From ₹2,499",
+      "Per dashboard; agreed sources and reports"
+    ],
+    [
+      "PDF-to-Excel extraction",
+      "From ₹999/batch",
+      "50 clear, standard-format pages"
+    ],
+    [
+      "Business workflow automation",
+      "From ₹4,999",
+      "Per project; requirements reviewed"
+    ]
+  ],
+  "Volume add-ons": [
+    [
+      "GST: next 100 invoices",
+      "₹499/month",
+      "Additional processing volume"
+    ],
+    [
+      "Bookkeeping: next 100 entries",
+      "₹999/month",
+      "Additional accounting entries"
+    ],
+    [
+      "Additional payroll employee",
+      "₹100/month",
+      "Per additional employee"
+    ],
+    [
+      "Extra GSTIN",
+      "From ₹999/month",
+      "Per additional GSTIN"
+    ],
+    [
+      "Backdated, urgent or complex work",
+      "Custom quote",
+      "Scope reviewed before engagement"
+    ]
+  ]
+}

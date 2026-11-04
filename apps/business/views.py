@@ -16,6 +16,16 @@ from apps.business.payroll import amount, calculate, money
 from .automation import guard_source,write_lock,run_data
 
 def permitted(request, code):return AuthorizationService.has_permission(request.api_user,code)
+
+def configuration_permission(request, code):
+    # Request-scoped snapshot avoids a permission query for every schema field.
+    if not hasattr(request,'_business_permissions'):
+        from apps.authorization.models import Permission
+        u=request.api_user;o=getattr(u,'organization',None);role=getattr(u,'role',None)
+        valid=u.is_active and o and o.is_active and role and role.is_active and role.organization and role.organization.id==o.id
+        ids=[getattr(x,'id',x) for x in (role._data.get('permissions') or [])] if valid else []
+        request._business_permissions=set(Permission.objects(id__in=ids,is_active=True).scalar('code')) if ids else set()
+    return code in request._business_permissions
 def serialize(x):return {'id':str(x.id),'key':x.key,'revision':x.revision,'data':x.data,'created_at':x.created_at.isoformat()}
 def payload(request):
     try:d=json.loads(request.body)
@@ -104,7 +114,9 @@ def configuration(request):
     from .enhancements import is_admin
     from .billing import settings as invoice_settings
     scope=getattr(request.api_organization,'business_scope','mixed')
-    return R.success(data={'can_read_cost':permitted(request,'products.read_cost'),'can_edit_issued_invoices':is_admin(request.api_user),'can_edit_invoices':is_admin(request.api_user) or not getattr(request.api_organization,'invoice_admin_only',True),'logo':invoice_settings(request.api_organization).get('logo',''),'schemas':{k:v for k,v in SCHEMAS.items() if permitted(request,v['permission']+'.read')},'profiles':PROFILES,'scope':scope,'profile':PROFILES.get(scope,PROFILES['mixed']),'modules':{k:getattr(request.api_organization,k+'_enabled',True) for k in ['workforce','expenses','taxation','finance','barcode','ai']}},request=request)
+    from apps.saas.entitlements import module_access
+    access=module_access(request.api_organization)
+    return R.success(data={'can_read_cost':configuration_permission(request,'products.read_cost'),'can_edit_issued_invoices':is_admin(request.api_user),'can_edit_invoices':is_admin(request.api_user) or not getattr(request.api_organization,'invoice_admin_only',True),'logo':invoice_settings(request.api_organization).get('logo',''),'schemas':{k:v for k,v in SCHEMAS.items() if configuration_permission(request,v['permission']+'.read') and (access.get('taxation',True) if k.startswith('gst_') else access.get('workforce',True) if v['permission'] in ('payroll','labour') else True)},'profiles':PROFILES,'scope':scope,'profile':PROFILES.get(scope,PROFILES['mixed']),'modules':{k:getattr(request.api_organization,k+'_enabled',True) and access.get(k,True) for k in ['workforce','expenses','taxation','finance','barcode','ai']}},request=request)
 
 @api_login_required
 @require_http_methods(['GET','POST','PATCH'])
@@ -131,6 +143,20 @@ def records(request,kind,record_id=None):
                 query=query.filter(match)
             return R.success(data={'records':[serialize(x) for x in query.limit(1000)],'total':query.count()},request=request)
         p=payload(request);raw=p.get('data')
+        if kind=='expenses' and isinstance(raw,dict) and raw.get('category')=='Employee advance':
+            if record_id:raise ValueError('Create a new advance; existing expenses cannot be reclassified here.')
+            if not permitted(request,'payroll.manage'):return R.forbidden(message='Payroll manage permission is required for employee advances.',request=request)
+            if not getattr(org,'workforce_enabled',True):raise ValueError('Enable Workforce before recording an employee advance.')
+            from apps.saas.entitlements import require
+            require(org,'workforce',write=True)
+            employee=Record.objects(organization=org,kind='employees',id=raw.get('employee_id')).first() if raw.get('employee_id') else None
+            if not employee:
+                matches=list(Record.objects(organization=org,kind='employees',data__name__iexact=str(raw.get('payee','')).strip()).limit(2))
+                if len(matches)!=1:raise ValueError('Select the employee; the paid-to name must match exactly one employee.')
+                employee=matches[0]
+            kind='advances'
+            raw={k:raw.get(k,'') for k in ('date','amount','reference','payment_mode','payment_account','notes')}
+            raw.update(employee_id=str(employee.id),recovered='0')
         if kind in ('advances','expenses'):
             from .books import ensure_accounts
             ensure_accounts(org,request.api_user)
@@ -235,5 +261,5 @@ def labour_export(request):
 @api_login_required
 @require_http_methods(['GET'])
 def worker_lookup(request):
-    if not (permitted(request,'labour.read') or permitted(request,'payroll.read')):return R.forbidden(message='Permission denied.',request=request)
+    if not (permitted(request,'labour.read') or permitted(request,'payroll.read') or (permitted(request,'expenses.manage') and permitted(request,'payroll.manage'))):return R.forbidden(message='Permission denied.',request=request)
     return R.success(data={'records':[{'id':str(x.id),'data':{'name':x.data.get('name'),'code':x.data.get('code'),'employment_type':x.data.get('employment_type','site'),'active':x.data.get('active',True)}} for x in Record.objects(organization=request.api_organization,kind='employees').limit(1000)]},request=request)

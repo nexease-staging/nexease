@@ -337,7 +337,7 @@ export default function UsersPage() {
             sm:flex-row
           "
         >
-          <button
+          <button title="Refresh"
             type="button"
             disabled={
               userQuery.isFetching
@@ -365,7 +365,7 @@ export default function UsersPage() {
               }
             />
 
-            Refresh
+            <span className="sr-only">Refresh</span>
           </button>
 
           {canCreate ? (
@@ -389,7 +389,7 @@ export default function UsersPage() {
       </div>
 
       <div
-        className="nx-list-filters
+        className="nx-list-filters 
           grid gap-4 rounded-2xl
           border border-slate-200
           bg-white p-4 shadow-sm

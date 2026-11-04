@@ -28,8 +28,8 @@ SCHEMAS['advances']={'label':'Advance register','permission':'payroll','fields':
 SCHEMAS['advances']['fields']['payment_mode']=field('Payment mode','select',False,['Bank transfer','Cash','UPI','Debit card','Credit card'])
 SCHEMAS['advances']['fields']['payment_account']=field('Payment ledger account (optional)','accounts')
 SCHEMAS['expenses']={'label':'Daily expenses','permission':'expenses','fields':{
-'date':field('Expense date','date',True),'category':field('Category','select',True,['Utilities','Travel','Petrol / fuel','Rent','Office supplies','Repairs / maintenance','Meals','Other']),
-'description':field('Description',required=True),'payee':field('Paid to',required=True),'amount':field('Total paid (including tax)','number',True),
+'date':field('Expense date','date',True),'category':field('Category','select',True,['Employee advance','Utilities','Travel','Petrol / fuel','Rent','Office supplies','Repairs / maintenance','Meals','Other']),
+'employee_id':field('Employee (for advance)','employees'),'description':field('Description',required=True),'payee':field('Paid to',required=True),'amount':field('Total paid (including tax)','number',True),
 'payment_mode':field('Payment mode','select',True,['Cash','Bank transfer','UPI','Debit card','Credit card']),'payment_account':field('Payment ledger account (optional)','accounts'),
 'reference':field('Receipt / payment reference',required=True),'notes':field('Notes')}}
 SCHEMAS['workforce_preferences']={'label':'Attendance & recovery defaults','permission':'payroll','fields':{

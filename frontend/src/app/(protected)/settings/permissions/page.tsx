@@ -194,7 +194,7 @@ export default function PermissionsPage() {
           </p>
         </div>
 
-        <button
+        <button title="Refresh"
           type="button"
           disabled={
             permissionQuery.isFetching
@@ -224,12 +224,12 @@ export default function PermissionsPage() {
             }
           />
 
-          Refresh
+          <span className="sr-only">Refresh</span>
         </button>
       </div>
 
       <div
-        className="nx-list-filters
+        className="nx-list-filters 
           grid gap-4 rounded-2xl
           border border-slate-200
           bg-white p-4 shadow-sm

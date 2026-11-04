@@ -44,7 +44,7 @@ export default function AppSidebar({
   const pathname = usePathname();
   const compact = collapsed && !mobileOpen;
   const config = useQuery({queryKey:["business-config"],queryFn:getConfig});
-  const [closed, setClosed] = useState<Record<string, boolean>>(Object.fromEntries(navigationSections.map(s => [s.label, false])));
+  const [openSection, setOpenSection] = useState<string|null>(null);
 
   const {
     authentication,
@@ -136,12 +136,12 @@ export default function AppSidebar({
                 text-white
               "
             >
-              <img src="/nexease-logo.jpeg" alt="NexEase" className="size-10 rounded-xl object-contain"/>
+              <img src="/nexease-brand-icon.png" alt="NexEase logo" className="size-10 rounded-xl object-contain"/>
             </div>
 
             {!compact && (
               <div className="min-w-0">
-                {config.data?.logo&&<img src={config.data.logo} alt="Organisation logo" className="h-8 max-w-32 object-contain"/>}
+                
                 <p
                   className="
                     truncate font-bold
@@ -157,7 +157,7 @@ export default function AppSidebar({
                     text-slate-500
                   "
                 >
-                  {pathname.startsWith("/workforce")?"Workforce workspace":"Business Management"}
+                  {authentication?.organization?.name || "Business made easier"}
                 </p>
               </div>
             )}
@@ -191,7 +191,7 @@ export default function AppSidebar({
                 className="mb-6"
               >
                 {!compact && (
-                  <button type="button" aria-expanded={!closed[section.label]} onClick={() => setClosed({...closed,[section.label]:!closed[section.label]})}
+                  <button type="button" aria-expanded={openSection===section.label} onClick={() => setOpenSection(current=>current===section.label?null:section.label)}
                     className="
                       mb-2 px-3 text-xs
                       font-semibold uppercase
@@ -199,11 +199,11 @@ export default function AppSidebar({
                       text-slate-400
                     "
                   >
-                    {section.label} {closed[section.label] ? "＋" : "−"}
+                    {section.label} {openSection===section.label ? "−" : "＋"}
                   </button>
                 )}
 
-                <div className="space-y-1" hidden={!compact && !!closed[section.label]}>
+                <div className="space-y-1" hidden={!compact && openSection!==section.label}>
                   {section.items.map(
                     (item) => {
                       const active =
@@ -294,6 +294,7 @@ export default function AppSidebar({
             )}
           </button>
         </div>
+        <Link href="/contact" onClick={onCloseMobile} className="shrink-0 border-t p-4 text-sm font-semibold text-emerald-800" title="Contact NexEase">{compact?"?":"Contact NexEase ↗"}</Link>
       </aside>
     </>
   );

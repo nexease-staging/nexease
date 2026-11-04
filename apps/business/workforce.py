@@ -57,7 +57,10 @@ def report(request,kind):
         from reportlab.lib.styles import getSampleStyleSheet
         from reportlab.lib import colors
         from xml.sax.saxutils import escape
-        styles=getSampleStyleSheet();out=BytesIO();story=[Paragraph(escape(SCHEMAS[kind]['label']),styles['Title'])]
+        from .billing import settings
+        from apps.finance.documents.branding import logo_story
+        theme=settings(request.api_organization)
+        styles=getSampleStyleSheet();styles['Title'].textColor=colors.HexColor(theme.get('accent_color') or '#047857');out=BytesIO();story=logo_story(theme)+[Paragraph(escape(SCHEMAS[kind]['label']),styles['Title'])]
         for row in rows[1:]:
             table=Table([[Paragraph(escape(str(k)),styles['Normal']),Paragraph(escape(str(v)),styles['Normal'])] for k,v in zip(rows[0],row)],colWidths=[190,320])
             table.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'TOP'),('LINEBELOW',(0,0),(-1,-1),.2,colors.lightgrey)]));story += [table,Spacer(1,20)]

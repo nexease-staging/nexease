@@ -325,7 +325,7 @@ export default function StockTransfersPage() {
             sm:flex-row
           "
         >
-          <button
+          <button title="Refresh"
             type="button"
             disabled={
               transferQuery.isFetching
@@ -354,7 +354,7 @@ export default function StockTransfersPage() {
               }
             />
 
-            Refresh
+            <span className="sr-only">Refresh</span>
           </button>
 
           {canTransfer ? (
@@ -380,7 +380,7 @@ export default function StockTransfersPage() {
       </div>
 
       <div
-        className="nx-list-filters
+        className="nx-list-filters 
           grid gap-4 rounded-2xl
           border border-slate-200
           bg-white p-4 shadow-sm

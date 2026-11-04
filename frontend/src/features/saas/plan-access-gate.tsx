@@ -1,0 +1,9 @@
+"use client";
+import type {ReactNode} from 'react';
+import Link from 'next/link';
+import {usePathname} from 'next/navigation';
+import {useQuery} from '@tanstack/react-query';
+import {getConfig} from '@/features/business/workspace';
+const finance=['/financial-dashboard','/cash-flow','/finance-audit','/document-logs','/chart-of-accounts','/journal-entries','/general-ledger','/trial-balance','/banking'];
+export function pageModule(path:string){if(['/workforce','/payroll','/labour'].some(p=>path===p||path.startsWith(p+'/')))return 'workforce';if(path==='/taxation'||path.startsWith('/taxation/'))return 'taxation';if(finance.some(p=>path===p||path.startsWith(p+'/')))return 'finance';return null;}
+export default function PlanAccessGate({children}:{children:ReactNode}){const path=usePathname(),module=pageModule(path);const config=useQuery({queryKey:['business-config'],queryFn:getConfig});if(!module)return <>{children}</>;if(config.isLoading)return <p role="status">Checking module access…</p>;if(config.error)return <section className="nx-panel"><p role="alert">Could not verify module access. Please retry.</p><button className="nx-button mt-4" onClick={()=>void config.refetch()}>Retry</button></section>;if(config.data?.modules?.[module]!==true)return <section className="nx-panel"><h1 className="text-2xl font-semibold">{module==='taxation'?'GST':module==='finance'?'Finance':'Workforce'} access is not enabled</h1><p className="my-4 text-slate-600">This module requires NexEase Plus or Pro and your organisation administrator’s permission.</p><Link href="/subscription" className="nx-button">View subscription</Link></section>;return <>{children}</>}

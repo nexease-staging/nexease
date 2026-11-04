@@ -6,7 +6,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
-from .billing import TEMPLATES, tax_heads
+from .billing import TEMPLATES, tax_heads, settings
 from pathlib import Path
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -21,8 +21,11 @@ def document_styles():
 
 
 def invoice_pdf(invoice):
-    d=invoice.billing_details or {};org=invoice.organization
+    d=dict(invoice.billing_details or {});org=invoice.organization
+    branding=settings(org)
+    if branding.get('logo'):d['logo']=branding['logo']
     _,name,color,layout=next((t for t in TEMPLATES if t[0]==d.get('template')),TEMPLATES[0])
+    color=settings(invoice.organization).get("accent_color") or color
     accent=colors.HexColor(color);buf=BytesIO();styles=document_styles()
     styles.add(ParagraphStyle(name='Cell',fontName='NX',fontSize=8 if layout!='compact' else 7,leading=11,wordWrap='CJK'))
     styles.add(ParagraphStyle(name='Brand',fontName='NX-Bold',fontSize=21,leading=25,textColor=accent,spaceAfter=8))
@@ -71,9 +74,11 @@ def payslip_pdf(org,run,row):
     styles=document_styles();buf=BytesIO()
     def p(v):return Paragraph(escape(str('—' if v is None or v=='' else v)),styles['Normal'])
     story=[p(org.name),Spacer(1,14),Paragraph('Payslip · '+escape(run.key),styles['Title']),p(row['employee'].get('name')),p('Employee code: '+row['employee'].get('code','')),p('Status: '+run.data['status']),Spacer(1,14)]
+    from apps.finance.documents.branding import logo_story
+    story[0:0]=logo_story(settings(org))
     rows=[['Component','Amount (INR)']]+[[k.replace('_',' ').title(),v] for k,v in row['result'].items()]
     rows += [[k.replace('_',' ').title(),v] for k,v in row.get('inputs',{}).items() if k in ('tds','professional_tax','lwf','advance_recovery','other_deductions','allowances','bonus','arrears')]
-    t=Table([[p(v) for v in r] for r in rows],colWidths=[340,180],repeatRows=1);t.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0),colors.HexColor('#dbeafe')),('ROWBACKGROUNDS',(0,1),(-1,-1),[colors.white,colors.HexColor('#f8fafc')]),('TOPPADDING',(0,0),(-1,-1),6),('BOTTOMPADDING',(0,0),(-1,-1),6)]));story+=[t,Spacer(1,15),p('Salary payment is recorded separately. Employer contributions are not employee deductions.'),p('Payroll reference: '+str(run.id))]
+    t=Table([[p(v) for v in r] for r in rows],colWidths=[340,180],repeatRows=1);t.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0),colors.HexColor(settings(org).get('accent_color') or '#dbeafe')),('ROWBACKGROUNDS',(0,1),(-1,-1),[colors.white,colors.HexColor('#f8fafc')]),('TOPPADDING',(0,0),(-1,-1),6),('BOTTOMPADDING',(0,0),(-1,-1),6)]));story+=[t,Spacer(1,15),p('Salary payment is recorded separately. Employer contributions are not employee deductions.'),p('Payroll reference: '+str(run.id))]
     from .models import BusinessRecord
     prefs=BusinessRecord.objects(organization=org,kind='workforce_preferences',key='default').first()
     if prefs and prefs.data.get('payslip_footer'):story += [Spacer(1,12),p(prefs.data['payslip_footer'])]

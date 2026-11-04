@@ -268,7 +268,7 @@ export default function DashboardShell() {
               />
             </label>
 
-            <button
+            <button title="Refresh"
               type="button"
               disabled={
                 isFetching
@@ -310,7 +310,7 @@ export default function DashboardShell() {
                 }
               />
 
-              Refresh
+              <span className="sr-only">Refresh</span>
             </button>
           </div>
         </header>

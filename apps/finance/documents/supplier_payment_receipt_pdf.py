@@ -1,3 +1,4 @@
+from .branding import themed_document, themed_color, logo_story
 from io import BytesIO
 
 from reportlab.lib import colors
@@ -379,20 +380,20 @@ class SupplierPaymentReceiptPDF:
                         "BACKGROUND",
                         (0, 0),
                         (0, -1),
-                        colors.HexColor("#F2F2F2"),
+                        themed_color("#F2F2F2"),
                     ),
                     (
                         "BACKGROUND",
                         (2, 0),
                         (2, -1),
-                        colors.HexColor("#F2F2F2"),
+                        themed_color("#F2F2F2"),
                     ),
                     (
                         "GRID",
                         (0, 0),
                         (-1, -1),
                         0.3,
-                        colors.HexColor("#D9D9D9"),
+                        themed_color("#D9D9D9"),
                     ),
                     (
                         "VALIGN",
@@ -542,13 +543,13 @@ class SupplierPaymentReceiptPDF:
                         (0, 0),
                         (-1, -1),
                         0.5,
-                        colors.HexColor("#D0D0D0"),
+                        themed_color("#D0D0D0"),
                     ),
                     (
                         "BACKGROUND",
                         (0, 0),
                         (-1, 0),
-                        colors.HexColor("#F4F4F4"),
+                        themed_color("#F4F4F4"),
                     ),
                     (
                         "LEFTPADDING",
@@ -696,14 +697,14 @@ class SupplierPaymentReceiptPDF:
                         "BACKGROUND",
                         (0, 0),
                         (-1, 0),
-                        colors.HexColor("#E8E8E8"),
+                        themed_color("#E8E8E8"),
                     ),
                     (
                         "GRID",
                         (0, 0),
                         (-1, -1),
                         0.35,
-                        colors.HexColor("#CCCCCC"),
+                        themed_color("#CCCCCC"),
                     ),
                     (
                         "VALIGN",
@@ -824,7 +825,7 @@ class SupplierPaymentReceiptPDF:
         canvas_object.saveState()
 
         canvas_object.setStrokeColor(
-            colors.HexColor("#DDDDDD")
+            themed_color("#DDDDDD")
         )
 
         canvas_object.line(
@@ -840,7 +841,7 @@ class SupplierPaymentReceiptPDF:
         )
 
         canvas_object.setFillColor(
-            colors.HexColor("#666666")
+            themed_color("#666666")
         )
 
         canvas_object.drawString(
@@ -855,6 +856,7 @@ class SupplierPaymentReceiptPDF:
         canvas_object.restoreState()
 
     @staticmethod
+    @themed_document
     def generate(
         *,
         payment,
@@ -984,6 +986,7 @@ class SupplierPaymentReceiptPDF:
                 ]
             )
 
+        story[0:0] = logo_story()
         document.build(
             story,
             onFirstPage=(

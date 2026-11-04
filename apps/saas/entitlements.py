@@ -10,12 +10,32 @@ from mongoengine.errors import ValidationError
 from .models import Plan,Membership
 DEFAULTS={
  'basic':('NexEase',749,dict(users=2,invoices=100,bills=100,products=500,warehouses=1,employees=0,ai=0,scan_pages=0),[]),
- 'plus':('NexEase Plus',1499,dict(users=5,invoices=500,bills=500,products=5000,warehouses=3,employees=25,ai=0,scan_pages=0),['advanced_reports','gst','workforce']),
- 'pro':('NexEase Pro',1999,dict(users=10,invoices=2000,bills=2000,products=20000,warehouses=10,employees=100,ai=300,scan_pages=100),['advanced_reports','gst','workforce','ai'])}
+ 'plus':('NexEase Plus',999,dict(users=5,invoices=500,bills=500,products=5000,warehouses=3,employees=25,ai=0,scan_pages=0),['finance','advanced_reports','gst','workforce']),
+ 'pro':('NexEase Pro',1299,dict(users=10,invoices=2000,bills=2000,products=20000,warehouses=10,employees=100,ai=300,scan_pages=100),['finance','advanced_reports','gst','workforce','ai'])}
 def enabled():return os.getenv('SAAS_ENFORCEMENT','true').lower()=='true'
 def seed():
  for code,(name,price,limits,features) in DEFAULTS.items():
   Plan.objects(code=code).update_one(upsert=True,set_on_insert__name=name,set_on_insert__price_paise=price*100,set_on_insert__limits=limits,set_on_insert__features=features)
+ # One-time, idempotent catalogue upgrade for installations still showing old prices.
+ revision='launch-749-999-1299-v2'
+ if not get_db().saas_catalog_revisions.find_one({'_id':revision}):
+  for code,(_,price,_,features) in DEFAULTS.items():
+   Plan.objects(code=code,price_paise__ne=price*100).update_one(set__price_paise=price*100,set__published=False,set__razorpay_plan_id='',inc__revision=1)
+   Plan.objects(code=code).update_one(set__features=features)
+  get_db().saas_catalog_revisions.update_one({'_id':revision},{'$set':{'applied_at':datetime.utcnow()}},upsert=True)
+
+def effective_features(membership):
+ # Tier policy overrides stale snapshots (e.g. a legacy Plus membership with AI).
+ return list(DEFAULTS[membership.plan][3]) if membership and membership.plan in DEFAULTS else []
+
+def module_access(org):
+ if not enabled():return {k:True for k in ('workforce','taxation','finance','ai')}
+ m=state(org)
+ active=m and not m.suspended and m.status in ('active','trial') and m.start<=datetime.utcnow()<m.end
+ if m and m.subscription_id and m.gateway_mode!=('test' if os.getenv('RAZORPAY_KEY_ID','').startswith('rzp_test_') else 'live'):active=False
+ f=effective_features(m) if active else []
+ return {k:feature in f for k,feature in [('workforce','workforce'),('taxation','gst'),('finance','finance'),('ai','ai')]}
+
 def state(org):
  m=Membership.objects(organization_id=str(org.id)).first()
  return m
@@ -27,11 +47,13 @@ def require(org,feature=None,write=False):
  active=m and m.status in ('active','trial') and m.start<=datetime.utcnow()<m.end
  if m and m.subscription_id and m.gateway_mode!=('test' if os.getenv('RAZORPAY_KEY_ID','').startswith('rzp_test_') else 'live'):active=False
  if write and not active:raise ValidationError('An active subscription or owner-granted trial is required. Open Subscription.')
- if feature and (not active or feature not in m.features):raise ValidationError('This feature requires an active '+('Pro' if feature=='ai' else 'Plus or Pro')+' plan.')
+ if feature and (not active or feature not in effective_features(m)):raise ValidationError('This feature requires an active '+('Pro' if feature=='ai' else 'Plus or Pro')+' plan.')
 
 def feature_for(path):
+ if path.startswith('/finance/'):return 'finance'
+ if any(x in path for x in ['/chart-of-accounts/','/journal-entries/','/general-ledger/','/trial-balance/','/bank-accounts/','/bank-transactions/','/bank-transfers/','/bank-statements/','/bank-payment-suggestions/','/document-logs/','/business/payment-accounts/','/business/books-sync/']):return 'finance'
  if any(s in path for s in ['/business/gst/','/business/records/gst_']):return 'gst'
- if any(s in path for s in ['/business/workforce/','/business/payroll','/business/daily-work/','/business/bulk-assign/','/business/labour','/business/workers/','/business/balances/']):return 'workforce'
+ if any(s in path for s in ['/business/workforce/','/business/payroll','/business/daily-work/','/business/bulk-assign/','/business/labour','/business/workers/','/business/balances/','/business/employee-payables/']):return 'workforce'
  if '/business/records/' in path and path.split('/business/records/')[1].split('/')[0] not in ('expenses','gst_settings','gst_adjustments'):return 'workforce'
  if any(s in path for s in ['/accounting-reports/','/business/accountant-export/','/cash-flow/','/finance-audit/','/finance-dashboard/','/accounting-dashboard/','/exports/']):return 'advanced_reports'
  return None
@@ -123,3 +145,14 @@ def install_guards():
     if user and not user.is_active:check_capacity(org,'users')
     return original_activate(*args,**kwargs)
   activate_user._saas_guarded=True;UserManagementService.activate_user=staticmethod(activate_user)
+
+
+def grant_signup_trial(org):
+ """One 14-day Plus trial for a newly created organization only."""
+ seed()
+ plan=Plan.objects.get(code='plus')
+ now=datetime.utcnow()
+ Membership.objects(organization_id=str(org.id)).update_one(upsert=True,
+     set_on_insert__plan='plus',set_on_insert__status='trial',
+     set_on_insert__start=now,set_on_insert__end=now+timedelta(days=14),
+     set_on_insert__limits=dict(plan.limits),set_on_insert__features=list(plan.features))

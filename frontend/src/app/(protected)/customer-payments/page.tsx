@@ -337,7 +337,7 @@ export default function CustomerPaymentsPage() {
             </div>
           </div>
 
-          <button
+          <button title="Refresh"
             type="button"
             onClick={() => {
               void paymentQuery.refetch();
@@ -362,7 +362,7 @@ export default function CustomerPaymentsPage() {
               }
             />
 
-            Refresh
+            <span className="sr-only">Refresh</span>
           </button>
         </div>
 

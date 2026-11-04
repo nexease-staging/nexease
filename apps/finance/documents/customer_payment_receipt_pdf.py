@@ -1,3 +1,4 @@
+from .branding import themed_document, themed_color, logo_story
 from io import BytesIO
 
 from reportlab.lib import colors
@@ -424,7 +425,7 @@ class CustomerPaymentReceiptPDF:
                         "BACKGROUND",
                         (0, 0),
                         (0, -1),
-                        colors.HexColor(
+                        themed_color(
                             "#F2F2F2"
                         ),
                     ),
@@ -432,7 +433,7 @@ class CustomerPaymentReceiptPDF:
                         "BACKGROUND",
                         (2, 0),
                         (2, -1),
-                        colors.HexColor(
+                        themed_color(
                             "#F2F2F2"
                         ),
                     ),
@@ -441,7 +442,7 @@ class CustomerPaymentReceiptPDF:
                         (0, 0),
                         (-1, -1),
                         0.3,
-                        colors.HexColor(
+                        themed_color(
                             "#D9D9D9"
                         ),
                     ),
@@ -612,7 +613,7 @@ class CustomerPaymentReceiptPDF:
                         (0, 0),
                         (-1, -1),
                         0.5,
-                        colors.HexColor(
+                        themed_color(
                             "#D0D0D0"
                         ),
                     ),
@@ -620,7 +621,7 @@ class CustomerPaymentReceiptPDF:
                         "BACKGROUND",
                         (0, 0),
                         (-1, 0),
-                        colors.HexColor(
+                        themed_color(
                             "#F4F4F4"
                         ),
                     ),
@@ -769,7 +770,7 @@ class CustomerPaymentReceiptPDF:
                         "BACKGROUND",
                         (0, 0),
                         (-1, 0),
-                        colors.HexColor(
+                        themed_color(
                             "#E8E8E8"
                         ),
                     ),
@@ -778,7 +779,7 @@ class CustomerPaymentReceiptPDF:
                         (0, 0),
                         (-1, -1),
                         0.35,
-                        colors.HexColor(
+                        themed_color(
                             "#CCCCCC"
                         ),
                     ),
@@ -909,7 +910,7 @@ class CustomerPaymentReceiptPDF:
         canvas_object.saveState()
 
         canvas_object.setStrokeColor(
-            colors.HexColor(
+            themed_color(
                 "#DDDDDD"
             )
         )
@@ -927,7 +928,7 @@ class CustomerPaymentReceiptPDF:
         )
 
         canvas_object.setFillColor(
-            colors.HexColor(
+            themed_color(
                 "#666666"
             )
         )
@@ -944,6 +945,7 @@ class CustomerPaymentReceiptPDF:
         canvas_object.restoreState()
 
     @staticmethod
+    @themed_document
     def generate(
         *,
         payment,
@@ -1080,6 +1082,7 @@ class CustomerPaymentReceiptPDF:
                 ]
             )
 
+        story[0:0] = logo_story()
         document.build(
             story,
             onFirstPage=(

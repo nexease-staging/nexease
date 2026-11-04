@@ -118,9 +118,9 @@ export default function ReportExportActions({
         >
           <Download size={16} />
 
-          {exportMutation.isPending
+          <span className="sr-only">{exportMutation.isPending
             ? "Exporting..."
-            : "CSV"}
+            : "CSV"}</span>
         </button>
 
         <button
@@ -144,7 +144,7 @@ export default function ReportExportActions({
             size={16}
           />
 
-          XLSX
+          <span className="sr-only">XLSX</span>
         </button>
       </div>
 

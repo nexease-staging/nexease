@@ -73,7 +73,8 @@ def invoice_settings(request):
     try:
         if request.method=='POST':
             p=payload(request)
-            allowed={'template','logo','bank_details','payment_terms','terms','signatory'}
+            allowed={'template','logo','accent_color','bank_details','payment_terms','terms','signatory'}
+            if p.get('accent_color') and not re.fullmatch(r'#[0-9a-fA-F]{6}',p['accent_color']):raise ValueError('Choose a valid document colour.')
             if set(p)-allowed:raise ValueError('Unknown setting.')
             for k,v in p.items():
                 if not isinstance(v,str) or len(v)>(400000 if k=='logo' else 2000):raise ValueError('Invalid '+k)

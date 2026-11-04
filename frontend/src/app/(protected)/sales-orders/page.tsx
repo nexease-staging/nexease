@@ -451,7 +451,7 @@ const canCreateProduct =
             sm:flex-row
           "
         >
-          <button
+          <button title="Refresh"
             type="button"
             disabled={
               salesOrderQuery.isFetching
@@ -478,7 +478,7 @@ const canCreateProduct =
                   : undefined
               }
             />
-            Refresh
+            <span className="sr-only">Refresh</span>
           </button>
 
           {canCreate ? (
@@ -502,7 +502,7 @@ const canCreateProduct =
       </div>
 
       <div
-        className="nx-list-filters
+        className="nx-list-filters 
           grid gap-4 rounded-2xl
           border border-slate-200
           bg-white p-4 shadow-sm

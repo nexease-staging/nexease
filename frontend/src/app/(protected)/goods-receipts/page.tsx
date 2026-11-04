@@ -268,7 +268,7 @@ export default function GoodsReceiptsPage() {
           "
         >
           <div
-            className="nx-list-filters
+            className="nx-list-filters 
               grid gap-3
               md:grid-cols-[minmax(0,1fr)_220px]
             "

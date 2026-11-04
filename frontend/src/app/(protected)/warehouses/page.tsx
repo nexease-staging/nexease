@@ -312,7 +312,7 @@ export default function WarehousesPage() {
             sm:flex-row
           "
         >
-          <button
+          <button title="Refresh"
             type="button"
             onClick={() => {
               void warehouseQuery.refetch();
@@ -341,7 +341,7 @@ export default function WarehousesPage() {
               }
             />
 
-            Refresh
+            <span className="sr-only">Refresh</span>
           </button>
 
           {canCreate ? (
@@ -365,7 +365,7 @@ export default function WarehousesPage() {
       </div>
 
       <div
-        className="nx-list-filters
+        className="nx-list-filters 
           grid gap-3 rounded-2xl
           border border-slate-200
           bg-white p-4 shadow-sm

@@ -123,7 +123,7 @@ describe(
           screen.getByRole(
             "button",
             {
-              name: "PDF",
+              name: "Download PDF",
             },
           ),
         ).toBeInTheDocument();
@@ -156,7 +156,7 @@ describe(
           screen.getByRole(
             "button",
             {
-              name: "PDF",
+              name: "Download PDF",
             },
           ),
         );
@@ -270,7 +270,7 @@ describe(
           screen.getByRole(
             "button",
             {
-              name: "PDF",
+              name: "Download PDF",
             },
           ),
         );

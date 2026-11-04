@@ -1,3 +1,4 @@
+from apps.core.quotation import quotation
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
@@ -51,6 +52,7 @@ handler500 = error_handlers.handler500
 # ==========================================================
 
 urlpatterns = [
+    path("api/v1/public/quotation/", quotation),
     # ------------------------------------------------------
     # Django admin
     # ------------------------------------------------------

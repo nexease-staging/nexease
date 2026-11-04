@@ -266,7 +266,7 @@ export default function InventoryPage() {
             sm:flex-row
           "
         >
-          <button
+          <button title="Refresh"
             type="button"
             disabled={
               inventoryQuery.isFetching
@@ -295,7 +295,7 @@ export default function InventoryPage() {
               }
             />
 
-            Refresh
+            <span className="sr-only">Refresh</span>
           </button>
 
           {canCreate ? (

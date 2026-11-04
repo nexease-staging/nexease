@@ -87,3 +87,39 @@ html { -webkit-text-size-adjust:100%; }
  .nx-list-filters > label:has(input:not([role="combobox"])) { flex-basis:100%; }
  .nx-list-filters > div:has(label[for$="-search"]), .nx-list-filters > label:has(input[type="search"]) { flex-basis:100%; }
 }
+
+/* Consistent touch-friendly list controls across web and native WebView. */
+.nx-list-filters{align-items:end;gap:12px!important}
+.nx-list-filters input,.nx-list-filters select{height:44px;min-width:0}
+.nx-list-filters .relative:has(>svg) input{padding-left:2.5rem!important}
+.nx-list-filters .relative>svg{pointer-events:none}
+.nx-app-shell main button:has(>svg:only-child){min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:10px}
+.nx-app-shell aside{isolation:isolate}
+.nx-contact input,.nx-contact textarea,.nx-contact select{font-size:16px}
+.nx-reveal{animation:nx-arrive .7s ease both}
+@keyframes nx-arrive{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.nx-reveal{animation:none}}
+@media(max-width:767px){
+ .nx-app-shell main{padding:16px 12px 100px!important}
+ .nx-list-filters{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));padding:12px!important}
+ .nx-list-filters>div:has(input[type="search"]),.nx-list-filters>div:has(label[for$="-search"]),.nx-list-filters>label:has(input[type="search"]){grid-column:1/-1}
+ .nx-list-filters input,.nx-list-filters select{font-size:14px!important}
+ .nx-list-filters label{font-size:12px!important}
+ .nx-app-shell header{min-height:64px}
+ button[aria-label="Open NexEase AI"]{width:48px;height:48px;overflow:hidden;gap:20px!important;padding:14px!important;font-size:0!important;right:12px!important}
+ button[aria-label="Open NexEase AI"] svg{min-width:20px;min-height:20px}
+ .nx-app-shell:has(aside.translate-x-0)~button[aria-label="Open NexEase AI"]{visibility:hidden}
+}
+@media(max-width:767px){
+ .nx-inline-actions{position:static;margin:16px 0;flex-wrap:wrap}.nx-inline-actions>*{flex:1;min-height:44px}
+ .nx-app-shell:has(aside.translate-x-0)~div .nx-fab{visibility:hidden}
+ .nx-app-shell main .nx-search input{padding-left:40px!important}
+}
+@media(max-width:767px){
+ .nx-app-shell main>section>div:first-child>div:has(>button),.nx-app-shell main>div>div:first-child>div:has(>button){flex-direction:row!important;align-items:center;justify-content:flex-end;gap:8px}
+ .nx-app-shell main button:has(>.sr-only){width:44px;min-width:44px;min-height:44px;flex:none;padding:10px;justify-content:center}
+ .nx-app-shell main button:has(>.sr-only) svg{flex-shrink:0}
+}
+
+.nx-marketing h1{animation:nx-arrive .65s ease both}.nx-marketing article{transition:transform .2s ease,box-shadow .2s ease}.nx-marketing article:hover{transform:translateY(-4px);box-shadow:0 12px 28px #173c3214}
+@media(prefers-reduced-motion:reduce){.nx-marketing h1{animation:none}.nx-marketing article{transition:none}.nx-marketing article:hover{transform:none}}

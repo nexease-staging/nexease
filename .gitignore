@@ -28,23 +28,10 @@ GoogleService-Info.plist
 *.keystore
 *.p12
 
-# Private configuration and generated outputs
-.env
-.env.local
-.env.*.local
-google-services.json
-*.jks
-*.keystore
+# Local backups and build output
+*.bak
 *.apk
 *.aab
-*.bak
 *.tsbuildinfo
-.venv/
-node_modules/
-.next/
-out/
-.gradle/
-local.properties
-frontend/android/**/build/
 frontend/android/app/src/main/assets/public/
 frontend/ios/App/App/public/

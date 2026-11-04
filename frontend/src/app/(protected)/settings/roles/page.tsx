@@ -271,7 +271,7 @@ export default function RolesPage() {
             flex flex-wrap items-center gap-2
           "
         >
-          <button
+          <button title="Refresh"
             type="button"
             disabled={roleQuery.isFetching}
             onClick={() => {
@@ -298,7 +298,7 @@ export default function RolesPage() {
               }
             />
 
-            Refresh
+            <span className="sr-only">Refresh</span>
           </button>
 
           {canCreate ? (
@@ -322,7 +322,7 @@ export default function RolesPage() {
       </div>
 
       <div
-        className="nx-list-filters
+        className="nx-list-filters 
           grid gap-4 rounded-2xl
           border border-slate-200
           bg-white p-4 shadow-sm

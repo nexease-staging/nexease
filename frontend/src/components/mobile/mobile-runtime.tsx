@@ -24,7 +24,7 @@ export default function MobileRuntime() {
     const keep = async (p: Promise<PluginListenerHandle>) => { const h = await p; if (disposed) await h.remove(); else handles.push(h); };
     void keep(Network.addListener('networkStatusChange', s => { setOffline(!s.connected); if (s.connected) void queries.invalidateQueries(); }));
     void Network.getStatus().then(s => { if (!disposed) setOffline(!s.connected); });
-    void keep(App.addListener('appStateChange', s => { if (s.isActive) void queries.invalidateQueries(); }));
+    void keep(App.addListener('appStateChange', s => { if (s.isActive) void queries.refetchQueries({type:'active',stale:true}); }));
     void keep(Keyboard.addListener('keyboardWillShow', () => { document.documentElement.dataset.keyboard = 'open'; }));
     void keep(Keyboard.addListener('keyboardWillHide', () => { delete document.documentElement.dataset.keyboard; }));
     const external = (event: MouseEvent) => {

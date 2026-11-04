@@ -58,7 +58,7 @@ export default function Providers({
                 return false;
               }
 
-              return failureCount < 2;
+              return failureCount < 1;
             },
           },
 

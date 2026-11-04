@@ -14,9 +14,15 @@ class NoRedirect(HTTPRedirectHandler):
 @api_rate_limit(scope='gst.lookup',limit=30,window_seconds=60)
 @require_http_methods(['GET'])
 def lookup(request):
-    if not any(permitted(request,p) for p in ['customers.create','customers.read','invoices.create','sales_orders.create']):return R.forbidden(message='Customer or sales access required.',request=request)
+    if not any(permitted(request,p) for p in ['customers.create','customers.read','invoices.create','sales_orders.create','suppliers.create','suppliers.update','suppliers.read','customers.update','organizations.update','taxation.manage']):return R.forbidden(message='Business lookup access required.',request=request)
     gstin=request.GET.get('gstin','').strip().upper()
     if not re.fullmatch(r'\d{2}[A-Z]{5}\d{4}[A-Z][A-Z0-9]Z[A-Z0-9]',gstin):return R.validation_error(message='Enter a valid 15-character GSTIN.',request=request)
+    if os.getenv('GST_LOOKUP_PROVIDER','adapter')=='sandbox':
+        try:
+            from .gst_provider import sandbox_lookup
+            return R.success(data=sandbox_lookup(gstin),request=request)
+        except (URLError,HTTPError,ValueError,TimeoutError,OSError,TypeError):
+            return R.validation_error(message='GST lookup failed. Check provider credentials, access, environment and GSTIN, or retry later. No records were changed.',request=request)
     from apps.sales.models import Customer
     c=Customer.objects(organization=request.api_organization,gstin=gstin,is_active=True).first()
     if c:return R.success(data={'id':str(c.id),'code':c.code,'name':c.name,'address':c.billing_address or '', 'state':c.state or '', 'gstin':gstin,'email':c.email or '', 'phone':c.phone or '', 'source':'Existing organisation customer'},request=request)
