@@ -240,7 +240,7 @@ export default function NotificationMenu() {
       {
         limit: 20,
       },
-      open,
+      true,
     );
 
   const markReadMutation =

@@ -17,7 +17,7 @@ type Entry = { key: string; label: string; group: string; href: string; icon: Lu
 export function CommandPaletteTrigger() {
   return (
     <button type="button" aria-label="Search and jump to…" onClick={() => window.dispatchEvent(new Event(OPEN_EVENT))}
-      className="nx-icon-btn md:w-auto md:gap-2 md:px-3 md:text-sm">
+      className="nx-icon-btn nx-search-trigger">
       <Search size={18} aria-hidden="true" />
       <span className="nx-muted hidden md:inline">Search</span>
       <kbd className="nx-kbd hidden md:inline">Ctrl K</kbd>

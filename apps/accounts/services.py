@@ -1,3 +1,5 @@
+from mongoengine.connection import get_db
+
 from django.conf import settings
 from apps.accounts.models import User
 from apps.accounts.session_models import (
@@ -17,6 +19,21 @@ class AuthenticationService:
 
     SESSION_USER_ID = "ims_user_id"
 
+    SESSION_CHANNEL = "nexease_session_channel"
+
+    @staticmethod
+    def _channel(request):
+        if (getattr(settings, "NEXEASE_MOBILE_ENABLED", False)
+                and request.META.get("HTTP_ORIGIN") == "https://localhost"
+                and (request.META.get("HTTP_X_NEXEASE_CLIENT") == "android"
+                     or "Android" in request.META.get("HTTP_USER_AGENT", ""))):
+            return "android"
+        return "web"
+
+    @staticmethod
+    def _slots():
+        return get_db()["nexease_active_login_slots"]
+
     @staticmethod
     def login(
         request,
@@ -29,11 +46,17 @@ class AuthenticationService:
             user.id
         )
 
-        if (getattr(settings, 'NEXEASE_MOBILE_ENABLED', False)
-                and request.META.get('HTTP_ORIGIN') == 'https://localhost'):
+        channel = AuthenticationService._channel(request)
+        request.session[AuthenticationService.SESSION_CHANNEL] = channel
+        if channel == "android":
             request.session.set_expiry(60 * 60 * 24 * 30)
         request.session.modified = True
         request.session.save()
+        AuthenticationService._slots().update_one(
+            {"_id": f"{user.id}:{channel}"},
+            {"$set": {"session_key": request.session.session_key}},
+            upsert=True,
+        )
 
     @staticmethod
     def logout(
@@ -188,6 +211,14 @@ class AuthenticationService:
 
             request.session.modified = True
 
+            return None
+
+        channel = request.session.get(AuthenticationService.SESSION_CHANNEL)
+        if channel not in {"web", "android"} or not AuthenticationService._slots().find_one({
+            "_id": f"{user.id}:{channel}",
+            "session_key": request.session.session_key,
+        }, {"_id": 1}):
+            request.session.flush()
             return None
 
         return user

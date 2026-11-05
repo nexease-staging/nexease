@@ -176,6 +176,12 @@ class NotificationService:
         )
 
     @staticmethod
+    def count_unread(*, user):
+        return NotificationRepository.count_unread(
+            organization=user.organization, recipient=user,
+        )
+
+    @staticmethod
     def mark_read(
         *,
         user,

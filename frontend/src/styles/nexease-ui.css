@@ -101,3 +101,7 @@ kbd.nx-kbd{border:1px solid var(--nx-border-strong);border-radius:6px;padding:1p
 
 @media(prefers-reduced-motion:reduce){.nx-skeleton,.nx-sheet{animation:none}.nx-card-link{transition:none}}
 @media print{.nx-fab,.nx-sticky-bar,.nx-palette{display:none!important}}
+
+.nx-icon-btn.nx-search-trigger{display:inline-flex;flex:none;align-items:center;justify-content:center;gap:.5rem;white-space:nowrap}
+.nx-search-trigger svg{flex:none}
+@media(min-width:768px){.nx-icon-btn.nx-search-trigger{width:auto;padding:0 .75rem;font-size:.875rem}}

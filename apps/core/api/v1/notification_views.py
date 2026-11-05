@@ -134,12 +134,7 @@ def notification_list_api(
             in notifications
         ]
 
-        unread_count = sum(
-            1
-            for notification
-            in results
-            if not notification["is_read"]
-        )
+        unread_count = NotificationService.count_unread(user=request.api_user)
 
         return (
             APIResponseService

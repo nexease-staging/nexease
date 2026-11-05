@@ -36,6 +36,7 @@ export function useNotificationList(
       ),
 
     enabled,
+    refetchInterval: 30_000,
   });
 }
 

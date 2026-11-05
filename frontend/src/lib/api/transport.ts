@@ -6,6 +6,7 @@ export async function apiFetch(url: string, options: RequestInit = {}, binary = 
   if (new URL(url).protocol !== 'https:') throw new Error('A secure HTTPS backend is required.');
   if (options.signal?.aborted) throw new DOMException('Request cancelled', 'AbortError');
   const headers = new Headers(options.headers);
+  if (Capacitor.getPlatform() === 'android') headers.set('X-NexEase-Client', 'android');
   headers.set('Origin', 'https://localhost');
   headers.set('Referer', 'https://localhost/');
   let data: HttpOptions['data'];

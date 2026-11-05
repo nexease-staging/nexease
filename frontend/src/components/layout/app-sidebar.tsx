@@ -10,7 +10,6 @@ import {
 } from "next/navigation";
 
 import {
-  Boxes,
   PanelLeftClose,
   PanelLeftOpen,
   X,
@@ -58,7 +57,7 @@ export default function AppSidebar({
     [];
 
   const workforceMode=pathname.startsWith("/workforce");
-  const visibleSections =
+  const permittedSections =
     (workforceMode?workforceSections:navigationSections)
       .filter(section => section.label !== 'Workforce' || config.data?.modules?.workforce !== false)
       .filter(section => !['Finance','Taxation','Barcode'].includes(section.label) || config.data?.modules?.[section.label.toLowerCase()] !== false)
@@ -80,6 +79,20 @@ export default function AppSidebar({
         (section) =>
           section.items.length > 0,
       );
+
+  const order = ["Overview", "Inventory", "Sales", "Purchasing", "Workforce", "Taxation", "Finance", "Administration"];
+  const byLabel = new Map(permittedSections.map(section => [section.label, section]));
+  const visibleSections = workforceMode ? permittedSections : order.flatMap(label => {
+    const section = byLabel.get(label);
+    const extra = label === "Inventory" ? byLabel.get("Barcode") : label === (byLabel.has("Finance") ? "Finance" : "Administration") ? byLabel.get("Expenses") : undefined;
+    if (!section && !extra) return [];
+    return [{
+      label: label === "Purchasing" ? "Purchase" : label,
+      direct: label === "Overview" || label === "Workforce",
+      items: label === "Workforce" ? (section?.items.slice(0, 1).map(item => ({ ...item, label: "Workforce" })) ?? [])
+        : [...(section?.items ?? []), ...(extra?.items ?? [])],
+    }];
+  });
 
   return (
     <>
@@ -122,7 +135,7 @@ export default function AppSidebar({
             px-4
           "
         >
-          <div
+          <Link href="/dashboard" aria-label="NexEase dashboard" onClick={onCloseMobile}
             className="
               flex min-w-0 flex-1
               items-center gap-3
@@ -161,7 +174,7 @@ export default function AppSidebar({
                 </p>
               </div>
             )}
-          </div>
+          </Link>
 
           <button
             type="button"
@@ -183,14 +196,16 @@ export default function AppSidebar({
             px-3 py-4
           "
         >
-          {workforceMode && <Link href="/dashboard" className="block mb-5 rounded-xl bg-slate-100 p-3 text-sm">← Back to business</Link>}
+          {workforceMode && <Link href="/dashboard" onClick={onCloseMobile} className="block mb-5 rounded-xl bg-slate-100 p-3 text-sm">← Back to business</Link>}
           {visibleSections.map(
-            (section) => (
+            (section) => {
+              const direct = "direct" in section && section.direct;
+              return (
               <div
                 key={section.label}
                 className="mb-6"
               >
-                {!compact && (
+                {!compact && !direct && (
                   <button type="button" aria-expanded={openSection===section.label} onClick={() => setOpenSection(current=>current===section.label?null:section.label)}
                     className="
                       mb-2 px-3 text-xs
@@ -203,7 +218,7 @@ export default function AppSidebar({
                   </button>
                 )}
 
-                <div className="space-y-1" hidden={!compact && openSection!==section.label}>
+                <div className="space-y-1" hidden={!direct && !compact && openSection!==section.label}>
                   {section.items.map(
                     (item) => {
                       const active =
@@ -261,7 +276,8 @@ export default function AppSidebar({
                   )}
                 </div>
               </div>
-            ),
+              );
+            },
           )}
         </nav>
 

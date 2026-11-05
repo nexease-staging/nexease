@@ -81,9 +81,16 @@ export function AuthProvider({
   const authenticationQuery =
     useQuery({
       queryKey: AUTH_QUERY_KEY,
-      queryFn: getCurrentUser,
+      queryFn: async () => {
+        try { return await getCurrentUser(); }
+        catch (error) {
+          if (error instanceof APIRequestError && error.status === 401) return null;
+          throw error;
+        }
+      },
       retry: false,
       staleTime: 60_000,
+      refetchInterval: (query) => query.state.data ? 60_000 : false,
     });
 
   const loginMutation =

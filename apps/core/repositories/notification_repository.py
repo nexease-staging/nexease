@@ -107,10 +107,16 @@ class NotificationRepository:
             )
 
         return queryset.order_by(
-            "-created_at"
+            "is_read", "-created_at"
         ).limit(
             limit
         )
+
+    @staticmethod
+    def count_unread(*, organization, recipient):
+        return Notification.objects(
+            organization=organization, recipient=recipient, is_read=False,
+        ).count()
 
     @staticmethod
     def mark_read(

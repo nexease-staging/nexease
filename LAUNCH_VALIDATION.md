@@ -27,3 +27,7 @@ Checked 04 Nov 2026. Source: latest NexEase_Complete_Fixed.zip version 13, retai
 Added one-time catalogue migration for existing stored prices, tier-based effective features, API/legacy Finance restrictions, tenant configuration filtering and client route guards. Default desktop sidebar remains expanded; group state is now a single open section, initially null. Removed only the two requested dashboard panels. Added backend tier/migration tests and frontend accordion, branding, direct-route and dashboard tests. Verification results for this follow-up are recorded after execution below.
 
 Follow-up results: **36 backend tests passed**, **177 frontend tests passed across 30 files**, TypeScript passed and Next.js production build passed (77 pages). The backend tests include native API tenant checks without relying on middleware request.user and logout after expiry. No live provider calls or production deployment were performed. Earlier runtime/browser limitations remain as described above.
+
+## GST diagnostic hotfix - 05 Nov 2026
+
+49 backend tests passed (13 focused provider diagnostics + 36 existing regressions). Credentials and provider responses are mocked. Actual deployment failure remains unconfirmed until the LIVE environment is selected and retried with the user’s private credentials. See GST_LOOKUP_HOTFIX.md. No frontend files changed in this hotfix.
