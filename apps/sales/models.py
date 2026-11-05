@@ -370,6 +370,8 @@ class InvoiceItem(EmbeddedDocument):
 
 
 class Invoice(Document):
+    einvoice = DictField(default=dict)
+    eway_status = StringField(default="")
     billing_details = DictField(default=dict)
     workforce_billing_key = StringField()
     workforce_timesheet_ids = ListField(StringField(), default=list)

@@ -132,6 +132,24 @@ export const navigationSections:
             permission: "invoices.read",
           },
         {
+          label: "E-Invoices",
+          href: "/e-invoices",
+          icon: FileText,
+          permission: "invoices.read",
+        },
+        {
+          label: "E-Way Bills",
+          href: "/e-way-bills",
+          icon: Truck,
+          permission: "invoices.read",
+        },
+        {
+          label: "Delivery Challans",
+          href: "/delivery-challans",
+          icon: Truck,
+          permission: "invoices.read",
+        },
+        {
           label: "Sales Returns",
           href: "/sales-returns",
           icon: Undo2,

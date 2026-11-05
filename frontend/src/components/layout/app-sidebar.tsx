@@ -68,6 +68,7 @@ export default function AppSidebar({
 
         items: section.items.filter(
           (item) =>
+            (!['/e-invoices','/e-way-bills'].includes(item.href) || config.data?.modules?.einvoice === true) &&
             (item.href !== '/workforce/accounts' || config.data?.modules?.finance !== false) &&
             hasPermission(
               permissions,

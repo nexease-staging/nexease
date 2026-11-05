@@ -130,7 +130,7 @@ def labour_invoice(request):
         if Invoice.objects(organization=org,invoice_number=number).first():raise ValueError('Number exists. Choose another number or higher sequence.')
         token=choice.set(None)
         try:
-            invoice=Invoice(organization=org,invoice_number=number,workforce_billing_key=key,workforce_timesheet_ids=[str(w.id) for w in work],customer=customer,invoice_date=when,due_date=due,items=[line],billing_details=details,subtotal=subtotal,tax_amount=tax,total_amount=total,balance_due=total,billing_name=customer.name,billing_address=customer.billing_address,billing_state=customer.state,customer_gstin=customer.gstin,created_by=request.api_user,direct_entry=True,stock_review_required=False,notes='Labour services: '+site.data['name']+' / '+month+'. Approved timesheets linked; no stock movement.').save()
+            invoice=Invoice(organization=org,invoice_number=number,workforce_billing_key=key,workforce_timesheet_ids=[str(w.id) for w in work],customer=customer,invoice_date=when,due_date=due,items=[line],billing_details=details,subtotal=subtotal,tax_amount=tax,total_amount=total,balance_due=total,billing_name=customer.name,billing_address=customer.billing_address,billing_state=customer.state,billing_city=customer.city,billing_pincode=customer.pincode,customer_gstin=customer.gstin,created_by=request.api_user,direct_entry=True,stock_review_required=False,notes='Labour services: '+site.data['name']+' / '+month+'. Approved timesheets linked; no stock movement.').save()
         finally:choice.reset(token)
         audit(request,'labour_invoice',invoice.id,'draft-from-work')
         return R.success(data={'invoice_number':invoice.invoice_number,'existing':False},request=request)

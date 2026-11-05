@@ -451,6 +451,9 @@ class InvoiceService:
                 "Invoice not found."
             )
 
+        if (invoice.einvoice or {}).get("status") in ("pending", "registered", "cancel_pending"):
+            raise ValueError("Resolve or cancel the IRP record before cancelling this invoice.")
+
         if invoice.status == "CANCELLED":
             raise ValueError(
                 "Invoice is already cancelled."

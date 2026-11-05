@@ -22,6 +22,7 @@ export function useEasyFeatures() {
  .filter(s=>!['Finance','Taxation','Barcode','Expenses'].includes(s.label)||config.data?.modules?.[s.label.toLowerCase()]!==false)
  .filter(s=>s.label==='Expenses'||!config.data||['Overview','Administration','Barcode'].includes(s.label)||config.data.profile.modules.includes(s.label)||workforceSections.includes(s)&&config.data?.modules?.workforce!==false)
  .map(s=>({...s,items:s.items.filter(i=>{
+  if(['/e-invoices','/e-way-bills'].includes(i.href)&&config.data?.modules?.einvoice!==true)return false;
   if(i.href.startsWith('/workforce')&&!hasPermission(authentication?.role.permissions??[],'labour.read')&&!hasPermission(authentication?.role.permissions??[],'payroll.read'))return false;
   if(seen.has(i.href)||!hasPermission(authentication?.role.permissions??[],i.permission)) return false;
   if(i.href==='/workforce/accounts'&&config.data?.modules?.finance===false)return false;

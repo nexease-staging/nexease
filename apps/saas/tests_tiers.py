@@ -23,7 +23,7 @@ class TierPolicyTests(SimpleTestCase):
   self.member('basic',['finance','advanced_reports','workforce','gst','ai'])
   for f in ('finance','advanced_reports','workforce','gst','ai'):
    with self.assertRaises(ValidationError):require(self.org,f)
-  self.assertEqual(module_access(self.org),dict(workforce=False,taxation=False,finance=False,ai=False));require(self.org,write=True)
+  self.assertEqual(module_access(self.org),dict(workforce=False,taxation=False,finance=False,ai=False,einvoice=False));require(self.org,write=True)
  def test_plus_keeps_all_paid_modules_but_denies_ai(self):
   m=self.member('plus',['ai']);self.assertNotIn('ai',membership_json(m)['features'])
   for f in ('finance','advanced_reports','gst','workforce'):require(self.org,f)
@@ -73,12 +73,12 @@ class TierPolicyTests(SimpleTestCase):
 
 class CatalogueUpgradeTests(SimpleTestCase):
  def setUp(self):
-  self.collection=get_db().saas_catalog_revisions;self.old=list(Plan.objects);self.marker=self.collection.find_one({'_id':'launch-749-999-1299-v2'})
-  Plan.objects.delete();self.collection.delete_one({'_id':'launch-749-999-1299-v2'})
+  self.collection=get_db().saas_catalog_revisions;self.old=list(Plan.objects);self.marker=self.collection.find_one({'_id':'launch-749-999-1299-annual-einvoice-v3'})
+  Plan.objects.delete();self.collection.delete_one({'_id':'launch-749-999-1299-annual-einvoice-v3'})
  def tearDown(self):
   Plan.objects.delete()
   for p in self.old:p.save()
-  self.collection.delete_one({'_id':'launch-749-999-1299-v2'})
+  self.collection.delete_one({'_id':'launch-749-999-1299-annual-einvoice-v3'})
   if self.marker:self.collection.insert_one(self.marker)
  def test_existing_published_catalogue_is_repriced_without_touching_contracts(self):
   for code,price in [('basic',749),('plus',1499),('pro',1999)]:Plan(code=code,name=code,price_paise=price*100,published=True,razorpay_plan_id='old-'+code).save()

@@ -15,16 +15,16 @@ from apps.organizations.models import Organization
 from apps.accounts.models import User
 from .models import Plan,Membership,Checkout,PlatformOwner,OwnerAudit
 from .security import owner_required,current_owner,rate,verify_totp,log
-from .entitlements import seed,state,usage,resource_count,org_lock,DEFAULTS,effective_features
+from .entitlements import seed,state,usage,resource_count,org_lock,DEFAULTS,effective_features,ANNUAL_PRICES
 from . import gateway
 
-def plan_json(p):return dict(code=p.code,name=p.name,price=p.price_paise/100,limits=p.limits,features=p.features,published=p.published)
-def membership_json(m):return None if not m else dict(plan=m.plan,status=('expired' if m.end<=datetime.utcnow() and m.status in ('active','trial') else m.status),start=m.start.isoformat(),end=m.end.isoformat(),suspended=m.suspended,limits=m.limits,features=effective_features(m),subscription_id=m.subscription_id)
+def plan_json(p):return dict(code=p.code,name=p.name,price=p.price_paise/100,limits=p.limits,features=p.features,published=p.published and p.gateway_mode==gateway.mode(),annual_price=ANNUAL_PRICES.get(p.code),annual_published=bool(p.annual_razorpay_plan_id and p.gateway_mode==gateway.mode()))
+def membership_json(m):return None if not m else dict(plan=m.plan,cycle=m.cycle,status=('expired' if m.end<=datetime.utcnow() and m.status in ('active','trial') else m.status),start=m.start.isoformat(),end=m.end.isoformat(),suspended=m.suspended,limits=m.limits,features=effective_features(m),subscription_id=m.subscription_id)
 def json_safe(obj):return json.loads(json.dumps(obj,default=str))
 
 @require_http_methods(['GET'])
 def plans(request):
- seed();return R.success(data={'plans':[plan_json(p) for p in Plan.objects.order_by('price_paise')],'payments_enabled':gateway.ready(),'price_note':'Per organization/month. Displayed checkout amount is the final amount; applicable tax is included.','terms_url':os.getenv('BILLING_TERMS_URL',''),'privacy_url':os.getenv('PRIVACY_URL',''),'refund_url':os.getenv('REFUND_POLICY_URL','')},request=request)
+ seed();return R.success(data={'plans':[plan_json(p) for p in Plan.objects.order_by('price_paise')],'payments_enabled':gateway.ready(),'price_note':'Per organization; billed monthly or annually. Displayed checkout amount is the final amount; applicable tax is included.','terms_url':os.getenv('BILLING_TERMS_URL',''),'privacy_url':os.getenv('PRIVACY_URL',''),'refund_url':os.getenv('REFUND_POLICY_URL','')},request=request)
 
 @api_login_required
 @require_http_methods(['GET','POST'])
@@ -35,8 +35,12 @@ def subscription(request):
    if not permitted(request,'organizations.update'):return R.forbidden(message='Organization administrator required.',request=request)
    p=payload(request);action=p.get('action')
    if action=='checkout':
-    code=p.get('plan');plan=Plan.objects(code=code,published=True,gateway_mode=gateway.mode()).first()
-    if not plan:raise ValueError('Plan checkout has not been published by the owner.')
+    code=p.get('plan');cycle=p.get('cycle','monthly')
+    if cycle not in ('monthly','yearly'):raise ValueError('Choose monthly or annual billing.')
+    plan=Plan.objects(code=code,gateway_mode=gateway.mode()).first()
+    annual=cycle=='yearly'
+    gateway_id=(plan.annual_razorpay_plan_id if annual else plan.razorpay_plan_id if plan.published else '') if plan else ''
+    if not gateway_id:raise ValueError('Plan checkout has not been published by the owner.')
     if p.get('accept_terms') is not True:raise ValueError('Accept the subscription terms and recurring charge before checkout.')
     with org_lock(org.id):
      m=state(org)
@@ -45,11 +49,11 @@ def subscription(request):
       if resource_count(org,k)>plan.limits[k]:raise ValueError('Current '+k+' exceed this plan. Reduce them or choose a larger plan.')
      existing=Checkout.objects(organization_id=str(org.id),mode=gateway.mode(),status__in=['created','authenticated','pending','halted']).order_by('-created_at').first()
      if existing:
-      if existing.plan!=code:raise ValueError('An unfinished checkout exists. Cancel it before choosing another plan.')
+      if existing.plan!=code or existing.cycle!=cycle:raise ValueError('An unfinished checkout exists. Cancel it before choosing another plan.')
       c=existing
      else:
-      result=gateway.api('subscriptions',{'plan_id':plan.razorpay_plan_id,'total_count':120,'quantity':1,'customer_notify':1,'notes':{'organization_id':str(org.id),'plan':code}})
-      c=Checkout(subscription_id=result['id'],organization_id=str(org.id),plan=code,price_paise=plan.price_paise,features=plan.features,limits=plan.limits,mode=gateway.mode()).save()
+      result=gateway.api('subscriptions',{'plan_id':gateway_id,'total_count':10 if annual else 120,'quantity':1,'customer_notify':1,'notes':{'organization_id':str(org.id),'plan':code}})
+      c=Checkout(subscription_id=result['id'],organization_id=str(org.id),plan=code,cycle=cycle,price_paise=ANNUAL_PRICES[code]*100 if annual else plan.price_paise,features=plan.features,limits=plan.limits,mode=gateway.mode()).save()
      return R.success(data={'subscription_id':c.subscription_id,'key_id':os.getenv('RAZORPAY_KEY_ID'),'name':plan.name,'amount':c.price_paise},request=request)
    sid=p.get('subscription_id') or (m.subscription_id if m else '')
    c=Checkout.objects(subscription_id=sid,organization_id=str(org.id),mode=gateway.mode()).first()
@@ -126,14 +130,17 @@ def owner_console(request):
     if not isinstance(limits,dict) or set(limits)!=set(DEFAULTS[plan.code][2]):raise ValueError('Supply all plan limits.')
     if any(type(v)!=int or v<0 or v>1000000 for v in limits.values()):raise ValueError('Limits must be nonnegative integers up to 1,000,000.')
     plan.price_paise=int(price*100);plan.limits=limits;plan.features=DEFAULTS[plan.code][3];plan.published=False;plan.revision+=1;plan.save()
-   else:gateway.publish(plan)
+   else:
+    cycle=p.get('cycle','monthly')
+    if cycle not in ('monthly','yearly'):raise ValueError('Choose monthly or annual billing.')
+    gateway.publish(plan,cycle)
   elif action=='grant_trial':
    org=Organization.objects(id=oid).first();plan=Plan.objects(code=p.get('plan')).first();days=int(p.get('days',14))
    if not org or not plan or not 1<=days<=90:raise ValueError('Select organization, plan and 1–90 days.')
    with org_lock(oid):
     m=state(org)
     if m and m.subscription_id and m.end>datetime.utcnow():raise ValueError('Do not overwrite a paid subscription. Cancel it through billing first.')
-    m=m or Membership(organization_id=oid);m.plan=plan.code;m.status='trial';m.start=datetime.utcnow();m.end=m.start+timedelta(days=days);m.limits=plan.limits;m.features=plan.features;m.subscription_id='';m.gateway_mode='';m.save()
+    m=m or Membership(organization_id=oid);m.plan=plan.code;m.cycle='monthly';m.status='trial';m.start=datetime.utcnow();m.end=m.start+timedelta(days=days);m.limits=plan.limits;m.features=plan.features;m.subscription_id='';m.gateway_mode='';m.save()
   elif action in ('workforce_on','workforce_off','expenses_on','expenses_off'):
    org=Organization.objects(id=oid).first()
    if not org:raise ValueError('Organization not found.')

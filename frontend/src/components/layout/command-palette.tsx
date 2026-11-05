@@ -46,6 +46,7 @@ export default function CommandPalette() {
       const flag = section.label.toLowerCase();
       if (modules && ["workforce", "expenses", "finance", "taxation", "barcode"].includes(flag) && modules[flag] === false) continue;
       for (const item of section.items) {
+        if (["/e-invoices","/e-way-bills"].includes(item.href) && modules?.einvoice !== true) continue;
         if (!hasPermission(perms, item.permission)) continue;
         const key = "n:" + item.href;
         if (seen.has(key)) continue;

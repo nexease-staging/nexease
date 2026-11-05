@@ -105,6 +105,8 @@ def invoice_details(request,invoice_id):
             from .enhancements import is_admin
             if getattr(request.api_organization,'invoice_admin_only',True) and not is_admin(request.api_user):return R.forbidden(message='Only a system Admin can edit invoice details.',request=request)
             if inv.status not in ('DRAFT','ISSUED','PARTIALLY_PAID','PAID'):raise ValueError('This invoice cannot be edited.')
+            if inv.eway_status or (inv.einvoice or {}).get('status'):
+                raise ValueError('Invoice details are locked after an IRP submission.')
             raw=payload(request)
             before=dict(inv.billing_details)
             if inv.status!='DRAFT':

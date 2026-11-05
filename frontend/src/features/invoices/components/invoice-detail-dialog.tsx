@@ -1,4 +1,7 @@
 "use client";
+import Link from "next/link";
+import {useQuery} from "@tanstack/react-query";
+import {getConfig} from "@/features/business/workspace";
 import {confirmAction} from "@/components/nex-feedback";
 
 import {InvoiceDetails} from "@/features/business/invoice-settings";
@@ -224,6 +227,7 @@ export default function InvoiceDetailDialog({
       "invoices.record_payment",
     );
 
+  const {data:config}=useQuery({queryKey:["business-config"],queryFn:getConfig});
   const invoice =
     invoiceQuery.data;
 
@@ -350,6 +354,11 @@ export default function InvoiceDetailDialog({
               Review billing, totals and
               invoice lifecycle information.
             </p>
+            {invoice&&<div className="mt-2 flex flex-wrap gap-3 text-sm">
+              {config?.modules?.einvoice&&invoice.status!=="DRAFT"&&<Link className="underline" href={`/e-invoices?invoice=${encodeURIComponent(invoice.invoice_number)}`}>GST e-invoice</Link>}
+              {config?.modules?.einvoice&&invoice.status!=="DRAFT"&&<Link className="underline" href={`/e-way-bills?invoice=${encodeURIComponent(invoice.id)}`}>E-way bill</Link>}
+              <Link className="underline" href={`/delivery-challans?invoice=${encodeURIComponent(invoice.invoice_number)}`}>Delivery challan</Link>
+            </div>}
           </div>
 
           <button

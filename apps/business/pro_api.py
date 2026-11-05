@@ -115,6 +115,7 @@ def invoice_descriptions(request,invoice_id):
         if not inv:return R.not_found(message='Invoice not found.',request=request)
         if inv.status not in ('DRAFT','ISSUED','PARTIALLY_PAID','PAID'):raise ValueError('This invoice cannot be edited.')
         if inv.status!='DRAFT' and not is_admin(request.api_user):return R.forbidden(message='Only a system Admin can edit an issued invoice.',request=request)
+        if inv.eway_status or (inv.einvoice or {}).get('status'):raise ValueError('Invoice descriptions are locked after an IRP submission.')
         before=[{'description':i.description,'show':i.show_description} for i in inv.items]
         p=payload(request);items=p.get('items',[])
         if not isinstance(items,list) or len(items)!=len(inv.items):raise ValueError('Reload the invoice; item count changed.')

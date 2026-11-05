@@ -16,9 +16,16 @@ def api(path,body=None,method=None):
  try:
   with urlopen(req,timeout=25) as r:return json.load(r)
  except (HTTPError,URLError,TimeoutError):raise ValueError('Payment provider request failed. Check gateway dashboard and retry; do not assume payment failed.')
-def publish(plan):
- r=api('plans',{'period':'monthly','interval':1,'item':{'name':plan.name+' v'+str(plan.revision),'amount':plan.price_paise,'currency':'INR','description':'Monthly organization subscription. Final displayed price includes applicable tax.'}})
- plan.razorpay_plan_id=r['id'];plan.gateway_mode=mode();plan.published=True;plan.save()
+def publish(plan,cycle='monthly'):
+ from .entitlements import ANNUAL_PRICES
+ annual=cycle=='yearly'
+ amount=ANNUAL_PRICES[plan.code]*100 if annual else plan.price_paise
+ r=api('plans',{'period':cycle,'interval':1,'item':{'name':plan.name+' '+cycle+' v'+str(plan.revision),'amount':amount,'currency':'INR','description':'Organization subscription. Final displayed price includes applicable tax.'}})
+ if plan.gateway_mode!=mode():
+  plan.razorpay_plan_id='';plan.annual_razorpay_plan_id='';plan.published=False
+ if annual:plan.annual_razorpay_plan_id=r['id']
+ else:plan.razorpay_plan_id=r['id'];plan.published=True
+ plan.gateway_mode=mode();plan.save()
 
 def reconcile(subscription_id,payment_id=None):
  c=Checkout.objects(subscription_id=subscription_id,mode=mode()).first()
@@ -49,7 +56,7 @@ def reconcile(subscription_id,payment_id=None):
    if not m:m=Membership(organization_id=c.organization_id)
    newstart=datetime.utcfromtimestamp(start);newend=datetime.utcfromtimestamp(end)
    if m.subscription_id==subscription_id and m.start>newstart:return {'status':m.status}
-   m.plan=c.plan;m.gateway_mode=c.mode;m.status='active';m.start=newstart;m.end=newend;m.subscription_id=subscription_id;m.limits=c.limits;m.features=c.features;m.updated_at=datetime.utcnow();m.save()
+   m.plan=c.plan;m.cycle=c.cycle;m.gateway_mode=c.mode;m.status='active';m.start=newstart;m.end=newend;m.subscription_id=subscription_id;m.limits=c.limits;m.features=c.features;m.updated_at=datetime.utcnow();m.save()
   elif m and m.subscription_id==subscription_id and (refunded or m.end<=datetime.utcnow()):m.status='refunded' if refunded else 'expired';m.save()
   c.status=s.get('status','unknown');c.save()
  return {'status':c.status,'message':'Paid access verified.' if paid else 'No captured current-period invoice verified yet.'}

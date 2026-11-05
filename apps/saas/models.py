@@ -7,11 +7,13 @@ class Plan(Document):
     limits=DictField(default=dict)
     features=ListField(StringField(),default=list)
     published=BooleanField(default=False)
+    annual_razorpay_plan_id=StringField(default='')
     razorpay_plan_id=StringField(default='')
     gateway_mode=StringField(default='')
     revision=IntField(default=1)
     meta={'collection':'saas_plans'}
 class Membership(Document):
+    cycle=StringField(default='monthly',choices=('monthly','yearly'))
     gateway_mode=StringField(default='')
     organization_id=StringField(primary_key=True)
     plan=StringField(default='basic')
@@ -25,6 +27,7 @@ class Membership(Document):
     updated_at=DateTimeField(default=datetime.utcnow)
     meta={'collection':'saas_memberships'}
 class Checkout(Document):
+    cycle=StringField(default='monthly',choices=('monthly','yearly'))
     subscription_id=StringField(primary_key=True)
     organization_id=StringField(required=True)
     plan=StringField(required=True)

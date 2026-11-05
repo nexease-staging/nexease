@@ -38,6 +38,19 @@ def invoice_pdf(invoice):
     header.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'TOP'),('LINEBELOW',(0,-1),(-1,-1),2,accent)]))
     if layout=='banner':header.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,-1),colors.HexColor('#f1f5f9')),('BOX',(0,0),(-1,-1),1,accent)]))
     story += [header,Spacer(1,16)]
+    irp=getattr(invoice,'einvoice',None) or {}
+    if irp.get('status')=='registered' and irp.get('environment')=='live':
+        from reportlab.graphics.barcode.qr import QrCodeWidget
+        from reportlab.graphics.shapes import Drawing
+        qr=QrCodeWidget(irp['qr'])
+        x,y,w,h=qr.getBounds()
+        side=130; scale=side/(w-x)
+        drawing=Drawing(side,side,transform=[scale,0,0,scale,-x*scale,-y*scale]);drawing.add(qr)
+        block=Table([[p('Registered e-invoice\nIRN: '+irp['irn']+'\nAcknowledgment: '+irp.get('ack_no','')+' '+irp.get('ack_date','')),drawing]],colWidths=[385,150])
+        block.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'MIDDLE')]))
+        story += [block,Spacer(1,10)]
+    elif irp.get('status'):
+        story += [p('IRP status: '+irp['status'].replace('_',' ')+(' (TEST ONLY)' if irp.get('environment')!='live' else '')),Spacer(1,10)]
     meta=[['Invoice date',str(invoice.invoice_date.date()),'Due date',str(invoice.due_date.date()) if invoice.due_date else '—'],['PO number',d.get('po_number',''),'PO date',d.get('po_date','')],['Service period',d.get('service_from','')+' to '+d.get('service_to',''),'Site / project',d.get('site_name','')],['Place of supply',d.get('place_of_supply',''),'Supply classification',d.get('supply_type','Unclassified')]]
     mt=Table([[p(v) for v in r] for r in meta],colWidths=[100,167,100,168]);mt.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'TOP'),('BACKGROUND',(0,0),(0,-1),colors.HexColor('#f8fafc')),('BACKGROUND',(2,0),(2,-1),colors.HexColor('#f8fafc'))]));story += [mt,Spacer(1,14)]
     party=Table([[p('BILL TO','Heading4'),p('SHIP TO / SERVICE LOCATION','Heading4')],[p(invoice.billing_name+'\n'+invoice.billing_address+'\nGSTIN: '+(invoice.customer_gstin or 'Unregistered')),p(d.get('shipping_address') or d.get('site_name') or invoice.billing_address)]],colWidths=[268,267]);party.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'TOP')]));story += [party,Spacer(1,14)]

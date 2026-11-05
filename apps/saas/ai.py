@@ -14,7 +14,7 @@ from apps.core.api.decorators import api_login_required
 from apps.core.services.api_response_service import APIResponseService as R
 from apps.business.views import payload,permitted
 from .models import AIProposal
-from .entitlements import require,state,org_lock
+from .entitlements import usage_period,require,state,org_lock
 from .security import rate
 from .ai_review import prompt_guide, normalize_review
 
@@ -52,7 +52,7 @@ def call_model(prompt,content):
  except (URLError,TimeoutError):raise ValueError('AI provider unavailable. No entry was created. Retry later or use the normal form.')
 
 def ai_usage(org,m):
- return get_db().saas_ai_usage.find_one({'_id':str(org.id)+':'+m.start.isoformat()}) or {'requests':0,'pages':0,'budget_units':0}
+ return get_db().saas_ai_usage.find_one({'_id':str(org.id)+':'+usage_period(m)}) or {'requests':0,'pages':0,'budget_units':0}
 
 def output(p):return {'id':str(p.id),'state':p.state,'kind':p.kind,'data':p.data,'warnings':p.warnings,'result':p.result}
 
@@ -113,7 +113,7 @@ def prepare(request):
     if im.width*im.height>25000000:raise ValueError('Image is too large. Resize it first.')
     pages=1;mime='image/jpeg' if im.format=='JPEG' else 'image/png';content.append({'type':'input_image','image_url':'data:'+mime+';base64,'+base64.b64encode(blob).decode()})
   if not text and not upload:raise ValueError('Enter a message or upload a bill.')
-  period=m.start.isoformat();uid=str(org.id)+':'+period
+  period=usage_period(m);uid=str(org.id)+':'+period
   rate('ai-global-day',int(os.getenv('AI_GLOBAL_DAILY_REQUEST_LIMIT','200')),86400)
   # Conservative cost reservation: configurable credits per request/page, not a provider billing guarantee.
   units=10+pages*5;budget=int(os.getenv('AI_ORG_BUDGET_UNITS','5000'))

@@ -160,6 +160,17 @@ class InvoiceRepository:
         paid_at=None,
         cancelled_at=None,
     ):
+        if status == "CANCELLED":
+            from mongoengine.queryset.visitor import Q
+            query = Invoice.objects(organization=invoice.organization, id=invoice.id,
+                                    status=invoice.status, updated_at=invoice.updated_at)
+            query = query.filter(Q(einvoice__status__exists=False) | Q(einvoice__status="cancelled"), eway_status__in=["", None])
+            changed = query.update_one(set__status=status, set__cancelled_at=cancelled_at,
+                                       set__updated_at=datetime.utcnow())
+            if not changed:
+                raise ValueError("Invoice changed or has an unresolved IRP record. Reload and review.")
+            return invoice.reload()
+
         invoice.status = status
 
         if issued_at is not None:
