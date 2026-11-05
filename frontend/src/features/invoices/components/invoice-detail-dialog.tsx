@@ -198,6 +198,12 @@ export default function InvoiceDetailDialog({
   const cancelMutation =
     useCancelInvoice();
 
+  const { data: config } = useQuery({
+    queryKey: ["business-config"],
+    queryFn: getConfig,
+    enabled: open,
+  });
+
   if (!open) {
     return null;
   }
@@ -227,7 +233,6 @@ export default function InvoiceDetailDialog({
       "invoices.record_payment",
     );
 
-  const {data:config}=useQuery({queryKey:["business-config"],queryFn:getConfig});
   const invoice =
     invoiceQuery.data;
 
