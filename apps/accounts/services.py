@@ -39,6 +39,7 @@ class AuthenticationService:
         request,
         user,
     ):
+        AuthenticationService._clear_request_user(request)
         request.session.cycle_key()
         request.session[
             AuthenticationService.SESSION_USER_ID
@@ -109,10 +110,34 @@ class AuthenticationService:
                 ip_address=ip_address,
             )
 
+        AuthenticationService._clear_request_user(request)
         request.session.flush()
 
     @staticmethod
-    def get_user(
+    def _clear_request_user(request):
+        request.__dict__.pop('_nexease_auth_snapshot', None)
+
+    @staticmethod
+    def get_user(request):
+        from apps.core.services.request_performance import current_scope
+        scope = current_scope()
+        if scope is None:
+            return AuthenticationService._load_user(request)
+        key = (request.session.get(AuthenticationService.SESSION_USER_ID),
+               request.session.get(AuthenticationService.SESSION_CHANNEL),
+               getattr(request.session, "session_key", None))
+        cached = getattr(request, '_nexease_auth_snapshot', None)
+        if cached is not None and cached[0] is scope and cached[1] == key:
+            return cached[2]
+        user = AuthenticationService._load_user(request)
+        current_key = (request.session.get(AuthenticationService.SESSION_USER_ID),
+                       request.session.get(AuthenticationService.SESSION_CHANNEL),
+                       getattr(request.session, "session_key", None))
+        request._nexease_auth_snapshot = (scope, current_key, user)
+        return user
+
+    @staticmethod
+    def _load_user(
         request,
     ):
 
@@ -218,6 +243,7 @@ class AuthenticationService:
             "_id": f"{user.id}:{channel}",
             "session_key": request.session.session_key,
         }, {"_id": 1}):
+            AuthenticationService._clear_request_user(request)
             request.session.flush()
             return None
 
@@ -330,6 +356,7 @@ class AuthenticationService:
         # CLEAR CURRENT SESSION
         # ==================================================
 
+        AuthenticationService._clear_request_user(request)
         request.session.flush()
 
         return deleted_count

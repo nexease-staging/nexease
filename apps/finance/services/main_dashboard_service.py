@@ -316,6 +316,8 @@ class MainDashboardService:
 
         product_totals = {}
 
+        inventory_records = inventory_records.select_related(max_depth=1)
+
         for inventory in inventory_records:
             quantity = (
                 MainDashboardService
@@ -1019,6 +1021,8 @@ class MainDashboardService:
 
         totals = {}
 
+        invoices = invoices.select_related(max_depth=1)
+
         for invoice in invoices:
             customer = invoice.customer
 
@@ -1099,6 +1103,8 @@ class MainDashboardService:
 
         totals = {}
 
+        bills = bills.select_related(max_depth=1)
+
         for bill in bills:
             supplier = bill.supplier
 
@@ -1176,6 +1182,8 @@ class MainDashboardService:
             )[:limit]
         )
 
+        invoices = invoices.select_related(max_depth=1)
+
         for invoice in invoices:
             customer_name = (
                 invoice.customer.name
@@ -1218,6 +1226,8 @@ class MainDashboardService:
                 "-created_at",
             )[:limit]
         )
+
+        bills = bills.select_related(max_depth=1)
 
         for bill in bills:
             supplier_name = (
@@ -1285,6 +1295,8 @@ class MainDashboardService:
                 organization=organization,
             )[:limit]
         )
+
+        stock_movements = stock_movements.select_related(max_depth=1)
 
         for movement in stock_movements:
             product_name = (

@@ -1,6 +1,7 @@
 import os
 
 from mongoengine import connect
+from apps.core.services.request_performance import RequestMongoListener
 
 
 def connect_to_mongodb():
@@ -25,6 +26,7 @@ def connect_to_mongodb():
 
     return connect(
         db=database,
+        event_listeners=[RequestMongoListener()],
         host=uri,
 
         # Retry supported read operations.

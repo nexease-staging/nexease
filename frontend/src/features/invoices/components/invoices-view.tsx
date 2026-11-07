@@ -6,7 +6,7 @@ import { AlertTriangle, ChevronLeft, ChevronRight, CircleDollarSign, Eye, FilePl
 import { InvoiceZip } from "@/features/business/operations-panels";
 import { useAuth } from "@/features/auth/auth-context";
 import { useCustomerList } from "@/features/customers/hooks";
-import { useMainDashboard } from "@/features/dashboard/hooks";
+import { useInvoiceOverview } from "@/features/invoices/overview-hook";
 import InvoiceDetailDialog from "@/features/invoices/components/invoice-detail-dialog";
 import FastInvoice from "@/features/invoices/components/fast-invoice";
 import InvoiceDialog from "@/features/invoices/components/invoice-dialog";
@@ -73,7 +73,7 @@ export default function InvoicesView() {
 
   const query = useInvoiceList(listParams);
   const customers = useCustomerList({ page: 1, page_size: 100, is_active: true, sort: "name" }).data?.customers ?? [];
-  const dash = useMainDashboard({}, canRead);
+  const dash = useInvoiceOverview(canRead && hasPermission(permissions, "accounting_reports.read"));
   const invoices = query.data?.invoices ?? [];
   const pagination = query.data?.pagination;
   const payable = (i: InvoiceSummary) => canPay && (i.status === "ISSUED" || i.status === "PARTIALLY_PAID") && Number(i.balance_due) > 0;
@@ -95,11 +95,11 @@ export default function InvoicesView() {
         actions={<div className="hidden items-center gap-2 md:flex">{createButtons}</div>} />
 
       <div className="grid grid-cols-3 gap-2">
-        <StatCard label="Receivables" icon={CircleDollarSign} tone="info" loading={dash.isPending}
+        <StatCard label="Receivables" icon={CircleDollarSign} tone="info" loading={dash.isLoading}
           value={formatCompactMoney(dash.data?.kpis.receivables)} title={formatMoney(dash.data?.kpis.receivables)} hint="Owed to you" />
-        <StatCard label="Overdue invoices" icon={AlertTriangle} tone={dash.data?.alerts.overdue_invoices ? "warning" : "success"} loading={dash.isPending}
+        <StatCard label="Overdue invoices" icon={AlertTriangle} tone={dash.data?.alerts.overdue_invoices ? "warning" : "success"} loading={dash.isLoading}
           value={String(dash.data?.alerts.overdue_invoices ?? 0)} hint="Needs follow-up" />
-        <StatCard label="Total sales" icon={TrendingUp} tone="success" loading={dash.isPending}
+        <StatCard label="Total sales" icon={TrendingUp} tone="success" loading={dash.isLoading}
           value={formatCompactMoney(dash.data?.kpis.total_sales)} title={formatMoney(dash.data?.kpis.total_sales)} hint="This reporting period" />
       </div>
 

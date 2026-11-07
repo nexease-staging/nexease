@@ -362,6 +362,7 @@ INSTALLED_APPS = [
 # ==================================================
 
 MIDDLEWARE = [
+    "apps.core.middleware.performance_middleware.PerformanceMiddleware",
     "apps.business.numbering.NumberingMiddleware",
     # ==============================================
     # DJANGO SECURITY

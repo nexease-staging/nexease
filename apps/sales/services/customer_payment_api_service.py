@@ -122,23 +122,38 @@ class CustomerPaymentAPIService:
         organization,
         as_of,
     ):
-        invoices = (
-            InvoiceRepository
-            .list_outstanding(
-                organization=organization,
-            )
-        )
+        from apps.core.services.request_performance import read_once
+
+        def load():
+            return CustomerPaymentAPIService._load_outstanding_invoices(
+                organization=organization, as_of=as_of)
+
+        return read_once(('outstanding-invoices', str(organization.id), as_of.date()), load)
+
+    @staticmethod
+    def _load_outstanding_invoices(*, organization, as_of):
+        from apps.sales.models import CreditNote
+        source = InvoiceRepository.list_outstanding(organization=organization)
+        bulk = hasattr(source, 'select_related')
+        invoices = source.select_related(max_depth=1) if bulk else list(source)
+        credits = {}
+        if invoices and bulk:
+            notes = CreditNote.objects(
+                organization=organization, invoice__in=[i.id for i in invoices], status='ISSUED'
+            ).only('invoice', 'applied_amount').no_dereference()
+            for note in notes:
+                reference = note._data.get('invoice')
+                invoice_id = str(getattr(reference, 'id', reference))
+                credits[invoice_id] = credits.get(invoice_id, Decimal('0')) + note.applied_amount
 
         outstanding = []
-
         for invoice in invoices:
-            net_receivable = (
-                InvoiceService
-                .get_invoice_net_receivable(
-                    organization=organization,
-                    invoice=invoice,
-                )
-            )
+            if bulk:
+                if not invoice.organization or invoice.organization.id != organization.id:
+                    raise PermissionError('Invoice does not belong to this organization.')
+                net_receivable = max(Decimal('0'), invoice.balance_due - credits.get(str(invoice.id), Decimal('0')))
+            else:
+                net_receivable = InvoiceService.get_invoice_net_receivable(organization=organization, invoice=invoice)
 
             if (
                 net_receivable

@@ -24,17 +24,19 @@ class DeviceNotificationTests(SimpleTestCase):
             devices.objects.assert_called_once_with(token='a'*50,user=request.api_user,organization=request.api_user.organization)
     @override_settings(NEXEASE_MOBILE_ENABLED=True)
     def test_native_login_has_persistent_expiry(self):
-        request=RequestFactory().post('/login',HTTP_ORIGIN='https://localhost')
+        request=RequestFactory().post('/login',HTTP_ORIGIN='https://localhost',HTTP_X_NEXEASE_CLIENT='android')
         from unittest.mock import MagicMock
-        request.session=MagicMock()
-        AuthenticationService.login(request,Mock(id='u1'))
+        request.session=MagicMock(session_key="test-session-key")
+        with patch.object(AuthenticationService, '_slots'):
+            AuthenticationService.login(request,Mock(id='u1'))
         request.session.set_expiry.assert_called_once_with(2592000)
     @override_settings(NEXEASE_MOBILE_ENABLED=True)
     def test_web_login_keeps_default_expiry(self):
         request=RequestFactory().post('/login',HTTP_ORIGIN='https://example.test')
         from unittest.mock import MagicMock
-        request.session=MagicMock()
-        AuthenticationService.login(request,Mock(id='u1'))
+        request.session=MagicMock(session_key="test-session-key")
+        with patch.object(AuthenticationService, '_slots'):
+            AuthenticationService.login(request,Mock(id='u1'))
         request.session.set_expiry.assert_not_called()
 
     def test_invalid_device_token_is_rejected(self):

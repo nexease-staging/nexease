@@ -9,10 +9,13 @@ from apps.sales.api.v1 import (
 )
 
 
+from apps.sales.api.v1.invoice_overview_views import invoice_overview
+
 app_name = "sales_api_v1"
 
 
 urlpatterns = [
+    path("invoices/overview/", invoice_overview, name="invoice_overview"),
     path(
         "customers/",
         views.customer_collection_api,

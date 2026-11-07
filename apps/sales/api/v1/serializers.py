@@ -799,6 +799,8 @@ class InvoiceAPISerializer:
     def serialize_many(
         invoices,
     ):
+        from mongoengine.dereference import DeReference
+        invoices = DeReference()(list(invoices), max_depth=1)
         return [
             (
                 InvoiceAPISerializer
