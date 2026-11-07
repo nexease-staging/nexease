@@ -1,39 +1,18 @@
 "use client";
-import SearchSelect from "@/components/search-select";
-
-
-import {
-  useState,
-} from "react";
-
+import {useState} from "react";
 import Link from "next/link";
-import {
-  useRouter,
-} from "next/navigation";
-
-import {
-  useForm,
-} from "react-hook-form";
-
-import {
-  zodResolver,
-} from "@hookform/resolvers/zod";
-
-import {
-  z,
-} from "zod";
-
-import {
-  APIRequestError,
-} from "@/lib/api/client";
-
-import {
-  signup,
-} from "@/features/auth/api";
-
+import {useRouter} from "next/navigation";
+import {useForm} from "react-hook-form";
+import {zodResolver} from "@hookform/resolvers/zod";
+import {z} from "zod";
+import {Building2, MessageCircle, Save} from "lucide-react";
+import {APIRequestError} from "@/lib/api/client";
+import {signup} from "@/features/auth/api";
+import SearchSelect from "@/components/search-select";
 const signupSchema = z
   .object({
     business_scope: z.string().min(1),
+    address: z.string().max(500).optional(),
     organization_name: z
       .string()
       .trim()
@@ -116,512 +95,47 @@ const signupSchema = z
 type SignupFormValues =
   z.infer<typeof signupSchema>;
 
-const inputClassName = `
-  mt-2 w-full rounded-lg
-  border border-slate-300
-  px-3 py-2.5 text-slate-900
-  outline-none transition
-  placeholder:text-slate-400
-  focus:border-blue-500
-  focus:ring-4
-  focus:ring-blue-100
-`;
 
-export default function SignupForm() {
-  const router = useRouter();
-
-  const [
-    serverError,
-    setServerError,
-  ] = useState<string | null>(
-    null,
-  );
-
-  const {
-    register,
-    handleSubmit,
-    formState: {
-      errors,
-      isSubmitting,
-    },
-  } = useForm<SignupFormValues>({
-    resolver: zodResolver(
-      signupSchema,
-    ),
-
-    defaultValues: {
-      business_scope: "mixed",
-      organization_name: "",
-      organization_email: "",
-      phone: "",
-      first_name: "",
-      last_name: "",
-      email: "",
-      password: "",
-      confirm_password: "",
-    },
-  });
-
-  async function onSubmit(
-    values: SignupFormValues,
-  ): Promise<void> {
-    setServerError(null);
-
-    try {
-      await signup({
-        business_scope: values.business_scope,
-        organization_name:
-          values.organization_name,
-
-        organization_email:
-          values.organization_email,
-
-        phone:
-          values.phone || undefined,
-
-        first_name:
-          values.first_name,
-
-        last_name:
-          values.last_name,
-
-        email:
-          values.email,
-
-        password:
-          values.password,
-      });
-
-      router.push(
-        "/login?signup=success",
-      );
-
-    } catch (error) {
-      if (
-        error instanceof APIRequestError
-      ) {
-        setServerError(
-          error.message,
-        );
-
-        return;
-      }
-
-      setServerError(
-        "Unable to create your organization. Please try again.",
-      );
-    }
-  }
-
-  return (
-    <form
-      onSubmit={handleSubmit(
-        onSubmit,
-      )}
-      className="
-        space-y-6 rounded-2xl
-        border border-slate-200
-        bg-white p-8 shadow-xl
-        shadow-slate-200/60
-      "
-      noValidate
-    >
-      <label className="block mb-5">Business scope<SearchSelect className="nx-input" {...register("business_scope")}><option value="mixed">Mixed / other</option><option value="retailer">Retail / shop</option><option value="wholesaler">Wholesale / distribution</option><option value="labour_supply">Labour supply / staffing</option><option value="manufacturer">Manufacturing business</option><option value="services">Professional services</option><option value="construction">Construction / contracting</option></SearchSelect></label>
-      <div>
-        <p
-          className="
-            text-sm font-semibold
-            uppercase tracking-wider
-            text-blue-600
-          "
-        >
-          NexEase
-        </p>
-
-        <h1
-          className="
-            mt-2 text-3xl font-bold
-            tracking-tight text-slate-900
-          "
-        >
-          Create organization
-        </h1>
-
-        <p
-          className="
-            mt-2 text-sm text-slate-600
-          "
-        >
-          Create your organization and
-          administrator account.
-        </p>
-      </div>
-
-      {serverError && (
-        <div
-          role="alert"
-          className="
-            rounded-lg border border-red-200
-            bg-red-50 px-4 py-3
-            text-sm text-red-700
-          "
-        >
-          {serverError}
-        </div>
-      )}
-
-      <div
-        className="
-          border-b border-slate-200 pb-2
-        "
-      >
-        <h2
-          className="
-            font-semibold text-slate-900
-          "
-        >
-          Organization details
-        </h2>
-      </div>
-
-      <div>
-        <label
-          htmlFor="organization_name"
-          className="
-            block text-sm font-medium
-            text-slate-700
-          "
-        >
-          Organization name
-        </label>
-
-        <input
-          id="organization_name"
-          type="text"
-          autoComplete="organization"
-          {...register(
-            "organization_name",
-          )}
-          className={inputClassName}
-          placeholder="ABC Enterprises"
-        />
-
-        {errors.organization_name && (
-          <p
-            className="
-              mt-1.5 text-sm text-red-600
-            "
-          >
-            {
-              errors
-                .organization_name
-                .message
-            }
-          </p>
-        )}
-      </div>
-
-      <div>
-        <label
-          htmlFor="organization_email"
-          className="
-            block text-sm font-medium
-            text-slate-700
-          "
-        >
-          Organization email
-        </label>
-
-        <input
-          id="organization_email"
-          type="email"
-          autoComplete="email"
-          {...register(
-            "organization_email",
-          )}
-          className={inputClassName}
-          placeholder="accounts@example.com"
-        />
-
-        {errors.organization_email && (
-          <p
-            className="
-              mt-1.5 text-sm text-red-600
-            "
-          >
-            {
-              errors
-                .organization_email
-                .message
-            }
-          </p>
-        )}
-      </div>
-
-      <div>
-        <label
-          htmlFor="phone"
-          className="
-            block text-sm font-medium
-            text-slate-700
-          "
-        >
-          Phone
-          <span className="text-slate-400">
-            {" "}(optional)
-          </span>
-        </label>
-
-        <input
-          id="phone"
-          type="tel"
-          autoComplete="tel"
-          {...register("phone")}
-          className={inputClassName}
-          placeholder="9876543210"
-        />
-
-        {errors.phone && (
-          <p
-            className="
-              mt-1.5 text-sm text-red-600
-            "
-          >
-            {errors.phone.message}
-          </p>
-        )}
-      </div>
-
-      <div
-        className="
-          border-b border-slate-200 pb-2
-        "
-      >
-        <h2
-          className="
-            font-semibold text-slate-900
-          "
-        >
-          Administrator details
-        </h2>
-      </div>
-
-      <div
-        className="
-          grid gap-4 sm:grid-cols-2
-        "
-      >
-        <div>
-          <label
-            htmlFor="first_name"
-            className="
-              block text-sm font-medium
-              text-slate-700
-            "
-          >
-            First name
-          </label>
-
-          <input
-            id="first_name"
-            type="text"
-            autoComplete="given-name"
-            {...register(
-              "first_name",
-            )}
-            className={inputClassName}
-            placeholder="Nitin"
-          />
-
-          {errors.first_name && (
-            <p
-              className="
-                mt-1.5 text-sm text-red-600
-              "
-            >
-              {
-                errors
-                  .first_name
-                  .message
-              }
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label
-            htmlFor="last_name"
-            className="
-              block text-sm font-medium
-              text-slate-700
-            "
-          >
-            Last name
-          </label>
-
-          <input
-            id="last_name"
-            type="text"
-            autoComplete="family-name"
-            {...register(
-              "last_name",
-            )}
-            className={inputClassName}
-            placeholder="Vishwakarma"
-          />
-
-          {errors.last_name && (
-            <p
-              className="
-                mt-1.5 text-sm text-red-600
-              "
-            >
-              {
-                errors
-                  .last_name
-                  .message
-              }
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div>
-        <label
-          htmlFor="email"
-          className="
-            block text-sm font-medium
-            text-slate-700
-          "
-        >
-          Administrator email
-        </label>
-
-        <input
-          id="email"
-          type="email"
-          autoComplete="email"
-          {...register("email")}
-          className={inputClassName}
-          placeholder="admin@example.com"
-        />
-
-        {errors.email && (
-          <p
-            className="
-              mt-1.5 text-sm text-red-600
-            "
-          >
-            {errors.email.message}
-          </p>
-        )}
-      </div>
-
-      <div>
-        <label
-          htmlFor="password"
-          className="
-            block text-sm font-medium
-            text-slate-700
-          "
-        >
-          Password
-        </label>
-
-        <input
-          id="password"
-          type="password"
-          autoComplete="new-password"
-          {...register("password")}
-          className={inputClassName}
-          placeholder="Create a password"
-        />
-
-        {errors.password && (
-          <p
-            className="
-              mt-1.5 text-sm text-red-600
-            "
-          >
-            {errors.password.message}
-          </p>
-        )}
-      </div>
-
-      <div>
-        <label
-          htmlFor="confirm_password"
-          className="
-            block text-sm font-medium
-            text-slate-700
-          "
-        >
-          Confirm password
-        </label>
-
-        <input
-          id="confirm_password"
-          type="password"
-          autoComplete="new-password"
-          {...register(
-            "confirm_password",
-          )}
-          className={inputClassName}
-          placeholder="Repeat your password"
-        />
-
-        {errors.confirm_password && (
-          <p
-            className="
-              mt-1.5 text-sm text-red-600
-            "
-          >
-            {
-              errors
-                .confirm_password
-                .message
-            }
-          </p>
-        )}
-      </div>
-
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="
-          w-full rounded-lg bg-blue-600
-          px-4 py-2.5 font-semibold
-          text-white transition
-          hover:bg-blue-700
-          focus:outline-none
-          focus:ring-4
-          focus:ring-blue-200
-          disabled:cursor-not-allowed
-          disabled:opacity-60
-        "
-      >
-        {isSubmitting
-          ? "Creating organization..."
-          : "Create organization"}
-      </button>
-
-      <p
-        className="
-          text-center text-sm text-slate-600
-        "
-      >
-        Already have an account?{" "}
-
-        <Link
-          href="/login"
-          className="
-            font-semibold text-blue-600
-            hover:text-blue-700
-          "
-        >
-          Sign in
-        </Link>
-      </p>
-    </form>
-  );
+export default function SignupForm(){
+ const router=useRouter();
+ const [serverError,setServerError]=useState<string|null>(null);
+ const {register,handleSubmit,formState:{errors,isSubmitting}}=useForm<SignupFormValues>({
+  resolver:zodResolver(signupSchema),
+  defaultValues:{business_scope:"mixed",organization_name:"",organization_email:"",phone:"",address:"",first_name:"",last_name:"",email:"",password:"",confirm_password:""}
+ });
+ async function onSubmit(values:SignupFormValues){
+  setServerError(null);
+  try{await signup({
+   business_scope:values.business_scope,organization_name:values.organization_name,
+   organization_email:values.organization_email,phone:values.phone||undefined,address:values.address||undefined,
+   first_name:values.first_name,last_name:values.last_name,email:values.email,password:values.password
+  });router.push("/login?signup=success")}
+  catch(error){setServerError(error instanceof APIRequestError?error.message:"Unable to create your organisation. Please try again.")}
+ }
+ const field=(name:Exclude<keyof SignupFormValues,"business_scope">,label:string,type="text",placeholder="",autoComplete?:string)=>
+  <div className="nx-signup-row" key={name}><label htmlFor={name}>{label}</label><div>
+   <input id={name} type={type} placeholder={placeholder} autoComplete={autoComplete} className="nx-input" {...register(name)} aria-invalid={!!errors[name]} aria-describedby={errors[name]?name+"-error":undefined}/>
+   {errors[name]&&<p id={name+"-error"} className="nx-signup-error" role="alert">{errors[name]?.message}</p>}
+  </div></div>;
+ return <form onSubmit={handleSubmit(onSubmit)} className="nx-signup-form" noValidate>
+  <header className="nx-signup-heading"><div><Link href="/" className="mb-2 flex items-center gap-2 text-sm font-semibold"><img src="/nexease-brand-icon.png" alt="" width="25" height="25"/>NexEase</Link><h1>Add your business</h1></div><a href="https://wa.me/919209753378" target="_blank" rel="noopener noreferrer"><MessageCircle size={20}/>Need help?</a></header>
+  <div className="nx-signup-fields">
+   {serverError&&<p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{serverError}</p>}
+   <h2 className="flex items-center gap-2"><Building2 size={17}/>Business information</h2>
+   {field("organization_name","Company name *","text","ABC Enterprises","organization")}
+   <div className="nx-signup-row"><label htmlFor="business_scope">Business type *</label><SearchSelect id="business_scope" className="nx-input" {...register("business_scope")}><option value="mixed">Mixed / other</option><option value="retailer">Retail / shop</option><option value="wholesaler">Wholesale / distribution</option><option value="labour_supply">Labour supply / staffing</option><option value="manufacturer">Manufacturing business</option><option value="services">Professional services</option><option value="construction">Construction / contracting</option></SearchSelect></div>
+   {field("organization_email","Organisation email *","email","accounts@example.com","email")}
+   {field("phone","Phone","tel","Business phone number","tel")}
+   {field("address","Business address","text","Street, city, state and pincode","street-address")}
+   <p className="text-xs leading-6 text-slate-500">After signing in, configure your GST registration and use GSTIN lookup from Taxation. A business without GST registration can also use NexEase.</p>
+   <h2>Administrator account</h2>
+   {field("first_name","First name *","text","Your first name","given-name")}
+   {field("last_name","Last name *","text","Your last name","family-name")}
+   {field("email","Login email *","email","you@example.com","username")}
+   {field("password","Password *","password","At least 8 characters","new-password")}
+   {field("confirm_password","Confirm password *","password","Re-enter password","new-password")}
+   <p className="text-xs text-slate-500">Your login email and organisation email can be the same. Fields marked * are required.</p>
+  </div>
+  <footer className="nx-signup-footer"><Link href="/login">Already registered? Sign in</Link><button type="submit" disabled={isSubmitting} className="nx-button"><Save size={17}/>{isSubmitting?"Creating…":"Create organisation"}</button></footer>
+ </form>;
 }

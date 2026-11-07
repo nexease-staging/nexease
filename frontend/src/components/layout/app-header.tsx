@@ -23,7 +23,8 @@ export default function AppHeader({onOpenMobile}:{onOpenMobile:()=>void}) {
  const initials=((user.first_name?.[0]||'')+(user.last_name?.[0]||'')).toUpperCase()||'U';
  async function logout(){setBusy(true);setError('');try{await signOut();router.replace('/login');router.refresh()}catch{setError('Could not confirm server sign-out. Please reconnect and try again.')}finally{setBusy(false)}}
  return <header className="nx-app-header sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-3 sm:px-6">
- <button type="button" aria-label="Open navigation" onClick={onOpenMobile} className="rounded-lg p-2 lg:hidden"><Menu size={21}/></button>
+ <button type="button" aria-label="Open navigation" onClick={onOpenMobile} className="nx-navigation-trigger rounded-lg p-2"><Menu size={21}/></button>
+ <Link href="/dashboard" aria-label="NexEase home" className="nx-header-brand"><img src="/nexease-brand-icon.png" alt="" width="34" height="34"/><strong>NexEase</strong></Link>
  <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{organization.name}</p><p className="truncate text-xs text-slate-500">{role.name}</p></div>
  <CommandPaletteTrigger/><QuickCreate variant="header"/><NotificationMenu/>
  <div ref={box} className="relative"><button ref={trigger} type="button" aria-label="Open account menu" aria-expanded={open} aria-controls="account-menu" onClick={()=>setOpen(!open)} className="flex size-10 items-center justify-center overflow-hidden rounded-full border border-emerald-200 bg-emerald-50 font-bold text-emerald-800">

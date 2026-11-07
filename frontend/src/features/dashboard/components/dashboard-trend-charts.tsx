@@ -168,7 +168,7 @@ export default function DashboardTrendCharts({
             className="
               text-base
               font-semibold
-              text-slate-950
+              text-[var(--nx-text)]
             "
           >
             Sales Trend
@@ -278,7 +278,7 @@ export default function DashboardTrendCharts({
             className="
               text-base
               font-semibold
-              text-slate-950
+              text-[var(--nx-text)]
             "
           >
             Purchase Trend
@@ -392,7 +392,7 @@ export default function DashboardTrendCharts({
             className="
               text-base
               font-semibold
-              text-slate-950
+              text-[var(--nx-text)]
             "
           >
             Cash Inflow vs Outflow

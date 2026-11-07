@@ -11,7 +11,7 @@ type Value=string|boolean;
 type Row={id:string;key:string;revision:number;data:Record<string,Value>};
 type Field={label:string;type:string;required:boolean;choices?:string[]};
 type Schema={label:string;permission:string;fields:Record<string,Field>};
-export type Configuration={can_read_cost?:boolean;can_edit_issued_invoices?:boolean;can_edit_invoices?:boolean;logo?:string;modules?:Record<string,boolean>;schemas:Record<string,Schema>;scope:string;profile:{modules:string[]};profiles:Record<string,{label:string}>};
+export type Configuration={setup?:{logo:boolean;email:boolean;bank:boolean};can_read_cost?:boolean;can_edit_issued_invoices?:boolean;can_edit_invoices?:boolean;logo?:string;modules?:Record<string,boolean>;schemas:Record<string,Schema>;scope:string;profile:{modules:string[]};profiles:Record<string,{label:string}>};
 export const getConfig=async()=>(await apiRequest<Configuration>("/business/configuration/")).data;
 export default function BusinessWorkspace({kinds,title,description}:{kinds:string[];title:string;description:string}){
  const qc=useQueryClient();const config=useQuery({queryKey:["business-config"],queryFn:getConfig});

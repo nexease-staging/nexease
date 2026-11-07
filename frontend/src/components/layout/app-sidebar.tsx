@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { getConfig } from "@/features/business/workspace";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
 import {
@@ -10,6 +10,7 @@ import {
 } from "next/navigation";
 
 import {
+  ChevronDown,
   PanelLeftClose,
   PanelLeftOpen,
   X,
@@ -41,6 +42,23 @@ export default function AppSidebar({
   onToggleCollapsed,
 }: AppSidebarProps) {
   const pathname = usePathname();
+  const drawer=useRef<HTMLElement>(null);
+  useEffect(()=>{
+    if(!mobileOpen)return;
+    const previous=document.activeElement as HTMLElement|null;
+    drawer.current?.querySelector<HTMLElement>('a,button')?.focus();
+    const key=(e:KeyboardEvent)=>{
+      if(e.key==='Escape'){e.preventDefault();onCloseMobile()}
+      if(e.key==='Tab'){
+        const nodes=Array.from(drawer.current?.querySelectorAll<HTMLElement>('a[href],button:not(:disabled),input,select')??[]).filter(n=>n.getClientRects().length);
+        const first=nodes[0],last=nodes[nodes.length-1];
+        if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus()}
+        else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus()}
+      }
+    };
+    document.addEventListener('keydown',key);
+    return()=>{document.removeEventListener('keydown',key);previous?.focus()};
+  },[mobileOpen,onCloseMobile]);
   const compact = collapsed && !mobileOpen;
   const config = useQuery({queryKey:["business-config"],queryFn:getConfig});
   const [openSection, setOpenSection] = useState<string|null>(null);
@@ -110,7 +128,7 @@ export default function AppSidebar({
         />
       )}
 
-      <aside
+      <aside ref={drawer} aria-label="Navigation drawer"
         className={`
           fixed inset-y-0 left-0 z-50
           flex h-dvh shrink-0 w-72 flex-col overflow-hidden
@@ -201,6 +219,7 @@ export default function AppSidebar({
           {visibleSections.map(
             (section) => {
               const direct = "direct" in section && section.direct;
+              const SectionIcon=section.items[0].icon;
               return (
               <div
                 key={section.label}
@@ -215,7 +234,7 @@ export default function AppSidebar({
                       text-slate-400
                     "
                   >
-                    {section.label} {openSection===section.label ? "−" : "＋"}
+                    <span className="flex items-center gap-3"><SectionIcon size={18}/>{section.label}</span><ChevronDown size={15} className={openSection===section.label?"rotate-180":""}/>
                   </button>
                 )}
 

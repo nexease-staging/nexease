@@ -58,7 +58,7 @@ export function useDownloadDocumentPDF() {
         ??
         `${documentType.toLowerCase()}-${documentId}.pdf`;
 
-      downloadBlob(
+      await downloadBlob(
         response.blob,
         filename,
       );
@@ -153,7 +153,7 @@ export function useExportResource() {
         ??
         `${resourceType.toLowerCase()}.${extension}`;
 
-      downloadBlob(
+      await downloadBlob(
         response.blob,
         filename,
       );

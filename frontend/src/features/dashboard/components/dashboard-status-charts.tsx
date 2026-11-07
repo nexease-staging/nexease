@@ -113,7 +113,7 @@ function DonutCard({
           className="
             text-base
             font-semibold
-            text-slate-950
+            text-[var(--nx-text)]
           "
         >
           {title}
@@ -223,7 +223,7 @@ function DonutCard({
                       text-center
                       text-lg
                       font-bold
-                      text-slate-950
+                      text-[var(--nx-text)]
                     "
                     title={
                       valueFormatter(
@@ -364,7 +364,7 @@ export default function DashboardStatusCharts({
               .current,
           ),
         color:
-          "#0f766e",
+          "var(--nx-chart-sales)",
       },
       {
         name:
@@ -376,7 +376,7 @@ export default function DashboardStatusCharts({
             ],
           ),
         color:
-          "#2563eb",
+          "var(--nx-chart-purchases)",
       },
       {
         name:
@@ -425,7 +425,7 @@ export default function DashboardStatusCharts({
           invoiceStatus
             .issued,
         color:
-          "#2563eb",
+          "var(--nx-chart-purchases)",
       },
       {
         name:
@@ -443,7 +443,7 @@ export default function DashboardStatusCharts({
           invoiceStatus
             .paid,
         color:
-          "#059669",
+          "var(--nx-chart-sales)",
       },
       {
         name:
@@ -465,7 +465,7 @@ export default function DashboardStatusCharts({
           billStatus
             .posted,
         color:
-          "#2563eb",
+          "var(--nx-chart-purchases)",
       },
       {
         name:
@@ -483,7 +483,7 @@ export default function DashboardStatusCharts({
           billStatus
             .paid,
         color:
-          "#059669",
+          "var(--nx-chart-sales)",
       },
       {
         name:
@@ -505,7 +505,7 @@ export default function DashboardStatusCharts({
           inventoryStatus
             .in_stock,
         color:
-          "#059669",
+          "var(--nx-chart-sales)",
       },
       {
         name:

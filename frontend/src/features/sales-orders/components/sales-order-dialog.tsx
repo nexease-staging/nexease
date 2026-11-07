@@ -799,7 +799,7 @@ export default function SalesOrderDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="sales-order-dialog-title"
-        className="
+        className="nx-sales-order-editor 
           max-h-[94vh] w-full
           max-w-6xl overflow-y-auto
           rounded-2xl bg-white

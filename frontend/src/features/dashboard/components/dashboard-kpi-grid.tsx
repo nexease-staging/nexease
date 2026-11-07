@@ -224,10 +224,10 @@ export default function DashboardKPIGrid({
                     <p
                       className="
                         mt-3
-                        text-xl
+                        nx-kpi-value text-xl
                         font-bold
                         tracking-tight
-                        text-slate-950
+                        text-[var(--nx-text)]
                       "
                       title={
                         card.value

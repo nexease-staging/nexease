@@ -120,7 +120,7 @@ function EntityTable({
             className="
               text-base
               font-semibold
-              text-slate-950
+              text-[var(--nx-text)]
             "
           >
             {title}

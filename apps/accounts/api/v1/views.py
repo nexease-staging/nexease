@@ -1393,6 +1393,7 @@ def signup_api(
                 user_email=user_email,
                 password=password,
                 phone=phone,
+                address=payload.get("address", ""),
             )
         )
 

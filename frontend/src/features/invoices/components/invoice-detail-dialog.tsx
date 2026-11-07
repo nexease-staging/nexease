@@ -469,6 +469,9 @@ export default function InvoiceDetailDialog({
                     invoice.customer.email
                   }
                   disabled={actionPending}
+                  whatsappMessage={["ISSUED", "PARTIALLY_PAID", "PAID"].includes(invoice.status)
+                    ? `Hello, here are the details for invoice ${invoice.invoice_number}. Total: ₹${formatAmount(invoice.total_amount)}. Balance due: ₹${formatAmount(invoice.balance_due)}.`
+                    : undefined}
                 />
                 {(
                   canIssue

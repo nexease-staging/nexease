@@ -51,6 +51,7 @@ class OrganizationSignupService:
         password,
         business_scope="mixed",
         phone="",
+        address="",
         country="India",
         currency="INR",
         timezone="Asia/Kolkata",
@@ -119,6 +120,10 @@ class OrganizationSignupService:
         # ==================================================
         # DUPLICATE USER
         # ==================================================
+
+        if not isinstance(address, str) or len(address.strip()) > 500:
+            raise OrganizationSignupError("Business address must contain at most 500 characters.")
+        address = address.strip()
 
         existing_user = (
             User.objects(
@@ -216,6 +221,7 @@ class OrganizationSignupService:
                 business_scope=business_scope,
                 email=organization_email,
                 phone=phone,
+                address=address,
                 country=country,
                 currency=currency,
                 timezone=timezone,

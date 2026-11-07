@@ -13,6 +13,8 @@ import QuickCreate from "@/components/layout/quick-create";
 import CommandPalette from "@/components/layout/command-palette";
 import RequireAuth from "@/features/auth/components/require-auth";
 
+import ModuleNavigation from "@/components/layout/module-navigation";
+
 import AppHeader from "@/components/layout/app-header";
 import AppSidebar from "@/components/layout/app-sidebar";
 
@@ -39,6 +41,7 @@ export default function AppShell({
           bg-slate-50
         "
       >
+        <div className="nx-drawer-wrapper" data-open={mobileOpen}>
         <AppSidebar
           mobileOpen={mobileOpen}
           collapsed={collapsed}
@@ -51,6 +54,7 @@ export default function AppShell({
             );
           }}
         />
+        </div>
 
         <div
           className="
@@ -63,8 +67,10 @@ export default function AppShell({
             }}
           />
 
-          <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
+          <ModuleNavigation/>
+          <main className="nx-workspace-main min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
             <PlanAccessGate>{children}</PlanAccessGate>
+            <footer className="nx-workspace-footer"><span>© {new Date().getFullYear()} NexEase</span><a href="https://wa.me/919209753378" target="_blank" rel="noopener noreferrer">WhatsApp support ↗</a></footer>
           </main><div className="md:hidden"><EasyNav/></div>
         </div>
       </div>

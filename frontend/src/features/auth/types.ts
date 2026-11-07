@@ -62,6 +62,7 @@ export interface LogoutAllData {
 }
 
 export interface SignupInput {
+  address?: string;
   business_scope?: string;
   organization_name: string;
   organization_email: string;

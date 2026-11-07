@@ -15,7 +15,7 @@ export default function SignupPage() {
   return (
     <main
       className="
-        min-h-screen bg-slate-50
+        nx-signup-page min-h-screen bg-slate-50
         px-4 py-12
       "
     >

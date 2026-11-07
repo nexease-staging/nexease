@@ -234,7 +234,7 @@ export default function DashboardAlertsActivity({
               className="
                 text-base
                 font-semibold
-                text-slate-950
+                text-[var(--nx-text)]
               "
             >
               Alerts
@@ -389,7 +389,7 @@ export default function DashboardAlertsActivity({
             className="
               text-base
               font-semibold
-              text-slate-950
+              text-[var(--nx-text)]
             "
           >
             Recent Activity

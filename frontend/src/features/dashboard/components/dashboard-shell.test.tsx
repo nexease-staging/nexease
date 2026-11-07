@@ -1,3 +1,4 @@
+vi.mock("./business-setup-card",()=>({default:()=>null}));
 vi.mock("@/features/auth/auth-context",()=>({useAuth:()=>({authentication:{role:{permissions:[]}}})}));
 import {
   fireEvent,

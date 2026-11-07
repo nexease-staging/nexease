@@ -7,7 +7,11 @@ import {
 import {
   Download,
   Mail,
+  MessageCircle,
+  Share2,
 } from "lucide-react";
+
+import { Capacitor } from "@capacitor/core";
 
 import DocumentEmailDialog from "@/features/documents/components/document-email-dialog";
 
@@ -29,6 +33,7 @@ interface DocumentActionsProps {
   documentNumber: string;
   defaultRecipient?: string | null;
   disabled?: boolean;
+  whatsappMessage?: string;
 }
 
 function getErrorMessage(
@@ -59,6 +64,7 @@ export default function DocumentActions({
   documentNumber,
   defaultRecipient = null,
   disabled = false,
+  whatsappMessage,
 }: DocumentActionsProps) {
   const [
     emailOpen,
@@ -74,6 +80,9 @@ export default function DocumentActions({
 
   const downloadMutation =
     useDownloadDocumentPDF();
+
+  const native = Capacitor.isNativePlatform();
+  const pdfLabel = native ? "Share PDF" : "Download PDF";
 
   const actionDisabled =
     disabled
@@ -117,7 +126,7 @@ export default function DocumentActions({
         >
           <button
             type="button"
-            aria-label="Download PDF" title="Download PDF" disabled={actionDisabled}
+            aria-label={pdfLabel} title={pdfLabel} disabled={actionDisabled}
             onClick={() => {
               void handleDownload();
             }}
@@ -134,9 +143,8 @@ export default function DocumentActions({
               disabled:opacity-50
             "
           >
-            <Download size={16} />
-
-            <span className="sr-only">{downloadMutation.isPending ? "Downloading..." : "PDF"}</span>
+            {native ? <Share2 size={16} aria-hidden="true" /> : <Download size={16} aria-hidden="true" />}
+            {downloadMutation.isPending ? "Preparing…" : pdfLabel}
           </button>
 
           <button
@@ -158,8 +166,15 @@ export default function DocumentActions({
             "
           >
             <Mail size={16} />
-            <span className="sr-only">Email</span>
+            <span>Email</span>
           </button>
+          {whatsappMessage && !native && !disabled && (
+            <a className="nx-button nx-secondary nx-btn-sm"
+              href={`https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`}
+              target="_blank" rel="noopener noreferrer">
+              <MessageCircle size={16} aria-hidden="true" /> WhatsApp message
+            </a>
+          )}
         </div>
 
         {downloadError ? (

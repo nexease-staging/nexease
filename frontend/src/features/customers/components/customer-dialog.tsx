@@ -480,7 +480,7 @@ export default function CustomerDialog({
     <div
       role="presentation"
       className="
-        fixed inset-0 z-50
+        nx-master-drawer-overlay fixed inset-0 z-50
         flex items-center justify-center
         bg-slate-950/50 p-4
       "
@@ -489,7 +489,7 @@ export default function CustomerDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="customer-dialog-title"
-        className="
+        className="nx-master-drawer 
           max-h-[90vh] w-full
           max-w-3xl overflow-y-auto
           rounded-2xl bg-white

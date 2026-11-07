@@ -8,6 +8,7 @@ import { useAuth } from "@/features/auth/auth-context";
 import { useCustomerList } from "@/features/customers/hooks";
 import { useMainDashboard } from "@/features/dashboard/hooks";
 import InvoiceDetailDialog from "@/features/invoices/components/invoice-detail-dialog";
+import FastInvoice from "@/features/invoices/components/fast-invoice";
 import InvoiceDialog from "@/features/invoices/components/invoice-dialog";
 import InvoicePaymentDialog from "@/features/invoices/components/invoice-payment-dialog";
 import { useInvoiceList } from "@/features/invoices/hooks";
@@ -28,7 +29,7 @@ const tabs: Array<{ value: InvoiceStatus | ""; label: string }> = [
   { value: "CANCELLED", label: "Cancelled" },
 ];
 
-type CreateMode = null | "standard" | "direct";
+type CreateMode = null | "standard" | "fast";
 
 export default function InvoicesView() {
   const router = useRouter();
@@ -54,7 +55,7 @@ export default function InvoicesView() {
     const n = params.get("new");
     const s = params.get("status") as InvoiceStatus | null;
     if (!n && !s) return;
-    if (n) setCreateMode(n === "direct" ? "direct" : "standard");
+    if (n) setCreateMode(n === "direct" || n === "fast" ? "fast" : "standard");
     if (s && tabs.some((t) => t.value === s)) { setStatus(s); setPage(1); }
     router.replace(pathname, { scroll: false });
   }, [params, pathname, router]);
@@ -83,7 +84,7 @@ export default function InvoicesView() {
 
   const createButtons = canCreate ? (
     <>
-      <button type="button" className="nx-button nx-secondary nx-btn-sm" onClick={() => setCreateMode("direct")}><Zap size={16} aria-hidden="true" />Quick invoice</button>
+      <button type="button" className="nx-button nx-secondary nx-btn-sm" onClick={() => setCreateMode("fast")}><Zap size={16} aria-hidden="true" />Quick invoice</button>
       <button type="button" className="nx-button nx-btn-sm" onClick={() => setCreateMode("standard")}><FilePlus2 size={16} aria-hidden="true" />New invoice</button>
     </>
   ) : null;
@@ -218,8 +219,9 @@ export default function InvoicesView() {
 
       {canCreate ? <div className="nx-inline-actions flex gap-2 md:hidden">{createButtons}</div> : null}
 
-      <InvoiceDialog open={createMode !== null} initialMode={createMode === "direct" ? "direct" : undefined}
+      <InvoiceDialog open={createMode === "standard"}
         onClose={() => setCreateMode(null)} onCreated={(id) => setDetailId(id)} />
+      {createMode === "fast" ? <FastInvoice onClose={() => setCreateMode(null)} onCreated={(id) => setDetailId(id)} /> : null}
       <InvoiceDetailDialog open={detailId !== null} invoiceId={detailId} onClose={() => setDetailId(null)}
         onRecordPayment={(inv) => { setDetailId(null); setPaying(inv); }} />
       <InvoicePaymentDialog open={paying !== null} invoice={paying} onClose={() => setPaying(null)} />
