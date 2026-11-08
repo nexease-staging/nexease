@@ -1,4 +1,8 @@
 from datetime import date, datetime, time
+from apps.core.services.reference_batch import hydrate
+from apps.sales.models import Customer
+from apps.purchasing.models import Supplier
+from apps.products.models import Product
 from decimal import Decimal
 from apps.finance.services.cash_flow_report_service import (
     CashFlowReportService,
@@ -316,7 +320,7 @@ class MainDashboardService:
 
         product_totals = {}
 
-        inventory_records = inventory_records.select_related(max_depth=1)
+        inventory_records = hydrate(inventory_records, organization, 'product', Product, ('name','cost_price','is_active'))
 
         for inventory in inventory_records:
             quantity = (
@@ -1021,7 +1025,7 @@ class MainDashboardService:
 
         totals = {}
 
-        invoices = invoices.select_related(max_depth=1)
+        invoices = hydrate(invoices, organization, 'customer', Customer)
 
         for invoice in invoices:
             customer = invoice.customer
@@ -1103,7 +1107,7 @@ class MainDashboardService:
 
         totals = {}
 
-        bills = bills.select_related(max_depth=1)
+        bills = hydrate(bills, organization, 'supplier', Supplier)
 
         for bill in bills:
             supplier = bill.supplier
@@ -1182,7 +1186,7 @@ class MainDashboardService:
             )[:limit]
         )
 
-        invoices = invoices.select_related(max_depth=1)
+        invoices = hydrate(invoices, organization, 'customer', Customer)
 
         for invoice in invoices:
             customer_name = (
@@ -1227,7 +1231,7 @@ class MainDashboardService:
             )[:limit]
         )
 
-        bills = bills.select_related(max_depth=1)
+        bills = hydrate(bills, organization, 'supplier', Supplier)
 
         for bill in bills:
             supplier_name = (
@@ -1296,7 +1300,7 @@ class MainDashboardService:
             )[:limit]
         )
 
-        stock_movements = stock_movements.select_related(max_depth=1)
+        stock_movements = hydrate(stock_movements, organization, 'product', Product)
 
         for movement in stock_movements:
             product_name = (

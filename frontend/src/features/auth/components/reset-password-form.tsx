@@ -1,4 +1,5 @@
 "use client";
+import PasswordInput from "@/components/password-input";
 
 import Link from "next/link";
 import {
@@ -203,7 +204,7 @@ export function ResetPasswordForm() {
                 New password
               </label>
 
-              <input
+              <PasswordInput
                 id="password"
                 type="password"
                 autoComplete="new-password"
@@ -226,7 +227,7 @@ export function ResetPasswordForm() {
                 Confirm new password
               </label>
 
-              <input
+              <PasswordInput
                 id="confirm_password"
                 type="password"
                 autoComplete="new-password"

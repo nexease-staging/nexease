@@ -10,6 +10,8 @@ const scanner=vi.hoisted(()=>({decode:vi.fn(),image:vi.fn(),stop:vi.fn()}));
 vi.mock('@tanstack/react-query',()=>({useQuery:()=>({data:{modules:{barcode:true}}})}));
 vi.mock('./workspace',()=>({getConfig:vi.fn()}));
 vi.mock('@/lib/api/client',()=>({apiRequest:vi.fn().mockResolvedValue({data:{id:'p',name:'Helmet',code:'P1'}})}));
+// Keep camera lifecycle tests independent of the decoder package's import cost.
+vi.mock('@zxing/library',()=>({DecodeHintType:{TRY_HARDER:3,POSSIBLE_FORMATS:2},BarcodeFormat:Object.fromEntries(['CODE_128','CODE_39','CODE_93','EAN_13','EAN_8','UPC_A','UPC_E','ITF','CODABAR'].map((name,index)=>[name,index]))}));
 vi.mock('@zxing/browser',()=>({BrowserMultiFormatReader:class {decodeFromStream=scanner.decode;decodeFromImageUrl=scanner.image;}}));
 const track={stop:vi.fn(),getSettings:()=>({deviceId:'back'})};
 const media={getTracks:()=>[track],getVideoTracks:()=>[track]};

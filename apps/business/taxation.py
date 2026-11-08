@@ -21,9 +21,16 @@ def gst_report(request):
         if form not in ['GSTR-1','GSTR-3B','GSTR-9']:raise ValueError('Unknown report.')
         records=[x.data for x in Record.objects(organization=org,kind='gst_adjustments') if start.isoformat()<=x.data['date']<=end.isoformat()]
         from .billing import tax_heads
-        linked_ids={d.get('source_reference') for d in records}
+        source_refs=[d.get('source_reference') for d in records if d.get('source_reference')]
+        if len(source_refs)!=len(set(source_refs)):raise ValueError('Duplicate source links exist in the GST review register. Resolve them before exporting.')
+        linked_ids=set(source_refs)
+        checks=[['Document','Source ID','Check','Difference','Action']]
         hsn_rows=[['Invoice','Date','Party type','Goods / Service','HSN/SAC','Unit','Quantity','GST rate','Taxable value','CGST','SGST/UTGST','IGST']]
         for inv in Invoice.objects(organization=org,status__in=['ISSUED','PARTIALLY_PAID','PAID'],invoice_date__gte=datetime.combine(start,time.min),invoice_date__lte=datetime.combine(end,time.max)):
+            line_tax=sum((Decimal(str(i.line_tax)) for i in inv.items),Decimal(0))
+            line_total=sum((Decimal(str(i.line_total)) for i in inv.items),Decimal(0))
+            for label,diff in [('Line tax vs invoice tax',line_tax-inv.tax_amount),('Line totals vs invoice total',line_total-inv.total_amount)]:
+                if diff:checks.append([inv.invoice_number,str(inv.id),label,float(diff),'Review source document'])
             d=inv.billing_details
             if not d.get('tax_reviewed') or str(inv.id) in linked_ids:continue
             cg,sg,ig=tax_heads(inv)
@@ -59,5 +66,5 @@ def gst_report(request):
             for i,k in enumerate(('taxable','cgst','sgst','igst','cess')):values[i]+=amount(d.get(k,0))
         for key,values in sorted(mapped.items()):outward.append([key,*map(float,values)])
         notes=[['NexEase '+form+' preparation workpaper'],['Period: '+start.isoformat()+' to '+end.isoformat()],['NOT a filed return, complete statutory computation, or GST portal import file.'],['Classified issued invoices are included automatically. Legacy/unclassified documents require GST review. Manual entries with a matching source ID replace that invoice in this workpaper; enter the complete reviewed amount.'],['Source documents are shown separately; they are NOT silently added to reviewed totals.'],['Credit/debit notes, advances, amendments, reverse charge, imports/exports, ITC reversals/reclaims and prior-year adjustments require separate reconciliation.'],['GSTR-9 additionally requires filed-return and annual ITC reconciliation.'],['Use the current official GST utility for validation and submission.'],['https://tutorial.gst.gov.in/userguide/returns/GSTR_1.htm'],['https://tutorial.gst.gov.in/userguide/returns/GSTR3B.htm'],['https://tutorial.gst.gov.in/userguide/returns/Manual_gstr9.htm']]
-        return workbook_response({'Read me':notes,'Reviewed register':register,'Reviewed summary':summary,'Source reconciliation':sources,'HSN SAC invoice lines':hsn_rows,'HSN SAC summary':hsn_summary,'3B outward review':outward},'NexEase-'+form+'-'+start.isoformat())
+        return workbook_response({'Read me':notes,'Reviewed register':register,'Reviewed summary':summary,'Source reconciliation':sources,'HSN SAC invoice lines':hsn_rows,'HSN SAC summary':hsn_summary,'3B outward review':outward,'Calculation checks':checks},'NexEase-'+form+'-'+start.isoformat())
     except (ValueError,TypeError) as e:return R.validation_error(message=str(e),request=request)

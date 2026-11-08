@@ -1,6 +1,7 @@
 "use client";
 import {useQuery} from "@tanstack/react-query";
 import {getConfig} from "@/features/business/workspace";
+import HSNSuggestions from "./hsn-suggestions";
 import BarcodeScan from "@/features/business/barcode-scan";
 import SearchSelect from "@/components/search-select";
 
@@ -215,6 +216,7 @@ export default function ProductDialog({
 
   const {
     register,
+    watch,
     handleSubmit,
     reset,
     setError,
@@ -551,7 +553,7 @@ export default function ProductDialog({
               )(event);
             }}
             className="space-y-5 p-5"
-          ><div className="grid grid-cols-2 gap-4 p-5"><label>Goods / Service<select className="nx-input" disabled={isEditing} {...register("item_type")}><option value="goods">Goods — stock tracked</option><option value="service">Service — no stock</option></select></label><label>HSN / SAC<input className="nx-input" placeholder="HSN for goods / 6-digit SAC for services" {...register("hsn_code")}/>{errors.hsn_code&&<p role="alert">{errors.hsn_code.message}</p>}</label></div>
+          ><div className="grid grid-cols-2 gap-4 p-5"><label>Goods / Service<select className="nx-input" disabled={isEditing} {...register("item_type")}><option value="goods">Goods — stock tracked</option><option value="service">Service — no stock</option></select></label><label>HSN / SAC<input className="nx-input" placeholder="HSN for goods / 6-digit SAC for services" {...register("hsn_code")}/>{errors.hsn_code&&<p role="alert">{errors.hsn_code.message}</p>}</label><HSNSuggestions name={watch("name") ?? ""} itemType={watch("item_type") ?? "goods"} onSelect={code=>setValue("hsn_code",code,{shouldValidate:true,shouldDirty:true})}/></div>
             <div
               className="
                 grid gap-4 md:grid-cols-2

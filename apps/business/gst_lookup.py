@@ -29,7 +29,7 @@ def lookup(request):
             return R.validation_error(message='GST lookup failed. Check provider credentials, access, environment and GSTIN, or retry later. No records were changed.',request=request)
     from apps.sales.models import Customer
     c=Customer.objects(organization=request.api_organization,gstin=gstin,is_active=True).first()
-    if c:return R.success(data={'id':str(c.id),'code':c.code,'name':c.name,'address':c.billing_address or '', 'state':c.state or '', 'gstin':gstin,'email':c.email or '', 'phone':c.phone or '', 'source':'Existing organisation customer'},request=request)
+    if c:return R.success(data={'id':str(c.id),'code':c.code,'name':c.name,'address':c.billing_address or '', 'state':c.state or '', 'gstin':gstin,'email':c.email or '', 'phone':c.phone or '', 'city':c.city or '', 'country':c.country or 'India', 'pincode':c.pincode or '', 'source':'Existing organisation customer'},request=request)
     url=os.getenv('GST_LOOKUP_URL','');token=os.getenv('GST_LOOKUP_TOKEN','')
     if not url or not token:return R.validation_error(message='No existing customer matches. External GST lookup is not configured. Enter details manually or ask the owner to configure a GST provider adapter.',request=request)
     parsed=urlparse(url)
@@ -41,7 +41,8 @@ def lookup(request):
         if len(raw)>65536:raise ValueError()
         data=json.loads(raw)
         if not isinstance(data,dict) or data.get('gstin')!=gstin or not isinstance(data.get('name'),str) or not data['name'].strip():raise ValueError()
-        clean={k:str(data.get(k) or '')[:limit] for k,limit in [('name',200),('address',500),('state',100),('gstin',15),('email',254),('phone',30)]}
+        clean={k:str(data.get(k) or '')[:limit] for k,limit in [('name',200),('address',500),('state',100),('gstin',15),('email',254),('phone',30),('city',100),('country',100),('pincode',20)]}
+        clean['country']=clean.get('country') or 'India'
         clean['source']='Configured GST provider — review before saving'
         return R.success(data=clean,request=request)
     except (URLError,HTTPError,ValueError,TimeoutError,OSError):return R.validation_error(message='GST lookup is unavailable or returned invalid data. Retry later or enter the details manually.',request=request)

@@ -1,4 +1,5 @@
 "use client";
+import PasswordInput from "@/components/password-input";
 
 import {useState, type FormEvent} from 'react';
 import Link from 'next/link';
@@ -61,7 +62,7 @@ export default function SalesDocuments({mode}:{mode:keyof typeof paths}) {
     {data?.can_create&&!irp&&<button className="nx-button" onClick={()=>setForm(!form)}>{form?'Close':'New delivery challan'}</button>}
     {form&&<form onSubmit={submit} className="nx-panel space-y-4">
       {irp?<><h2 className="text-xl font-semibold">Connect this workspace’s GSTIN</h2><p>Use dedicated IRP API credentials for Quicko GSP. The password is encrypted on the server.</p><div className="grid gap-3 sm:grid-cols-2">
-        <label>IRP API username<input required className={input} name="username" maxLength={100}/></label><label>IRP API password<input required className={input} name="password" type="password" autoComplete="new-password" maxLength={200}/></label>
+        <label>IRP API username<input required className={input} name="username" maxLength={100}/></label><label>IRP API password<PasswordInput required className={input} name="password" type="password" autoComplete="new-password" maxLength={200}/></label>
         <label>Registered seller address<input required className={input} name="address" maxLength={100}/></label><label>Seller city<input required className={input} name="city" maxLength={50}/></label><label>Seller PIN code<input required className={input} name="pincode" pattern="[1-9][0-9]{5}" inputMode="numeric"/></label></div></>:
         <><h2 className="text-xl font-semibold">Issue a delivery challan</h2><div className="grid gap-3 sm:grid-cols-2">
         <Picker kind="customers" value={customer} onSelect={x=>setCustomer(x.id)} label="Consignee"/>

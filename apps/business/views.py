@@ -89,6 +89,10 @@ def validate(kind, data, org, record_id=None):
     if kind=='gst_settings':
         if not re.fullmatch(r'\d{2}',clean['state_code']):raise ValueError('State code must have two digits.')
         if clean['registration']!='unregistered' and not re.fullmatch(r'\d{2}[A-Z]{5}\d{4}[A-Z][A-Z0-9]Z[A-Z0-9]',clean['gstin']):raise ValueError('Check GSTIN format.')
+    if kind=='gst_adjustments' and clean.get('source_reference'):
+        duplicate=Record.objects(organization=org,kind=kind,data__source_reference=clean['source_reference'])
+        if record_id:duplicate=duplicate.filter(id__ne=record_id)
+        if duplicate.first():raise ValueError('This source already has a GST review entry. Edit the existing entry to avoid duplicate tax.')
     if kind=='gst_adjustments' and amount(clean['igst']) and (amount(clean['cgst']) or amount(clean['sgst'])):raise ValueError('Use IGST or CGST/SGST, not both.')
     return clean
 

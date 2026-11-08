@@ -1,4 +1,5 @@
 "use client";
+import PasswordInput from "@/components/password-input";
 import SearchSelect from "@/components/search-select";
 
 
@@ -668,7 +669,7 @@ export default function UserDialog({
                     Password
                   </span>
 
-                  <input
+                  <PasswordInput
                     {...register("password")}
                     type="password"
                     placeholder="At least 8 characters"
@@ -700,7 +701,7 @@ export default function UserDialog({
                     Confirm password
                   </span>
 
-                  <input
+                  <PasswordInput
                     {...register(
                       "password_confirmation",
                     )}

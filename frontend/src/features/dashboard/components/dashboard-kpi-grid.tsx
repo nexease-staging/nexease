@@ -145,6 +145,8 @@ export default function DashboardKPIGrid({
         AlertTriangle,
     },
   ];
+  const priority = ["Cash / Bank Balance", "Receivables", "Payables", "Total Sales", "Total Purchases", "Inventory Value", "Out of Stock Items"];
+  cards.sort((a, b) => priority.indexOf(a.label) - priority.indexOf(b.label));
 
   return (
     <section

@@ -138,7 +138,7 @@ function DonutCard({
                 className="
                   relative
                   mt-5
-                  h-56
+                  h-40
                   w-full
                 "
               >
@@ -321,7 +321,7 @@ function DonutCard({
               className="
                 mt-5
                 flex
-                h-56
+                h-40
                 items-center
                 justify-center
                 rounded-xl

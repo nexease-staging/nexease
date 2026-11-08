@@ -1,4 +1,5 @@
 "use client";
+import PasswordInput from "@/components/password-input";
 
 import {
   useEffect,
@@ -295,7 +296,7 @@ export default function LoginForm() {
           </Link>
         </div>
 
-        <input
+        <PasswordInput
           id="password"
           type="password"
           autoComplete="current-password"

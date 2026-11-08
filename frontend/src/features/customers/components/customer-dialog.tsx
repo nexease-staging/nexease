@@ -586,7 +586,7 @@ export default function CustomerDialog({
               )(event);
             }}
             className="space-y-5 p-5"
-          ><div className="p-4"><GstLookup onSelect={r=>{for(const k of ['name','gstin','state','email','phone'] as const){if(r[k])setValue(k,r[k],{shouldValidate:true});}if(r.address)setValue('billing_address',r.address,{shouldValidate:true});}}/></div>
+          ><div className="p-4"><GstLookup onSelect={r=>{for(const k of ['name','gstin','state','email','phone','city','country','pincode'] as const){if(r[k])setValue(k,r[k],{shouldValidate:true});}if(r.address)setValue('billing_address',r.address,{shouldValidate:true});}}/></div>
             <div
               className="
                 grid gap-4 md:grid-cols-2

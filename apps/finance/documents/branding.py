@@ -4,7 +4,7 @@ from functools import wraps
 from io import BytesIO
 import base64
 from reportlab.lib import colors
-from reportlab.platypus import Image, Spacer
+from reportlab.platypus import Image, Spacer, Table, TableStyle
 
 _theme=ContextVar('document_theme',default={})
 def themed_document(fn):
@@ -31,12 +31,17 @@ def themed_color(value):
 def logo_story(theme=None):
     theme=_theme.get() if theme is None else theme
     value=theme.get('logo','')
-    if not value:return []
+    style=theme.get('document_style','classic')
+    accent=colors.HexColor(theme.get('accent_color') or '#006b58')
+    divider=Table([['']],colWidths=[500],rowHeights=[4 if style=='letterhead' else 1])
+    divider.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,-1),accent)]))
+    extra=[divider,Spacer(1,10)] if style in ('letterhead','minimal') else []
+    if not value:return extra
     try:
         prefix,data=value.split(',',1)
         if prefix not in ('data:image/png;base64','data:image/jpeg;base64'):return []
         img=Image(BytesIO(base64.b64decode(data,validate=True)))
         scale=min(100/img.imageWidth,45/img.imageHeight)
         img.drawWidth=img.imageWidth*scale;img.drawHeight=img.imageHeight*scale;img.hAlign='LEFT'
-        return [img,Spacer(1,10)]
+        return [img,Spacer(1,10)]+extra
     except (ValueError,OSError):return []

@@ -104,4 +104,13 @@ def normalize_taxpayer(result,gstin):
     principal=data.get('pradr') or {};principal=principal if isinstance(principal,dict) else {}
     addr=principal.get('addr') or {};addr=addr if isinstance(addr,dict) else {}
     address=', '.join(str(addr[k]).strip() for k in ('bno','flno','bnm','st','loc','dst','stcd','pncd') if addr.get(k))
-    return {'gstin':gstin,'name':(trade or legal)[:200],'legal_name':legal[:200],'trade_name':trade[:200],'address':address[:500],'state':gstin[:2],'state_name':str(addr.get('stcd') or '')[:100],'pincode':str(addr.get('pncd') or '')[:20],'city':str(addr.get('dst') or addr.get('loc') or '')[:100],'status':str(data.get('sts') or '')[:80],'registration_type':str(data.get('dty') or '')[:80],'email':'','phone':'','source':'Sandbox GST taxpayer lookup ('+os.getenv('GST_SANDBOX_ENV','test').strip().lower()+') - verify before saving'}
+    return {'gstin':gstin,'name':(trade or legal)[:200],'legal_name':legal[:200],'trade_name':trade[:200],'address':address[:500],'state':gstin[:2],'state_name':str(addr.get('stcd') or '')[:100],'pincode':str(addr.get('pncd') or '')[:20],'city':str(addr.get('city') or addr.get('dst') or addr.get('loc') or '')[:100],'country':'India','status':str(data.get('sts') or '')[:80],'registration_type':str(data.get('dty') or '')[:80],'email':safe_email(data.get('email') or data.get('emailId') or principal.get('email')),'phone':safe_phone(data.get('phone') or data.get('mobile') or data.get('mobNum') or principal.get('phone')),'source':'Sandbox GST taxpayer lookup ('+os.getenv('GST_SANDBOX_ENV','test').strip().lower()+') - verify before saving'}
+
+
+def safe_email(value):
+    text = str(value or '').strip()
+    return text[:254] if re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', text) and '*' not in text else ''
+
+def safe_phone(value):
+    text = str(value or '').strip()
+    return text[:30] if re.fullmatch(r'[+0-9 ()-]{7,30}', text) else ''

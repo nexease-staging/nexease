@@ -187,7 +187,7 @@ export default function DashboardTrendCharts({
 
         <div
           className="
-            h-80
+            h-64
             w-full
           "
         >
@@ -297,7 +297,7 @@ export default function DashboardTrendCharts({
 
         <div
           className="
-            h-80
+            h-64
             w-full
           "
         >
@@ -411,7 +411,7 @@ export default function DashboardTrendCharts({
 
         <div
           className="
-            h-80
+            h-64
             w-full
           "
         >

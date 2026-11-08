@@ -135,7 +135,16 @@ class CustomerPaymentAPIService:
         from apps.sales.models import CreditNote
         source = InvoiceRepository.list_outstanding(organization=organization)
         bulk = hasattr(source, 'select_related')
-        invoices = source.select_related(max_depth=1) if bulk else list(source)
+        invoices = list(source)
+        if bulk:
+            from apps.core.services.reference_batch import hydrate
+            from apps.sales.models import Customer
+            invoices = hydrate(invoices, organization, 'customer', Customer, fields=None)
+            for invoice in invoices:
+                from apps.core.services.reference_batch import reference_id
+                if reference_id(invoice._data.get('organization')) != organization.id:
+                    raise PermissionError('Invoice does not belong to this organization.')
+                invoice._data['organization'] = organization
         credits = {}
         if invoices and bulk:
             notes = CreditNote.objects(

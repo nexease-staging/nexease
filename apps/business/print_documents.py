@@ -23,6 +23,9 @@ def document_styles():
 def invoice_pdf(invoice):
     d=dict(invoice.billing_details or {});org=invoice.organization
     branding=settings(org)
+    if d.get('template') in ('retail_blue','retail_emerald'):
+        from .professional_documents import retail_invoice
+        return retail_invoice(invoice,branding)
     if branding.get('logo'):d['logo']=branding['logo']
     _,name,color,layout=next((t for t in TEMPLATES if t[0]==d.get('template')),TEMPLATES[0])
     color=settings(invoice.organization).get("accent_color") or color
@@ -84,6 +87,10 @@ def invoice_pdf(invoice):
     return buf.getvalue()
 
 def payslip_pdf(org,run,row):
+    branding=settings(org)
+    if branding.get('payslip_template','professional')=='professional':
+        from .professional_documents import salary_slip
+        return salary_slip(org,run,row,branding)
     styles=document_styles();buf=BytesIO()
     def p(v):return Paragraph(escape(str('—' if v is None or v=='' else v)),styles['Normal'])
     story=[p(org.name),Spacer(1,14),Paragraph('Payslip · '+escape(run.key),styles['Title']),p(row['employee'].get('name')),p('Employee code: '+row['employee'].get('code','')),p('Status: '+run.data['status']),Spacer(1,14)]

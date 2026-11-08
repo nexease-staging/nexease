@@ -1,4 +1,5 @@
 "use client";
+import PasswordInput from "@/components/password-input";
 import {useState} from "react";
 import Link from "next/link";
 import {useRouter} from "next/navigation";
@@ -114,7 +115,7 @@ export default function SignupForm(){
  }
  const field=(name:Exclude<keyof SignupFormValues,"business_scope">,label:string,type="text",placeholder="",autoComplete?:string)=>
   <div className="nx-signup-row" key={name}><label htmlFor={name}>{label}</label><div>
-   <input id={name} type={type} placeholder={placeholder} autoComplete={autoComplete} className="nx-input" {...register(name)} aria-invalid={!!errors[name]} aria-describedby={errors[name]?name+"-error":undefined}/>
+   <PasswordInput id={name} type={type} placeholder={placeholder} autoComplete={autoComplete} className="nx-input" {...register(name)} aria-invalid={!!errors[name]} aria-describedby={errors[name]?name+"-error":undefined}/>
    {errors[name]&&<p id={name+"-error"} className="nx-signup-error" role="alert">{errors[name]?.message}</p>}
   </div></div>;
  return <form onSubmit={handleSubmit(onSubmit)} className="nx-signup-form" noValidate>

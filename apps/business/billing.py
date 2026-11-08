@@ -18,6 +18,7 @@ TEMPLATES = [
     ('emerald','Emerald studio','#047857','stripe'), ('service','Service statement','#6d28d9','service'),
     ('contractor','Contractor works','#b45309','grid'), ('compact','Compact register','#475569','compact'),
     ('elegant','Elegant violet','#7c3aed','minimal'), ('bold','Bold graphite','#18181b','banner'),
+    ('retail_blue','Retail blue - detailed grid','#176fa3','retail'), ('retail_emerald','NexEase retail emerald','#006b58','retail'),
 ]
 TEXT_FIELDS={'po_number':100,'po_date':10,'service_from':10,'service_to':10,'site_name':200,'shipping_address':1000,'payment_terms':1000,'bank_details':1000,'terms':2000,'signatory':200,'place_of_supply':2,'supply_type':30,'template':30}
 SUPPLIES=('taxable','exempt','nil_rated','non_gst','unregistered')
@@ -73,11 +74,13 @@ def invoice_settings(request):
     try:
         if request.method=='POST':
             p=payload(request)
-            allowed={'template','logo','accent_color','bank_details','payment_terms','terms','signatory'}
+            allowed={'template','logo','accent_color','bank_details','payment_terms','terms','signatory','payslip_template','document_style'}
             if p.get('accent_color') and not re.fullmatch(r'#[0-9a-fA-F]{6}',p['accent_color']):raise ValueError('Choose a valid document colour.')
             if set(p)-allowed:raise ValueError('Unknown setting.')
             for k,v in p.items():
                 if not isinstance(v,str) or len(v)>(400000 if k=='logo' else 2000):raise ValueError('Invalid '+k)
+            if p.get('payslip_template','professional') not in ('professional','classic'):raise ValueError('Choose a payslip format.')
+            if p.get('document_style','classic') not in ('classic','letterhead','minimal'):raise ValueError('Choose a document style.')
             if p.get('template') not in [t[0] for t in TEMPLATES]:raise ValueError('Choose a template.')
             if p.get('logo'):
                 from PIL import Image
