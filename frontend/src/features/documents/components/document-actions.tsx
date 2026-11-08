@@ -13,6 +13,8 @@ import {
 
 import { Capacitor } from "@capacitor/core";
 
+import DocumentPDFPreview from "./document-pdf-preview";
+
 import DocumentEmailDialog from "@/features/documents/components/document-email-dialog";
 
 import {
@@ -124,6 +126,7 @@ export default function DocumentActions({
             flex flex-wrap gap-2
           "
         >
+          <DocumentPDFPreview documentType={documentType} documentId={documentId} documentNumber={documentNumber} disabled={disabled}/>
           <button
             type="button"
             aria-label={pdfLabel} title={pdfLabel} disabled={actionDisabled}

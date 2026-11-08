@@ -25,50 +25,8 @@ def amount_words(value):
 
 
 def retail_invoice(invoice, branding):
-    from .print_documents import document_styles
-    from .billing import tax_heads
-    from apps.finance.documents.branding import logo_story
-    from reportlab.graphics.barcode.qr import QrCodeWidget
-    from reportlab.graphics.shapes import Drawing
-    org=invoice.organization;d=invoice.billing_details or {};buf=BytesIO();styles=document_styles()
-    accent=colors.HexColor(branding.get('accent_color') or ('#176fa3' if d.get('template')=='retail_blue' else '#006b58'))
-    light=colors.Color(.93+.07*accent.red,.93+.07*accent.green,.93+.07*accent.blue)
-    styles.add(ParagraphStyle('RetailCell',fontName='NX',fontSize=8,leading=11,wordWrap='CJK'))
-    styles.add(ParagraphStyle('RetailHead',fontName='NX-Bold',fontSize=7,leading=9,wordWrap='CJK'))
-    styles.add(ParagraphStyle('RetailBrand',fontName='NX-Bold',fontSize=21,leading=25,textColor=accent))
-    def p(value,style='RetailCell'):return Paragraph(escape(str(value or '')).replace('\n','<br/>'),styles[style])
-    def table(rows,widths,header=False):
-        result=Table([[p(c,'RetailHead' if header and ri==0 else 'RetailCell') for c in row] for ri,row in enumerate(rows)],colWidths=widths,repeatRows=1 if header else 0)
-        result.setStyle(TableStyle([('GRID',(0,0),(-1,-1),.5,accent),('VALIGN',(0,0),(-1,-1),'TOP'),('TOPPADDING',(0,0),(-1,-1),7),('BOTTOMPADDING',(0,0),(-1,-1),7)]+([('BACKGROUND',(0,0),(-1,0),light)] if header else [])))
-        return result
-    story=logo_story(branding)+[p(org.name,'RetailBrand'),p(org.address),p('Phone: '+(org.phone or '')+'   Email: '+(org.email or '')),Spacer(1,12)]
-    title='TAX INVOICE' if d.get('supply_type')=='taxable' else 'BILL OF SUPPLY' if d.get('supply_type') in ('exempt','nil_rated','non_gst') else 'INVOICE'
-    story += [table([['GSTIN: '+d.get('supplier_gstin','Not configured'),title,'ORIGINAL FOR RECIPIENT']],[210,150,175],True)]
-    story += [table([['Customer details','Invoice details'],[invoice.billing_name+'\n'+invoice.billing_address+'\nGSTIN: '+(invoice.customer_gstin or 'Unregistered')+'\nPlace of supply: '+d.get('place_of_supply',''), 'Invoice: '+invoice.invoice_number+'\nDate: '+invoice.invoice_date.strftime('%d-%b-%Y')+'\nDue: '+(invoice.due_date.strftime('%d-%b-%Y') if invoice.due_date else '-')+'\nPO: '+d.get('po_number','')],[ 'Ship to / service address',d.get('shipping_address') or invoice.billing_address]],[267,268]),Spacer(1,12)]
-    irp=getattr(invoice,'einvoice',{}) or {}
-    if irp.get('status')=='registered' and irp.get('environment')=='live':
-        qr=QrCodeWidget(irp['qr']);x,y,w,h=qr.getBounds();scale=95/(w-x)
-        drawing=Drawing(95,95,transform=[scale,0,0,scale,-x*scale,-y*scale]);drawing.add(qr)
-        block=Table([[p('IRN: '+irp['irn']+'\nAcknowledgment: '+irp.get('ack_no','')+' '+irp.get('ack_date','')),drawing]],colWidths=[430,105]);story += [block,Spacer(1,10)]
-    elif irp.get('status'):story += [p('IRP: '+irp['status']+(' (TEST ONLY)' if irp.get('environment')!='live' else '')),Spacer(1,8)]
-    rows=[['Sr.','Product / service','HSN /\nSAC','Qty /\nunit','Rate','Taxable','GST %','Tax','Total']]
-    for n,item in enumerate(invoice.items,1):
-        name=item.item_name or (item.product.name if item.product else '')
-        if item.show_description and item.description:name+='\n'+item.description
-        rows.append([n,name,item.hsn_code,str(item.quantity)+' '+(item.unit or ''),money(item.unit_price),money(item.line_subtotal-item.discount),str(item.tax_rate),money(item.line_tax),money(item.line_total)])
-    story += [table(rows,[25,140,45,48,52,60,35,55,75],True),Spacer(1,12)]
-    cg,sg,ig=tax_heads(invoice)
-    totals=[['Taxable amount',money(invoice.total_amount-invoice.tax_amount)]]
-    totals+= [['CGST',money(cg)],['SGST / UTGST',money(sg)],['IGST',money(ig)]] if d.get('tax_reviewed') else [['Tax - classification pending',money(invoice.tax_amount)]]
-    totals += [['Total '+(org.currency or 'INR'),money(invoice.total_amount)],['Paid',money(invoice.amount_paid)],['Balance due',money(invoice.balance_due)]]
-    details='Amount in words\n'+(amount_words(invoice.total_amount) if (org.currency or 'INR')=='INR' else str(invoice.total_amount)+' '+org.currency)+'\n\nBank details\n'+d.get('bank_details',branding.get('bank_details',''))+'\n\nTerms & conditions\n'+d.get('terms',branding.get('terms',''))
-    summary=Table([[p(details),table(totals,[145,93])]],colWidths=[285,250]);summary.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'TOP'),('BOX',(0,0),(-1,-1),.5,accent)]));story += [summary,Spacer(1,14)]
-    if invoice.notes:story += [p('Notes: '+invoice.notes),Spacer(1,10)]
-    story += [table([['For '+org.name,'Authorised signatory'],['',d.get('signatory',branding.get('signatory',''))]],[285,250])]
-    def footer(c,doc):
-        c.setFont('NX',8);c.setFillColor(accent);c.drawString(30,20,'Generated with NexEase');c.drawRightString(565,20,'Page '+str(doc.page))
-    SimpleDocTemplate(buf,pagesize=A4,leftMargin=30,rightMargin=30,topMargin=26,bottomMargin=35,title=title+' '+invoice.invoice_number).build(story,onFirstPage=footer,onLaterPages=footer)
-    return buf.getvalue()
+    from .reference_invoice import reference_invoice
+    return reference_invoice(invoice, branding)
 
 
 def salary_slip(org,run,row,branding):
