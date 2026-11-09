@@ -88,7 +88,7 @@ html[data-keyboard="open"] .nx-fab,html[data-keyboard="open"] .nx-sticky-bar{dis
 .nx-sheet{position:fixed;z-index:60;left:0;right:0;bottom:0;padding:8px 16px calc(16px + env(safe-area-inset-bottom,0px));background:var(--nx-surface);border-radius:20px 20px 0 0;box-shadow:var(--nx-shadow-md);animation:nx-sheet-in .18s ease-out}
 .nx-sheet-grip{width:40px;height:4px;border-radius:4px;background:var(--nx-border-strong);margin:4px auto 12px}
 .nx-popover{position:absolute;z-index:60;right:0;top:calc(100% + 8px);width:300px;padding:8px;background:var(--nx-surface);border:1px solid var(--nx-border);border-radius:14px;box-shadow:var(--nx-shadow-md)}
-.nx-menu-item{display:flex;align-items:center;gap:12px;width:100%;padding:10px;border-radius:10px;text-align:left}
+.nx-menu-item{color:var(--nx-text);display:flex;align-items:center;gap:12px;width:100%;padding:10px;border-radius:10px;text-align:left}
 .nx-menu-item:hover,.nx-menu-item[aria-selected="true"]{background:var(--nx-primary-soft)}
 .nx-menu-item small{display:block;color:var(--nx-text-muted);font-size:12px}
 @keyframes nx-sheet-in{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}

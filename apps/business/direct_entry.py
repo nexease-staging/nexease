@@ -1,4 +1,6 @@
 from .numbering import incoming
+from .automation import write_lock
+from .quick_stock import warehouse_for,move
 """Direct draft billing; invoice creation does not imply stock dispatch."""
 from datetime import datetime
 from decimal import Decimal
@@ -24,6 +26,7 @@ def text(d,k,required=False,limit=200):
 
 @api_login_required
 @require_http_methods(['POST'])
+@write_lock
 def direct_invoice(request):
     org=request.api_organization;user=request.api_user
     if not AuthorizationService.has_permission(user,'invoices.create'):return R.forbidden(message='Permission denied.',request=request)
@@ -68,7 +71,8 @@ def direct_invoice(request):
                 prod=n['product'] or Product(name=n['name'],unit=n['unit'],item_type=n['item_type'],hsn_code=n['hsn_code'])
                 preview.append(InvoiceItem(product=prod,item_name=n['name'],item_type=n['item_type'],hsn_code=n['hsn_code'],unit=n['unit'],quantity=n['quantity'],unit_price=n['unit_price'],tax_rate=n['tax_rate']))
             clean_details(p['billing_details'],org,preview)
-        warnings=['Direct invoice without sales order. Stock dispatch requires separate review.'];new_records=[]
+        if any(n['item_type']=='goods' for n in normalized):warehouse=warehouse_for(org,warehouse)
+        warnings=['Direct invoice without sales order. Goods quantity is deducted immediately, including below zero.'];new_records=[]
         if not customer:
             customer=Customer(organization=org,code=code,name=name,billing_address=text(c,'address',limit=500),gstin=text(c,'gstin',limit=20),state=text(c,'state',limit=100),email=text(c,'email',limit=254) or None,phone=text(c,'phone',limit=30)).save();new_records.append('Customer '+code)
         invoice_items=[]
@@ -86,7 +90,12 @@ def direct_invoice(request):
         details={**settings(org),**clean_details(p['billing_details'],org,invoice_items)} if 'billing_details' in p else {}
         goods=any(i.item_type=='goods' for i in invoice_items)
         total=sum(x.line_total for x in invoice_items)
-        invoice=Invoice(billing_details=details,organization=org,invoice_number=number,customer=customer,invoice_date=when,due_date=due,items=invoice_items,subtotal=sum(x.line_subtotal for x in invoice_items),tax_amount=sum(x.line_tax for x in invoice_items),discount_amount=sum(x.discount for x in invoice_items),total_amount=total,balance_due=total,billing_name=customer.name,billing_address=customer.billing_address,billing_state=customer.state,billing_city=customer.city,billing_pincode=customer.pincode,customer_gstin=customer.gstin,created_by=user,notes=('DIRECT ENTRY: pending stock review. ' if goods else 'SERVICE INVOICE: no stock movement. ')+text(p,'notes',limit=700),direct_entry=True,stock_review_required=goods).save()
+        invoice=Invoice(billing_details=details,organization=org,invoice_number=number,customer=customer,invoice_date=when,due_date=due,items=invoice_items,subtotal=sum(x.line_subtotal for x in invoice_items),tax_amount=sum(x.line_tax for x in invoice_items),discount_amount=sum(x.discount for x in invoice_items),total_amount=total,balance_due=total,billing_name=customer.name,billing_address=customer.billing_address,billing_state=customer.state,billing_city=customer.city,billing_pincode=customer.pincode,customer_gstin=customer.gstin,created_by=user,notes=('DIRECT ENTRY: stock deducted; review negative quantities. ' if goods else 'SERVICE INVOICE: no stock movement. ')+text(p,'notes',limit=700),direct_entry=True,stock_review_required=goods).save()
+        if goods:
+            try:move(invoice,user,warehouse)
+            except Exception:
+                invoice.delete()
+                raise
         audit(request,'direct_invoice',invoice.id,'create')
         NotificationService.create_notification(organization=org,recipient=user,notification_type='SYSTEM',title='Review direct invoice '+invoice.invoice_number,message=(' '.join(warnings)+' New records: '+', '.join(new_records))[:1000],severity='WARNING',resource_type='invoice',resource_id=str(invoice.id),action_url='/invoices')
         return R.success(data={'id':str(invoice.id),'invoice_number':invoice.invoice_number,'status':'DRAFT','warnings':warnings,'new_records':new_records},request=request)

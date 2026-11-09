@@ -31,3 +31,9 @@ describe("Business module navigation",()=>{
   expect(screen.getByRole("link",{name:"E-Invoices"})).toHaveAttribute("href","/e-invoices");
  });
 });
+
+it('opens all permitted Workforce tools directly from the navbar',()=>{
+ state.permissions=['payroll.read','labour.read'];render(<ModuleNavigation/>);
+ fireEvent.click(screen.getByRole('button',{name:'Workforce'}));
+ for(const name of ['Employees','Leave & approvals','Advances','Payslips','Timesheets'])expect(screen.getByRole('link',{name})).toBeInTheDocument();
+});

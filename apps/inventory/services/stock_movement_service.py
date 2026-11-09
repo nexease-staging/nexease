@@ -148,15 +148,8 @@ class StockMovementService:
                 "Movement quantity cannot be zero."
             )
 
-        if quantity_before < 0:
-            raise ValueError(
-                "Quantity before cannot be negative."
-            )
-
-        if quantity_after < 0:
-            raise ValueError(
-                "Quantity after cannot be negative."
-            )
+        if quantity_after < 0 and quantity_after < quantity_before:
+            raise ValueError("Only quick invoices can create or increase negative stock.")
 
         if reserved_before < 0:
             raise ValueError(
@@ -168,12 +161,12 @@ class StockMovementService:
                 "Reserved quantity after cannot be negative."
             )
 
-        if reserved_before > quantity_before:
+        if reserved_before > max(quantity_before, Decimal(0)):
             raise ValueError(
                 "Reserved quantity before cannot exceed quantity before."
             )
 
-        if reserved_after > quantity_after:
+        if reserved_after > max(quantity_after, Decimal(0)):
             raise ValueError(
                 "Reserved quantity after cannot exceed quantity after."
             )

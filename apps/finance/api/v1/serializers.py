@@ -2198,11 +2198,11 @@ class DocumentAccessLogAPISerializer:
         if not log:
             return None
 
-        user = getattr(
-            log,
-            "user",
-            None,
-        )
+        from mongoengine.errors import DoesNotExist
+        try:
+            user = getattr(log,"user",None)
+        except DoesNotExist:
+            user = None
 
         return {
             "id": (

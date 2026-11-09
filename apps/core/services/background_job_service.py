@@ -10,6 +10,7 @@ class BackgroundJobService:
     ALLOWED_JOB_TYPES = {
         "BANK_STATEMENT_IMPORT",
         "DOCUMENT_EMAIL",
+            "PAYSLIP_EMAIL",
         "NOTIFICATION",
         "DATA_MIGRATION_VALIDATE",
         "DATA_MIGRATION_IMPORT",

@@ -15,6 +15,8 @@ import RequireAuth from "@/features/auth/components/require-auth";
 
 import ModuleNavigation from "@/components/layout/module-navigation";
 
+import PullToRefresh from "@/components/mobile/pull-to-refresh";
+
 import AppHeader from "@/components/layout/app-header";
 import AppSidebar from "@/components/layout/app-sidebar";
 
@@ -74,7 +76,7 @@ export default function AppShell({
           </main><div className="md:hidden"><EasyNav/></div>
         </div>
       </div>
-      <Assistant/><NexFeedback/><QuickCreate variant="fab"/><CommandPalette/>
+      <PullToRefresh/><Assistant/><NexFeedback/><QuickCreate variant="fab"/><CommandPalette/>
     </RequireAuth>
   );
 }
