@@ -82,9 +82,15 @@ def payslips(request,run_id):
             row=next((r for r in run.data['rows'] if r['employee_id']==eid),None)
             if not row:return R.not_found(message='Employee not in this payroll.',request=request)
             return binary(payslip_pdf(request.api_organization,run,row),'application/pdf','Payslip-'+run.key+'-'+eid+'.pdf')
+        selected=request.GET.get('employee_ids','')
+        rows=run.data['rows']
+        if selected:
+            ids=set(selected.split(','))
+            if len(ids)>100 or not ids.issubset({r['employee_id'] for r in rows}):raise ValueError('Select employees from this payroll, up to 100.')
+            rows=[r for r in rows if r['employee_id'] in ids]
         out=BytesIO()
         with ZipFile(out,'w',ZIP_DEFLATED) as archive:
-            for row in run.data['rows']:
+            for row in rows:
                 code=re.sub(r'[^a-zA-Z0-9_-]','_',row['employee'].get('code','employee'))[:60]
                 archive.writestr(code+'-'+row['employee_id']+'-'+run.key+'.pdf',payslip_pdf(request.api_organization,run,row))
         return binary(out.getvalue(),'application/zip','Payslips-'+run.key+'.zip')

@@ -484,6 +484,9 @@ class InvoiceService:
                 "from its current status."
             )
 
+        from apps.business.quick_stock import reverse
+        reverse(invoice,user)
+
         return (
             InvoiceRepository.update_status(
                 invoice=invoice,

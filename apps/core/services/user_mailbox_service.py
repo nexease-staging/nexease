@@ -19,7 +19,8 @@ def get_mailbox(user,org):return get_db().user_mailboxes.find_one(scope(user,org
 def status(user,org):
     row=get_mailbox(user,org)
     connected=bool(row and row['email']==user.email.strip().lower())
-    return {'connected':connected,'email':user.email,'provider':row['provider'] if connected else '', 'configured':bool(os.getenv('MAILBOX_ENCRYPTION_KEY'))}
+    from .email_verification import verified
+    return {'verified':verified(user),'connected':connected,'email':user.email,'provider':row['provider'] if connected else '', 'configured':bool(os.getenv('MAILBOX_ENCRYPTION_KEY'))}
 
 def connect(user,org,provider,password):
     if provider not in PROVIDERS:raise ValueError('Choose Gmail, Microsoft 365 or Yahoo.')
@@ -40,7 +41,11 @@ def disconnect(user,org):get_db().user_mailboxes.delete_one(scope(user,org))
 
 def delivery_options(user,org):
     row=get_mailbox(user,org)
-    if not row or row['email']!=user.email.strip().lower():raise ValueError('Connect your registered email in Settings → My email before sending documents.')
+    if not row or row['email']!=user.email.strip().lower():
+        from .email_verification import verified
+        from django.conf import settings
+        if not verified(user):raise ValueError('Verify your email in Settings → My email before sharing documents.')
+        return {'from_email':settings.DEFAULT_FROM_EMAIL,'reply_to':[user.email.strip().lower()]}
     try:password=cipher().decrypt(row['secret'].encode()).decode()
     except InvalidToken:raise ValueError('Mailbox credentials cannot be decrypted. Reconnect your mailbox in Settings.')
     host,port=PROVIDERS[row['provider']]

@@ -440,12 +440,12 @@ class InventoryService:
             + quantity_change
         )
 
-        if quantity_after < 0:
+        if quantity_after < 0 and quantity_change < 0:
             raise ValueError(
                 "Inventory quantity cannot become negative."
             )
 
-        if reserved_before > quantity_after:
+        if reserved_before > max(quantity_after, Decimal(0)):
             raise ValueError(
                 "Quantity cannot be lower than "
                 "reserved quantity."
@@ -783,7 +783,7 @@ class InventoryService:
             + quantity_change
         )
 
-        if quantity_after < 0:
+        if quantity_after < 0 and quantity_change < 0:
             raise ValueError(
                 "Inventory quantity cannot "
                 "become negative."
@@ -791,7 +791,7 @@ class InventoryService:
 
         if (
             reserved_before
-            > quantity_after
+            > max(quantity_after, Decimal(0))
         ):
             raise ValueError(
                 "Quantity cannot be lower "

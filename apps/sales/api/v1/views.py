@@ -1,3 +1,4 @@
+from apps.business.automation import write_lock
 import json
 
 from apps.authorization.services import (
@@ -2271,6 +2272,7 @@ def invoice_issue_api(
     limit=60,
     window_seconds=60,
 )
+@write_lock
 def invoice_cancel_api(
     request,
     invoice_id,

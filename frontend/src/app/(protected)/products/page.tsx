@@ -22,6 +22,10 @@ import {
   useAuth,
 } from "@/features/auth/auth-context";
 
+import {useQuery} from "@tanstack/react-query";
+import {apiRequest} from "@/lib/api/client";
+import ReorderLevel from "@/features/products/components/reorder-level";
+
 import ProductDialog from "@/features/products/components/product-dialog";
 
 import {
@@ -59,6 +63,7 @@ function formatCurrency(
 }
 
 export default function ProductsPage() {
+  const [reorderId,setReorderId]=useState<string|null>(null);
   const {
     authentication,
   } = useAuth();
@@ -158,6 +163,8 @@ export default function ProductsPage() {
       listParameters,
     );
 
+  const stockIds=(productQuery.data?.products??[]).map(p=>p.id).join(',');
+  const stockQuery=useQuery({queryKey:['product-stock-balances',stockIds],queryFn:async()=>(await apiRequest<{quantities:Record<string,string>}>(`/business/stock-balances/?product_ids=${encodeURIComponent(stockIds)}`)).data,enabled:canRead&&hasPermission(permissions,'inventory.read')&&!!stockIds,refetchInterval:30000});
   if (!authentication) {
     return null;
   }
@@ -631,6 +638,7 @@ export default function ProductsPage() {
                     "Unit",
                     "Cost price",
                     "Selling price",
+                    "Stock quantity",
                     "Status",
                     "Actions",
                   ].map(
@@ -688,7 +696,7 @@ export default function ProductsPage() {
                             text-slate-900
                           "
                         >
-                          {product.name}<span className="block text-xs font-normal text-slate-500">{product.item_type==="service"?"Service":"Goods"} · HSN/SAC: {product.hsn_code||"Not set"}</span>
+                          {product.name}{product.item_type!=="service"&&hasPermission(authentication?.role.permissions??[],"products.update")&&<button className="ml-2 text-xs text-emerald-700 underline" onClick={()=>setReorderId(product.id)}>Reorder</button>}<span className="block text-xs font-normal text-slate-500">{product.item_type==="service"?"Service":"Goods"} · HSN/SAC: {product.hsn_code||"Not set"}</span>
                         </p>
 
                         <p
@@ -750,6 +758,7 @@ export default function ProductsPage() {
                         }
                       </td>
 
+                      <td className="whitespace-nowrap px-4 py-4 text-sm"><span className={Number(stockQuery.data?.quantities[product.id]??0)<0?'font-semibold text-red-700':''}>{product.item_type==='service'?'—':hasPermission(permissions,'inventory.read')?(stockQuery.data?.quantities[product.id]??(stockQuery.error?'Unavailable':'…')):'Restricted'}</span></td>
                       <td
                         className="
                           whitespace-nowrap
@@ -971,6 +980,7 @@ export default function ProductsPage() {
         ) : null}
       </div>
 
+      {reorderId&&<ReorderLevel productId={reorderId} onClose={()=>setReorderId(null)}/>}
       <ProductDialog
         open={
           productDialogOpen

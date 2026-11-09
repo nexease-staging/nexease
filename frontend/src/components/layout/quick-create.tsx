@@ -41,7 +41,7 @@ export default function QuickCreate({ variant }: { variant: "header" | "fab" }) 
         <li key={href} role="none">
           <Link role="menuitem" href={href} className="nx-menu-item" onClick={() => setOpen(false)}>
             <span className="nx-icon-chip" data-tone="success"><Icon size={19} aria-hidden="true" /></span>
-            <span><strong className="text-sm">{label}</strong><small>{hint}</small></span>
+            <span><strong className="block text-sm !text-slate-900">{label}</strong><small>{hint}</small></span>
           </Link>
         </li>
       ))}

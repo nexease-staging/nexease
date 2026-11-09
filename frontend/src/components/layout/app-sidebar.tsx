@@ -107,8 +107,8 @@ export default function AppSidebar({
     if (!section && !extra) return [];
     return [{
       label: label === "Purchasing" ? "Purchase" : label,
-      direct: label === "Overview" || label === "Workforce",
-      items: label === "Workforce" ? (section?.items.slice(0, 1).map(item => ({ ...item, label: "Workforce" })) ?? [])
+      direct: label === "Overview",
+      items: label === "Workforce" ? (section?.items ?? [])
         : [...(section?.items ?? []), ...(extra?.items ?? [])],
     }];
   });

@@ -5,6 +5,7 @@ import {getConfig} from "@/features/business/workspace";
 import {confirmAction} from "@/components/nex-feedback";
 
 import {InvoiceDetails} from "@/features/business/invoice-settings";
+import InvoiceEditor from "@/features/business/invoice-editor";
 import InvoiceDescriptions from "@/features/business/invoice-descriptions";
 import DocumentActions from "@/features/documents/components/document-actions";
 
@@ -458,7 +459,7 @@ export default function InvoiceDetailDialog({
                   flex flex-wrap gap-2
                 "
               >
-                {["DRAFT","ISSUED","PARTIALLY_PAID","PAID"].includes(invoice.status) && <><InvoiceDetails key={invoice.id+"details"} id={invoice.id} issued={invoice.status!=="DRAFT"}/><InvoiceDescriptions key={invoice.id} invoice={invoice}/></>}
+                {["DRAFT","ISSUED","PARTIALLY_PAID","PAID"].includes(invoice.status) && <><InvoiceEditor key={invoice.id+"edit"} id={invoice.id}/><InvoiceDetails key={invoice.id+"details"} id={invoice.id} issued={invoice.status!=="DRAFT"}/><InvoiceDescriptions key={invoice.id} invoice={invoice}/></>}
                 <DocumentActions
                   documentType="INVOICE"
                   documentId={invoice.id}

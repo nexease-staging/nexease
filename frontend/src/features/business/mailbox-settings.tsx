@@ -1,12 +1,85 @@
 "use client";
-import PasswordInput from "@/components/password-input";
-import {useState} from 'react';
-import {useQuery,useQueryClient} from '@tanstack/react-query';
-import {apiRequest} from '@/lib/api/client';
-type Mailbox={connected:boolean;email:string;provider:string;configured:boolean};
-export default function MailboxSettings(){
- const qc=useQueryClient(),q=useQuery({queryKey:['my-mailbox'],queryFn:async()=>(await apiRequest<Mailbox>('/email/mailbox/')).data});
- const [provider,setProvider]=useState('gmail'),[password,setPassword]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
- async function update(remove=false){setBusy(true);setMessage('');try{await apiRequest('/email/mailbox/',{method:remove?'DELETE':'POST',...(!remove?{body:{provider,password}}:{})});setPassword('');await qc.invalidateQueries({queryKey:['my-mailbox']});await qc.invalidateQueries({queryKey:['business-config']});setMessage(remove?'Mailbox disconnected.':'Mailbox connected. Document emails will use your registered address.')}catch(e){setMessage((e as Error).message)}finally{setBusy(false)}}
- return <section id="my-email" className="nx-panel space-y-3"><h2 className="text-lg font-semibold">My email — document sender</h2><p>Connect your registered email to send invoices, orders and other supported documents from your own mailbox.</p>{q.isLoading?<p>Loading…</p>:q.isError?<p role="alert">{q.error.message}</p>:<><p className="font-medium">{q.data?.email}</p><p>{q.data?.connected?'Connected: '+q.data.provider:'Not connected'}</p>{!q.data?.configured&&<p>The owner must configure MAILBOX_ENCRYPTION_KEY on the backend and workers first.</p>}<label className="block">Provider<select className="nx-input" value={provider} onChange={e=>setProvider(e.target.value)}><option value="gmail">Gmail / Google Workspace</option><option value="outlook">Microsoft 365 (SMTP authentication required)</option><option value="yahoo">Yahoo</option></select></label><label className="block">App password<PasswordInput className="nx-input" type="password" autoComplete="new-password" value={password} onChange={e=>setPassword(e.target.value)}/></label><p className="text-xs">Use a provider-issued app password, not your normal account password. SMTP must be allowed by your provider. Accounts requiring OAuth cannot connect through this form. Credentials are encrypted; they are never returned to the browser.</p><div className="flex flex-wrap gap-3"><button type="button" className="nx-button" disabled={busy||!password||!q.data?.configured} onClick={()=>void update()}>{busy?'Working…':'Authenticate & connect'}</button>{q.data?.connected&&<button type="button" className="nx-button nx-secondary" disabled={busy} onClick={()=>void update(true)}>Disconnect</button>}</div></>}{message&&<p role="status">{message}</p>}</section>
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/api/client";
+type Mailbox = {
+  connected: boolean;
+  verified: boolean;
+  email: string;
+  provider: string;
+  configured: boolean;
+};
+export default function MailboxSettings() {
+  const qc = useQueryClient();
+  const q = useQuery({
+    queryKey: ["my-mailbox"],
+    queryFn: async () => (await apiRequest<Mailbox>("/email/mailbox/")).data,
+    refetchOnWindowFocus: true,
+  });
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  return (
+    <section id="my-email" className="nx-panel space-y-4">
+      <h2 className="text-lg font-semibold">My email — document sharing</h2>
+      <p>
+        Verify your registered email using a link. No mailbox password is
+        required.
+      </p>
+      {q.isLoading ? (
+        <p>Loading…</p>
+      ) : q.error ? (
+        <p role="alert">{q.error.message}</p>
+      ) : (
+        <>
+          <p className="font-medium">{q.data?.email}</p>
+          <p>
+            {q.data?.verified
+              ? "Email verified"
+              : q.data?.connected
+                ? "Authenticated mailbox connected"
+                : "Email not verified"}
+          </p>
+          <p className="text-sm text-slate-500">
+            Verified-only sharing uses NexEase’s configured sender, with your
+            address in Reply-To. An existing authenticated mailbox can continue
+            sending directly from your email.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            {!q.data?.verified && (
+              <button
+                className="nx-button"
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  try {
+                    await apiRequest("/email/verify/request/", {
+                      method: "POST",
+                    });
+                    setMessage(
+                      "Verification link sent. Check your inbox and spam folder.",
+                    );
+                  } catch (e) {
+                    setMessage((e as Error).message);
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                {busy ? "Sending…" : "Send verification link"}
+              </button>
+            )}
+            <button
+              className="nx-button nx-secondary"
+              onClick={() =>
+                void qc.invalidateQueries({ queryKey: ["my-mailbox"] })
+              }
+            >
+              Refresh status
+            </button>
+          </div>
+        </>
+      )}
+      {message && <p role="status">{message}</p>}
+    </section>
+  );
 }

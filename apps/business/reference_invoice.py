@@ -65,7 +65,7 @@ def reference_invoice(invoice, branding):
     reviewed=d.get('tax_reviewed');taxable=d.get('supply_type')=='taxable'
     intra=reviewed and taxable and d.get('supplier_state')==d.get('place_of_supply')
     heads=['CGST','SGST / UTGST'] if intra else ['IGST' if reviewed and taxable else 'Tax']
-    widths=([24,126,35,33,48,69,17,47,17,47,72] if intra else [21,144,47,43,56,70,27,53,74])
+    widths=([24,106,44,33,48,65,25,47,25,47,71] if intra else [21,144,47,43,56,70,27,53,74])
     # Normalize to exactly the invoice frame width.
     widths=[v*width/sum(widths) for v in widths]
     labels=['Sr.\nNo.','Name of Product / Service','HSN / SAC','Qty','Rate','Taxable Value']
@@ -81,12 +81,12 @@ def reference_invoice(invoice, branding):
         name=item.item_name or (item.product.name if item.product else '')
         description=item.description if item.show_description else ''
         desc=[p(name,bold)]+([p(description)] if description else [])
-        row=[p(n),desc,p(item.hsn_code),p(str(item.quantity)+' '+(item.unit or '')),p(indian_money(item.unit_price),numeric),p(indian_money(item.line_subtotal-item.discount),numeric)]
+        row=[p(n),desc,p(item.hsn_code,numeric),p(str(item.quantity)+' '+(item.unit or '')),p(indian_money(item.unit_price),numeric),p(indian_money(item.line_subtotal-item.discount),numeric)]
         tax=Decimal(str(item.line_tax));rate=Decimal(str(item.tax_rate))
         if intra:
             cg=(tax/2).quantize(Decimal('.01'))
-            for amount in (cg,tax-cg):row += [p(str(rate/2)),p(indian_money(amount),numeric)]
-        else:row += [p(str(rate)),p(indian_money(tax),numeric)]
+            for amount in (cg,tax-cg):row += [p(format((rate/2).normalize(),'f'),numeric),p(indian_money(amount),numeric)]
+        else:row += [p(format(rate.normalize(),'f'),numeric),p(indian_money(tax),numeric)]
         row += [p(indian_money(item.line_total),numeric)];rows.append(row);heights.append(None)
     item_table=grid(rows,widths,extra=commands+[('ALIGN',(4,2),(-1,-1),'RIGHT'),('BACKGROUND',(5,2),(5,-1),light),('BACKGROUND',(-1,2),(-1,-1),light),('LINEBELOW',(0,2),(-1,-1),0,colors.white)])
     item_table.repeatRows=2

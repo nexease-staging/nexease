@@ -94,6 +94,10 @@ def execute_notification(
 
 
 def register_core_background_jobs():
+    from apps.business.payslip_distribution import execute as payslip_email
+    if 'PAYSLIP_EMAIL' not in BackgroundJobExecutor.registered_job_types():
+        BackgroundJobExecutor.register('PAYSLIP_EMAIL',payslip_email)
+
     registered = (
         BackgroundJobExecutor
         .registered_job_types()

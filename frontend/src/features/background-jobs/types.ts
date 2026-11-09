@@ -1,6 +1,7 @@
 export type BackgroundJobType =
   | "BANK_STATEMENT_IMPORT"
   | "DOCUMENT_EMAIL"
+  | "PAYSLIP_EMAIL"
   | "NOTIFICATION";
 
 export type BackgroundJobStatus =

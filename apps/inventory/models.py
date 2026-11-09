@@ -112,7 +112,6 @@ class Inventory(Document):
     quantity = DecimalField(
         precision=2,
         default=0,
-        min_value=0,
     )
 
     reserved_quantity = DecimalField(
@@ -202,13 +201,11 @@ class StockMovement(Document):
     quantity_before = DecimalField(
         precision=2,
         required=True,
-        min_value=0,
     )
 
     quantity_after = DecimalField(
         precision=2,
         required=True,
-        min_value=0,
     )
 
     reserved_before = DecimalField(

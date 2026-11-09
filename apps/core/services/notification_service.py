@@ -164,6 +164,8 @@ class NotificationService:
                 "User is inactive."
             )
 
+        from apps.business.reorder import scan
+        scan(user)
         return (
             NotificationRepository
             .list_for_recipient(
@@ -177,6 +179,8 @@ class NotificationService:
 
     @staticmethod
     def count_unread(*, user):
+        from apps.business.reorder import scan
+        scan(user)
         return NotificationRepository.count_unread(
             organization=user.organization, recipient=user,
         )
