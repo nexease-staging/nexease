@@ -115,3 +115,6 @@ See BUGS_FIXED.md for fixes, DESIGN_SYSTEM.md for adopted UI patterns, and UPGRA
 
 ## New partner routes
 `/partners`, `/owner/partners`, `/api/v1/saas/partners/session/`, `/api/v1/saas/partners/dashboard/`, `/api/v1/saas/owner/partners/`: implementation and automated regression coverage added. Authenticated visual, console/network and physical-device checks remain UNTESTED. See PARTNER_PORTAL.md for walkthrough and omissions.
+
+## Payment flow inspection
+Confirmed MONEY-001/PAYMENT-001/JOURNAL-001 fixed as documented in PAYMENT_SAFETY_CHECKPOINT.md. Open high-severity findings: payment and journal writes are not one transaction; process-crash reconciliation and concurrent balance updates are not yet certified; blank-reference duplicate submissions are not yet idempotent. A tenant-scoped read-only source-link audit command is available for staging evidence. This is not a completed all-module finance audit.

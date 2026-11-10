@@ -105,9 +105,10 @@ class PaymentService:
         field_name,
     ):
         try:
-            return Decimal(
-                str(value)
-            )
+            amount = Decimal(str(value))
+            if not amount.is_finite() or amount != amount.quantize(Decimal("0.01")):
+                raise ValueError("Payment amounts must be finite with at most two decimal places.")
+            return amount
 
         except Exception:
             raise ValueError(
@@ -238,6 +239,16 @@ class PaymentService:
             raise ValueError(
                 "Invalid payment method."
             )
+
+        # Resolve predictable accounting failures before persisting money movements.
+        for permission in ("bank_transactions.create", "journal_entries.create", "journal_entries.post"):
+            PaymentService._check_permission(user, permission)
+        for system_key in ("ACCOUNTS_RECEIVABLE", "CASH" if payment_method == "CASH" else "BANK"):
+            account = ChartOfAccountService.get_system_account(
+                organization=organization, system_key=system_key,
+            )
+            if account.organization.id != organization.id or not account.is_active:
+                raise ValueError("Payment accounting account is unavailable for this organization.")
 
         reference_number = (
             reference_number.strip()
@@ -458,7 +469,13 @@ class PaymentService:
         )
 
         if existing_journal:
-            return existing_journal
+            if existing_journal.status == "POSTED":
+                return existing_journal
+            if existing_journal.status == "DRAFT":
+                return JournalEntryService.post_journal(
+                    user=user, organization=organization, journal_id=str(existing_journal.id),
+                )
+            raise ValueError("Existing payment journal requires accounting review.")
 
         # ==================================================
         # ACCOUNTS RECEIVABLE

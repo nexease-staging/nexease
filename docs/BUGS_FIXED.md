@@ -40,3 +40,8 @@ Financial transactions, financial-year numbering, partner commissions and full r
 - PARTNER-006: worker-delivered welcome and link emails; ambiguous sends held, stale links cancelled.
 - PARTNER-007: scoped CSV/PDF statements with CSV formula escaping and export cap.
 - PARTNER-008: immutable owner-authenticated external payout recording with exact commission amount validation and duplicate prevention. No bank-transfer or GL posting is claimed.
+
+## Financial payment checkpoint
+- MONEY-001: reject non-finite and sub-paise customer/supplier payment amounts instead of allowing inconsistent model rounding.
+- PAYMENT-001: check customer payment accounting permissions/system accounts before payment and bank writes; unexpected multi-document failures remain unresolved.
+- JOURNAL-001: retry existing draft customer/supplier payment journals through normal posting validation; do not treat a draft as posted or recreate it.

@@ -108,9 +108,10 @@ class SupplierPaymentService:
         field_name,
     ):
         try:
-            return Decimal(
-                str(value)
-            )
+            amount = Decimal(str(value))
+            if not amount.is_finite() or amount != amount.quantize(Decimal("0.01")):
+                raise ValueError("Payment amounts must be finite with at most two decimal places.")
+            return amount
 
         except Exception:
             raise ValueError(
@@ -168,7 +169,13 @@ class SupplierPaymentService:
         )
 
         if existing_journal:
-            return existing_journal
+            if existing_journal.status == "POSTED":
+                return existing_journal
+            if existing_journal.status == "DRAFT":
+                return JournalEntryService.post_journal(
+                    user=user, organization=organization, journal_id=str(existing_journal.id),
+                )
+            raise ValueError("Existing payment journal requires accounting review.")
 
         # ==================================================
         # ACCOUNTS PAYABLE
