@@ -22,6 +22,7 @@ class CommissionTests(unittest.TestCase):
             'organization_id': str(org or self.org.id), 'subscription_id': 'subscription-1',
             'mode': mode, 'paid_at': paid_at, 'amount_paise': amount, 'refunded_paise': refund,
         }}, upsert=True)
+        get_db().saas_payment_tax.update_one({'_id':mode+':'+key}, {'$set':{'gross_paise':amount,'refunded_paise':refund,'gst_paise':0,'refund_gst_paise':0}}, upsert=True)
 
     def test_first_and_renewal_replay_once(self):
         self.payment('first', 100)
@@ -116,6 +117,31 @@ class CommissionTests(unittest.TestCase):
             gateway.reconcile('subscription-1')
         self.assertEqual(Membership.objects.first().status,'active')
         self.assertEqual(Membership.objects.first().start,datetime.utcfromtimestamp(current_start))
-        self.assertEqual(get_db().saas_commissions.find_one({'_id':'test:old-pay'})['amount_paise'],0)
+        self.assertIsNone(get_db().saas_commissions.find_one({'_id':'test:old-pay'})['amount_paise'])
         self.assertEqual(get_db().saas_commissions.find_one({'_id':'test:new-pay'})['percent'],10)
         self.assertEqual(get_db().saas_commissions.count_documents({}),2)
+
+    def test_gst_excluded_first_and_renewal(self):
+        self.payment('first',100,amount=118000)
+        self.payment('renewal',200,amount=118000)
+        for key in ('first','renewal'):
+            commissions.record_tax(key,'live',18000,0,'INV-'+key,'test','Verified invoice')
+        self.assertEqual(get_db().saas_commissions.find_one({'_id':'live:first'})['amount_paise'],20000)
+        self.assertEqual(get_db().saas_commissions.find_one({'_id':'live:renewal'})['amount_paise'],10000)
+
+    def test_missing_or_stale_gst_holds_previous_amount(self):
+        self.payment('first',100,amount=118000)
+        get_db().saas_payment_tax.delete_many({})
+        commissions.rebuild(self.org.id,'live')
+        self.assertIsNone(get_db().saas_commissions.find_one()['amount_paise'])
+        commissions.record_tax('first','live',18000,0,'INV-1','test','Verified invoice')
+        get_db().saas_payments.update_one({'_id':'first'},{'$set':{'refunded_paise':59000}})
+        commissions.rebuild(self.org.id,'live')
+        self.assertIsNone(get_db().saas_commissions.find_one()['amount_paise'])
+        commissions.record_tax('first','live',18000,9000,'CN-1','test','Verified refund')
+        self.assertEqual(get_db().saas_commissions.find_one()['amount_paise'],10000)
+
+    def test_invalid_tax_and_full_refund_validation(self):
+        for values in [(118000,118000,18000,0),(118000,59000,18000,19000),(118000,0,18000.0,0)]:
+            with self.assertRaises(ValueError): commissions.validate_tax(*values)
+        commissions.validate_tax(118000,118000,18000,18000)

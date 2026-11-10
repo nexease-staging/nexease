@@ -22,7 +22,7 @@ class Command(BaseCommand):
             import json
             from mongoengine.connection import get_db
             rows = list(get_db().saas_commissions.find({'partner_id': options['partner'], 'mode': options['mode']}, {'_id': 0}).sort('paid_at', 1))
-            self.stdout.write(json.dumps({'mode': options['mode'], 'status': 'review_only', 'total_paise': sum(r['amount_paise'] for r in rows), 'entries': rows}, default=str, indent=2))
+            self.stdout.write(json.dumps({'mode': options['mode'], 'status': 'review_only', 'total_paise': sum(r['amount_paise'] or 0 for r in rows), 'held_entries': sum(r['amount_paise'] is None for r in rows), 'entries': rows}, default=str, indent=2))
             return
         if len(options['reason'].strip()) < 5:
             raise CommandError('Enter an audit reason of at least five characters.')

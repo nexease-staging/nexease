@@ -27,3 +27,5 @@ Financial transactions, financial-year numbering, partner commissions and full r
 - COMMISSION-001: added review-only 20% first/10% renewal ledger with idempotent payment keys, refund recalculation and sandbox isolation. Nine focused tests; no payout functionality claimed.
 - ALERT-004: approved default schedule is now 7,3,1 IST days before expiry. Explicit environment settings still override it.
 - UI-004: corrected an accidental internal variable name in the access-denied user message.
+
+- COMMISSION-002: confirmed GST-exclusive basis; hold missing/stale tax evidence, reject invalid refund GST, and audit operator tax evidence. Twelve focused commission/reminder tests pass.
