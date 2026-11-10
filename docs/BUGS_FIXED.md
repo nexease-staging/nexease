@@ -22,3 +22,8 @@ Baseline main: 51ee883. These are code/test results, not a production certificat
 Stale tests now distinguish read-only master lookup from invoice creation and use the existing paid prices, which this upgrade does not change. Ref assignment was moved out of render where appropriate. Scoped React lint exceptions remain for intentional effect-driven hydration/reset flows and a ref-forwarding render prop; they are not evidence that every hook pattern has been redesigned. Lint has 18 warnings and no errors.
 
 Financial transactions, financial-year numbering, partner commissions and full route smoke coverage have not been fixed or certified by this patch. See AUDIT.md and UPGRADE_STATUS.md.
+
+## Approved-policy follow-up
+- COMMISSION-001: added review-only 20% first/10% renewal ledger with idempotent payment keys, refund recalculation and sandbox isolation. Nine focused tests; no payout functionality claimed.
+- ALERT-004: approved default schedule is now 7,3,1 IST days before expiry. Explicit environment settings still override it.
+- UI-004: corrected an accidental internal variable name in the access-denied user message.

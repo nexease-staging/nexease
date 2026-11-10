@@ -43,7 +43,7 @@ def schedule(now=None, offsets=None):
     from apps.authorization.models import Role
     from apps.organizations.models import Organization
     now = now or datetime.utcnow()
-    offsets = offsets if offsets is not None else [int(x) for x in os.getenv('SUBSCRIPTION_ALERT_DAYS', '').split(',') if x.strip()]
+    offsets = offsets if offsets is not None else [int(x) for x in os.getenv('SUBSCRIPTION_ALERT_DAYS', '7,3,1').split(',') if x.strip()]
     if len(offsets) > 20 or any(abs(x) > 90 for x in offsets):
         raise ValueError('Subscription alert offsets must contain at most 20 days within +/-90.')
     today = as_ist(now).date()

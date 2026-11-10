@@ -11,7 +11,7 @@ Durable subscription/welcome outbox; IST renewal scheduler; guarded ambiguous em
 3. Run `python manage.py upgrade_plan_limits` to preview only. Owner must choose monthly GST lookup quotas first. Default zero deliberately blocks paid Sandbox calls; existing membership snapshots without this quota also block them.
 4. After choosing quotas, use `upgrade_plan_limits --apply --gst-basic N --gst-plus N --gst-pro N` with actual integers. `--include-memberships` explicitly replaces existing membership limit snapshots. It does not delete excess resources or change plan prices. Review contractual allowances before applying.
 5. Configure authenticated production SMTP authorized to send from `nexease.contact@gmail.com`. Welcome events queue independently of the renewal toggle. In development, attempted email events are held for review, not silently called delivered.
-6. Renewal schedule is disabled by default: `SUBSCRIPTION_ALERTS_ENABLED=false`, `SUBSCRIPTION_ALERT_DAYS=`. Owner must supply offsets in days before expiry; negative values mean after expiry. Offsets used in tests (7,3,1,0) are test examples, not an approved business policy.
+6. Renewal schedule is disabled by default: `SUBSCRIPTION_ALERTS_ENABLED=false`, `SUBSCRIPTION_ALERT_DAYS=7,3,1`. The owner has now approved 7,3,1 days before expiry, with no expiry-day reminder. Set SUBSCRIPTION_ALERT_DAYS=7,3,1 in staging; older tests also exercise other explicit schedules.
 7. Keep `run_background_worker` running. Inspect `subscription_alerts` pending/sending/review_required records and provider claims. Never reset ambiguous email/paid-provider events automatically: reconcile with provider logs first.
 8. Smoke-test signup, Free activation, subscription UI, GST quota errors, invoice list and keyboard/back/navigation on a real APK before merging/deploying.
 
@@ -20,8 +20,8 @@ Unique event keys and atomic claims prevent duplicate scheduling/claiming. In-ap
 
 ## Pending requirements
 - Complete authenticated browser/device audit of all 64 page files and 369 resolved API routes, including permissions/console/network/loading/empty/error states.
-- Partner signup, approval, referrals, commissions, payouts and statements. No complete partner business rules were supplied: rates, earning event, refund clawback, payout threshold and approval rules are required.
-- Usage threshold alerts and partner welcome email integration; final renewal schedule.
+- Partner signup, approval, referrals, commissions, payouts and statements. Rates are now confirmed at 20% first payment and 10% renewal. A review-only operator ledger is implemented; public partner UI and payout/tax policy remain incomplete. See PARTNER_COMMISSION_RULES.md.
+- Usage threshold alerts and partner welcome email integration; live verification of the approved renewal schedule.
 - Full transactional accounting/stock/payroll linkage audit, financial-year invoice numbering and concurrent financial integration tests. Existing Decimal use alone is insufficient assurance.
 - Automatic payment reminders, recurring invoices/expenses, low-stock automation, monthly summaries and long-form draft autosave.
 - All-screen shared component migration, remaining invoice card actions/date filters, measured text contrast and three-card viewport acceptance.
