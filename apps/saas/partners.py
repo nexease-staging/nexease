@@ -25,7 +25,7 @@ def partner_for(request):
 
 
 def public_partner(row):
-    return {k: row.get(k) for k in ('name', 'email', 'status', 'referral_code')}
+    return {k: row.get(k) for k in ('name', 'email', 'status', 'referral_code', 'email_verified')}
 
 
 @sensitive_post_parameters('password')
@@ -61,9 +61,11 @@ def session(request):
             # never claim their records merely by knowing their email address.
             db.saas_partners.create_index('email', unique=True)
             try:
-                db.saas_partners.insert_one({'_id': secrets.token_hex(16), 'name': name, 'email': email,
+                created = db.saas_partners.insert_one({'_id': secrets.token_hex(16), 'name': name, 'email': email,
                     'password': make_password(password), 'generation': 0, 'status': 'pending',
                     'created_at': datetime.utcnow()})
+                from .partner_mail import queue_welcome
+                queue_welcome(created.inserted_id, email)
             except DuplicateKeyError:
                 pass  # Same neutral result avoids account enumeration.
             return R.success(data={'message': 'Application received. If this email is new, the owner will review it. Existing partners can sign in.'}, request=request)
@@ -100,6 +102,9 @@ def dashboard(request):
     totals = list(db.saas_commissions.aggregate([{'$match':scope}, {'$group':{'_id':None,
         'review_paise':{'$sum':{'$ifNull':['$amount_paise',0]}},
         'held':{'$sum':{'$cond':[{'$eq':['$amount_paise',None]},1,0]}}}}]))
+    paid = {r['commission_id']:r['amount_paise'] for r in db.saas_partner_payouts.find({**scope, 'commission_id': {'$in':['live:'+r['payment_id'] for r in rows]}})}
+    for row in rows:
+        row['recorded_payout_paise'] = paid.get('live:'+row['payment_id'],0)
     referrals = list(db.saas_referrals.find({'partner_id':partner['_id']}, {'_id':1, 'assigned_at':1})
         .sort('assigned_at',-1).skip((page-1)*25).limit(25))
     return R.success(data={'partner':public_partner(partner), 'entries':rows,
@@ -127,6 +132,8 @@ def owner_partners(request):
         partner = db.saas_partners.find_one({'_id':str(data.get('id',''))})
         if not partner or not partner.get('password'):
             raise ValueError('Portal application not found.')
+        if action == 'approve' and not partner.get('email_verified'):
+            raise ValueError('The partner must verify their email before approval.')
         status = {'approve':'approved','reject':'rejected','suspend':'suspended'}[action]
         log(owner.email, 'partner:'+action, reason=reason, details={'partner_id':partner['_id']})
         db.saas_partners.update_one({'_id':partner['_id']}, {'$set':{'status':status,

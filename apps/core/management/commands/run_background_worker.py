@@ -132,6 +132,8 @@ class Command(BaseCommand):
                         alerts.schedule()
                         next_alert_scan = time.monotonic() + 60
                 alerts.deliver_one()
+                from apps.saas import partner_mail
+                partner_mail.deliver_one()
             except Exception:
                 logging.getLogger(__name__).exception('Subscription alert processing failed')
             BackgroundJobService.recover_expired_jobs()

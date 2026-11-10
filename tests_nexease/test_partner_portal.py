@@ -77,6 +77,7 @@ class PartnerPortalTests(unittest.TestCase):
         owner_session=Session(nexease_owner={'email':owner.email,'generation':0,'at':time.time()})
         data={'id':row['_id'],'action':'approve','reason':'Identity verified','password':'wrong','code':'123456'}
         self.assertEqual(partners.owner_partners(self.request(data,owner_session)).status_code,400)
+        get_db().saas_partners.update_one({'_id':row['_id']},{'$set':{'email_verified':True}})
         data['password']='Owner#1234'
         with patch('apps.saas.partners.verify_totp',return_value=True):
             self.assertEqual(partners.owner_partners(self.request(data,owner_session)).status_code,200)

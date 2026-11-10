@@ -34,3 +34,9 @@ Financial transactions, financial-year numbering, partner commissions and full r
 - PARTNER-002: isolated partner registration and sessions, owner approval/rejection/suspension with fresh authentication and audit records.
 - PARTNER-003: approved referral-code attribution at signup; compensated rollback removes referral records on failed signup.
 - PARTNER-004: server-scoped live-only commission statement and referral pagination; regression tests reject cross-partner selection, pending access and expired/revoked sessions.
+
+## Partner delivery and payout increment
+- PARTNER-005: single-use verification/reset with expiry, generation-bound tokens, hashed nonce and encrypted mail payload. Password reset revokes old sessions.
+- PARTNER-006: worker-delivered welcome and link emails; ambiguous sends held, stale links cancelled.
+- PARTNER-007: scoped CSV/PDF statements with CSV formula escaping and export cap.
+- PARTNER-008: immutable owner-authenticated external payout recording with exact commission amount validation and duplicate prevention. No bank-transfer or GL posting is claimed.

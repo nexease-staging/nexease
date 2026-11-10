@@ -38,3 +38,6 @@ Free users/invoices and paid core caps follow the request. Extra Free limits (30
 
 ## Partner portal checkpoint
 Public partner registration/sign-in, owner application review, referral-link signup attribution and live review statements have now been implemented; see PARTNER_PORTAL.md. Earlier pending lists above describe the initial checkpoint. Password recovery, verification/welcome emails, statement exports and payout workflow remain pending. No production or staging deployment is implied.
+
+## Partner delivery/payout checkpoint
+Email verification, password recovery, queued welcome/link emails, CSV/PDF review statements and owner-authenticated external payout recording are implemented. See PARTNER_DELIVERY_PAYOUTS.md for configuration and limitations. These are code changes, not a deployed/inbox-verified service. Automated transfers, GL linkage, payout corrections/batches, physical-device QA and the wider financial/UI audit remain incomplete.

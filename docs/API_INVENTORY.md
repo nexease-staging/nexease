@@ -379,3 +379,8 @@ Generated from Django URL resolver. Static registration only: each runtime statu
 - GET `/api/v1/saas/partners/dashboard/`: approved partner scoped live statement/referrals.
 - GET/POST `/api/v1/saas/owner/partners/`: owner-only list and audited decisions with fresh authentication.
 Automated auth/isolation tests added; deployed runtime walkthrough remains pending.
+
+## Partner delivery additions
+- POST `/api/v1/saas/partners/email/`: rate-limited verification/reset requests and token consumption.
+- GET `/api/v1/saas/partners/statement/`: approved verified partner CSV/PDF export.
+- GET/POST `/api/v1/saas/owner/partner-payouts/`: owner list and external payment recording.
