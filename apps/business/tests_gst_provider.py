@@ -76,4 +76,9 @@ class GSTDiagnosticsTests(SimpleTestCase):
   # Bypass authentication and rate-limit wrappers for focused response regression.
   fn=view
   while hasattr(fn,'__wrapped__'):fn=fn.__wrapped__
-  response=fn(req);self.assertEqual(response.status_code,400);self.assertIn(b'GST_ENV_MISMATCH',response.content);self.assertNotIn(b'Check provider credentials, access, environment and GSTIN',response.content)
+  from types import SimpleNamespace
+  req.api_organization=SimpleNamespace(id='provider-error-contract')
+  # Quota enforcement is covered separately; exercise the provider-error response here.
+  with patch('apps.saas.entitlements.require'),patch('apps.saas.entitlements.state',return_value=None),patch('apps.saas.provider_guard.guarded_call',side_effect=lambda **kw:kw['call']()):
+   response=fn(req)
+  self.assertEqual(response.status_code,400);self.assertIn(b'GST_ENV_MISMATCH',response.content);self.assertNotIn(b'Check provider credentials, access, environment and GSTIN',response.content)

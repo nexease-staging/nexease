@@ -175,6 +175,7 @@ export interface InvoicePaymentData {
 }
 
 export interface RecordInvoicePaymentInput {
+  request_key?: string;
   amount: string;
   payment_method:
     InvoicePaymentMethod;

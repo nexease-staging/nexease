@@ -3,7 +3,7 @@ from mongoengine import Document,StringField,IntField,BooleanField,DateTimeField
 class Plan(Document):
     code=StringField(primary_key=True)
     name=StringField(required=True)
-    price_paise=IntField(required=True,min_value=100)
+    price_paise=IntField(required=True,min_value=0)
     limits=DictField(default=dict)
     features=ListField(StringField(),default=list)
     published=BooleanField(default=False)

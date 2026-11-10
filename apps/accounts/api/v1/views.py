@@ -1381,6 +1381,7 @@ def signup_api(
         result = (
             OrganizationSignupService
             .create_organization_account(
+                referral_code=payload.get("referral_code", ""),
                 business_scope=payload.get("business_scope", "mixed"),
                 organization_name=(
                     organization_name

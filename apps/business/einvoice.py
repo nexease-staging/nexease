@@ -262,6 +262,9 @@ def einvoices(request):
             if action=='recover' and status!='pending':raise ValueError('This invoice is not pending recovery.')
             if action in ('cancel','check-cancellation') and status not in ('registered','cancel_pending'):raise ValueError('An active IRN is required.')
             if action=='cancel' and status=='cancel_pending':raise ValueError('Check the cancellation outcome before retrying.')
+            if action=='generate':
+                from apps.saas.provider_guard import reserve_einvoice
+                reserve_einvoice(org,inv.id,env)
             base,headers,seller=session(org,(inv.billing_details or {}).get('supplier_gstin',''))
             document=old.get('document') if old else build_document(inv,reg,seller)
             route=PREFIX+'/invoice'

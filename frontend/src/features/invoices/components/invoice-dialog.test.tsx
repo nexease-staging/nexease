@@ -8,7 +8,7 @@ vi.mock('@/lib/api/client',()=>({apiRequest:vi.fn()}));
 vi.mock('@/features/invoices/api',()=>({createInvoice:vi.fn()}));
 vi.mock('@/features/sales-orders/hooks',()=>({useSalesOrderList:()=>({data:{sales_orders:[{id:'so1',so_number:'SO-001',customer:{name:'QA Client'}}]}})}));
 vi.mock('@/components/master-lookup',()=>({default:()=>null}));
-vi.mock('@/features/business/barcode-scan',()=>({default:({renderInput}:{renderInput?:Function})=>renderInput?.(()=>{},{current:null},false)??null}));
+vi.mock('@/features/business/barcode-scan',()=>({default:({renderInput}:{renderInput?:(onScan:(value:string)=>void,ref:{current:HTMLInputElement|null},ready:boolean)=>import('react').ReactNode})=>renderInput?.(()=>{},{current:null},false)??null}));
 vi.mock('@/features/business/gst-lookup',()=>({default:()=>null}));
 beforeAll(()=>{HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','')};HTMLDialogElement.prototype.close=function(){this.removeAttribute('open')}});
 beforeEach(()=>{vi.clearAllMocks();vi.mocked(apiRequest).mockImplementation(async path=>({data:path.includes('/lookup/')?{records:[]}:{id:'invoice1'}} as never));vi.mocked(createInvoice).mockResolvedValue({id:'invoice2'} as never)});
@@ -28,4 +28,13 @@ describe('Shared invoice creation',()=>{
  });
  it('uses the same dialog for an order invoice',async()=>{const callbacks=mount('order');fireEvent.change(screen.getByLabelText('Fulfilled sales order *'),{target:{value:'so1'}});fireEvent.change(screen.getByLabelText('GST treatment'),{target:{value:'unregistered'}});fireEvent.click(screen.getByRole('button',{name:'Save draft invoice'}));await waitFor(()=>expect(callbacks.onCreated).toHaveBeenCalledWith('invoice2'));expect(createInvoice).toHaveBeenCalledWith(expect.objectContaining({sales_order_id:'so1'}));expect(apiRequest).not.toHaveBeenCalled()});
  it('switches modes without creating records and closes safely',()=>{const callbacks=mount();fireEvent.click(screen.getByRole('button',{name:'From sales order'}));expect(screen.getByLabelText('Fulfilled sales order *')).toBeRequired();fireEvent.click(screen.getByRole('button',{name:'Close invoice'}));expect(callbacks.onClose).toHaveBeenCalled();expect(apiRequest).not.toHaveBeenCalled()});
+});
+
+it('blocks two synchronous submits while the create request is pending',async()=>{
+ mount('order');
+ vi.mocked(createInvoice).mockReturnValue(new Promise(()=>{}));
+ const form=screen.getByRole('button',{name:'Save draft invoice'}).closest('form')!;
+ fireEvent.change(screen.getByLabelText('Fulfilled sales order *'),{target:{value:'so1'}});
+ fireEvent.submit(form);fireEvent.submit(form);
+ expect(createInvoice).toHaveBeenCalledTimes(1);
 });

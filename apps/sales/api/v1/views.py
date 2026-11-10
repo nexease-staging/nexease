@@ -1,3 +1,4 @@
+from apps.core.services.invoice_creation_request import invoice_creation_request
 from apps.business.automation import write_lock
 import json
 
@@ -1791,6 +1792,7 @@ def invoice_bank_account_list_api(
     limit=120,
     window_seconds=60,
 )
+@invoice_creation_request("sales_order")
 def invoice_collection_api(
     request,
 ):

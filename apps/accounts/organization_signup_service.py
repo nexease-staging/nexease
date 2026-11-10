@@ -49,6 +49,7 @@ class OrganizationSignupService:
         last_name,
         user_email,
         password,
+        referral_code="",
         business_scope="mixed",
         phone="",
         address="",
@@ -60,6 +61,11 @@ class OrganizationSignupService:
         # NORMALIZE
         # ==================================================
 
+        from apps.saas.partners import resolve_referral
+        try:
+            partner_id = resolve_referral(referral_code, user_email)
+        except ValueError as exc:
+            raise OrganizationSignupError(str(exc)) from exc
         from apps.business.profiles import PROFILES
         if business_scope not in PROFILES:
             raise OrganizationSignupError("Choose a valid business scope.")
@@ -274,8 +280,16 @@ class OrganizationSignupService:
                 force_insert=True
             )
 
+            if partner_id:
+                from apps.saas.commissions import attach_referral
+                attach_referral(organization.id, partner_id, "signup:" + str(user.id))
             from apps.saas.entitlements import grant_signup_trial
             grant_signup_trial(organization)
+            from apps.saas.alerts import enqueue
+            enqueue(organization=organization.id, recipient=user.id, cycle='signup:'+str(user.id),
+                due_date=user.created_at.date(), kind='welcome', title='Welcome to NexEase',
+                message='Your NexEase workspace is ready. Sign in to configure your business and review your subscription.',
+                now=datetime.utcnow())
 
             return {
                 "organization":
@@ -336,6 +350,8 @@ class OrganizationSignupService:
             try:
                 from apps.saas.models import Membership
                 Membership.objects(organization_id=str(organization.id)).delete()
+                from mongoengine.connection import get_db
+                get_db().saas_referrals.delete_one({"_id": str(organization.id)})
                 organization.delete()
             except Exception:
                 pass

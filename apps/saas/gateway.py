@@ -39,16 +39,19 @@ def reconcile(subscription_id,payment_id=None):
  for skip in range(0,300,100):
   batch=api('invoices?subscription_id='+subscription_id+'&count=100&skip='+str(skip)).get('items',[]);invoices.extend(batch)
   if len(batch)<100:break
+ track_commissions=bool(get_db().saas_referrals.find_one({'_id':c.organization_id}))
  paid=None;refunded=False
  for inv in invoices:
   if inv.get('subscription_id')!=subscription_id or inv.get('status')!='paid' or inv.get('currency')!='INR' or inv.get('amount_paid')!=c.price_paise:continue
-  if inv.get('billing_start')!=start or inv.get('billing_end')!=end:continue
-  if payment_id and inv.get('payment_id')!=payment_id:continue
+  if not track_commissions and (inv.get('billing_start')!=start or inv.get('billing_end')!=end):continue
   p=api('payments/'+inv['payment_id'])
   if p.get('currency')=='INR' and p.get('amount')==c.price_paise and p.get('status') in ('captured','refunded'):
-   get_db().saas_payments.update_one({'_id':inv['payment_id']},{'$set':{'organization_id':c.organization_id,'subscription_id':subscription_id,'invoice_id':inv.get('id',''),'amount_paise':p['amount'],'refunded_paise':p.get('amount_refunded',0),'mode':c.mode,'paid_at':inv.get('paid_at'),'period_start':start,'period_end':end,'receipt_url':inv.get('short_url','')}},upsert=True)
+   get_db().saas_payments.update_one({'_id':inv['payment_id']},{'$set':{'organization_id':c.organization_id,'subscription_id':subscription_id,'invoice_id':inv.get('id',''),'amount_paise':p['amount'],'refunded_paise':p.get('amount_refunded',0),'mode':c.mode,'paid_at':inv.get('paid_at'),'period_start':inv.get('billing_start'),'period_end':inv.get('billing_end'),'receipt_url':inv.get('short_url','')}},upsert=True)
+  # Historical receipts update commissions but never activate an old period.
+  if inv.get('billing_start')!=start or inv.get('billing_end')!=end:continue
+  if payment_id and inv.get('payment_id')!=payment_id:continue
   if p.get('currency')=='INR' and p.get('amount')==c.price_paise and p.get('amount_refunded',0):refunded=True
-  if p.get('status')=='captured' and p.get('currency')=='INR' and p.get('amount')==c.price_paise and not p.get('amount_refunded',0):paid=inv;break
+  if p.get('status')=='captured' and p.get('currency')=='INR' and p.get('amount')==c.price_paise and not p.get('amount_refunded',0):paid=inv
  with org_lock(c.organization_id):
   m=Membership.objects(organization_id=c.organization_id).first()
   if paid:
@@ -59,4 +62,6 @@ def reconcile(subscription_id,payment_id=None):
    m.plan=c.plan;m.cycle=c.cycle;m.gateway_mode=c.mode;m.status='active';m.start=newstart;m.end=newend;m.subscription_id=subscription_id;m.limits=c.limits;m.features=c.features;m.updated_at=datetime.utcnow();m.save()
   elif m and m.subscription_id==subscription_id and (refunded or m.end<=datetime.utcnow()):m.status='refunded' if refunded else 'expired';m.save()
   c.status=s.get('status','unknown');c.save()
+ from .commissions import rebuild
+ rebuild(c.organization_id,c.mode)
  return {'status':c.status,'message':'Paid access verified.' if paid else 'No captured current-period invoice verified yet.'}

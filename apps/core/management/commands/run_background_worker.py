@@ -1,4 +1,6 @@
 import socket
+import os
+import logging
 import time
 import uuid
 
@@ -107,6 +109,7 @@ class Command(BaseCommand):
             )
         )
 
+        next_alert_scan = 0.0
         while True:
 
             if ShutdownStateService.is_shutting_down():
@@ -121,7 +124,23 @@ class Command(BaseCommand):
             from datetime import datetime
             from apps.core.quotation import deliver_one
             get_db().nexease_worker_health.update_one({'_id':'background'},{'$set':{'at':datetime.utcnow()}},upsert=True)
-            deliver_one()
+            # Isolate queues: an unavailable provider/queue must not starve others.
+            from apps.saas import alerts, partner_mail
+            try:
+                if os.getenv('SUBSCRIPTION_ALERTS_ENABLED', 'false').lower() == 'true' and time.monotonic() >= next_alert_scan:
+                    alerts.schedule()
+                    next_alert_scan = time.monotonic() + 60
+            except Exception:
+                logging.getLogger(__name__).exception('Subscription alert scheduling failed')
+            for queue_name, deliver in (
+                ('quotation', deliver_one),
+                ('subscription', alerts.deliver_one),
+                ('partner', partner_mail.deliver_one),
+            ):
+                try:
+                    deliver()
+                except Exception:
+                    logging.getLogger(__name__).exception('%s queue processing failed', queue_name)
             BackgroundJobService.recover_expired_jobs()
 
             self._requeue_due_retries()

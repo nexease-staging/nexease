@@ -62,6 +62,7 @@ export interface LogoutAllData {
 }
 
 export interface SignupInput {
+  referral_code?: string;
   address?: string;
   business_scope?: string;
   organization_name: string;

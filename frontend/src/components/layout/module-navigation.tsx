@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect -- Close the navigation popover when route state changes. */
 "use client";
 
 import {useEffect, useRef, useState} from "react";

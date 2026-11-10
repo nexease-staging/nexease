@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect -- Hydrate the persisted browser preference after SSR. */
 "use client";
 import { useEffect, useState } from 'react';
 import Link from 'next/link';

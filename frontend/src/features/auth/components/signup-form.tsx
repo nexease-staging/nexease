@@ -1,6 +1,6 @@
 "use client";
 import PasswordInput from "@/components/password-input";
-import {useState} from "react";
+import {useSyncExternalStore,useState} from "react";
 import Link from "next/link";
 import {useRouter} from "next/navigation";
 import {useForm} from "react-hook-form";
@@ -97,8 +97,13 @@ type SignupFormValues =
   z.infer<typeof signupSchema>;
 
 
+const subscribeReferral=()=>()=>{};
+const readReferral=()=>new URLSearchParams(window.location.search).get('ref')?.slice(0,64)||'';
 export default function SignupForm(){
  const router=useRouter();
+ const queryReferral=useSyncExternalStore(subscribeReferral,readReferral,()=> '');
+ const [editedReferral,setReferral]=useState<string|null>(null);
+ const referral=editedReferral??queryReferral;
  const [serverError,setServerError]=useState<string|null>(null);
  const {register,handleSubmit,formState:{errors,isSubmitting}}=useForm<SignupFormValues>({
   resolver:zodResolver(signupSchema),
@@ -107,7 +112,7 @@ export default function SignupForm(){
  async function onSubmit(values:SignupFormValues){
   setServerError(null);
   try{await signup({
-   business_scope:values.business_scope,organization_name:values.organization_name,
+   referral_code:referral, business_scope:values.business_scope,organization_name:values.organization_name,
    organization_email:values.organization_email,phone:values.phone||undefined,address:values.address||undefined,
    first_name:values.first_name,last_name:values.last_name,email:values.email,password:values.password
   });router.push("/login?signup=success")}
@@ -137,6 +142,7 @@ export default function SignupForm(){
    {field("confirm_password","Confirm password *","password","Re-enter password","new-password")}
    <p className="text-xs text-slate-500">Your login email and organisation email can be the same. Fields marked * are required.</p>
   </div>
+  <label className="block">Referral code (optional)<input className="nx-input" maxLength={64} value={referral} onChange={e=>setReferral(e.target.value)}/></label>
   <footer className="nx-signup-footer"><Link href="/login">Already registered? Sign in</Link><button type="submit" disabled={isSubmitting} className="nx-button"><Save size={17}/>{isSubmitting?"Creating…":"Create organisation"}</button></footer>
  </form>;
 }

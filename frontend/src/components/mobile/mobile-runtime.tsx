@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Capacitor, type PluginListenerHandle } from '@capacitor/core';
+import { Capacitor, SystemBars, SystemBarsStyle, SystemBarType, type PluginListenerHandle } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { Network } from '@capacitor/network';
 import { Keyboard } from '@capacitor/keyboard';
@@ -19,23 +19,24 @@ export default function MobileRuntime() {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     document.documentElement.dataset.native = 'true';
+    void SystemBars.setStyle({style:SystemBarsStyle.Dark,bar:SystemBarType.StatusBar}).catch(()=>{/* Older native binaries may not support SystemBars. */});
     void clearOldShareFiles();
     let disposed = false; const handles: PluginListenerHandle[] = [];
-    const keep = async (p: Promise<PluginListenerHandle>) => { const h = await p; if (disposed) await h.remove(); else handles.push(h); };
+    const keep = async (p: Promise<PluginListenerHandle>) => { try {const h = await p; if (disposed) await h.remove(); else handles.push(h);} catch { /* Plugin unavailable on this device; browser fallback remains. */ } };
     void keep(Network.addListener('networkStatusChange', s => { setOffline(!s.connected); if (s.connected) void queries.invalidateQueries(); }));
-    void Network.getStatus().then(s => { if (!disposed) setOffline(!s.connected); });
+    void Network.getStatus().then(s => { if (!disposed) setOffline(!s.connected); }).catch(()=>setOffline(!navigator.onLine));
     void keep(App.addListener('appStateChange', s => { if (s.isActive) {
       void queries.invalidateQueries({queryKey:['authentication', 'current-user']});
       void queries.refetchQueries({type:'active',stale:true,predicate:q=>q.queryKey[0]!=='authentication'});
     } }));
-    void keep(Keyboard.addListener('keyboardWillShow', () => { document.documentElement.dataset.keyboard = 'open'; }));
+    void keep(Keyboard.addListener('keyboardWillShow', () => { document.documentElement.dataset.keyboard = 'open'; requestAnimationFrame(()=>{(document.activeElement as HTMLElement|null)?.scrollIntoView?.({block:'center',behavior:'smooth'});}); }));
     void keep(Keyboard.addListener('keyboardWillHide', () => { delete document.documentElement.dataset.keyboard; }));
     const external = (event: MouseEvent) => {
       const anchor = (event.target as Element).closest?.('a');
       if (!anchor || !anchor.href || anchor.download) return;
       const url = new URL(anchor.href);
       if (url.origin !== window.location.origin && /^https?:$/.test(url.protocol)) {
-        event.preventDefault(); void Browser.open({ url: url.href });
+        event.preventDefault(); void Browser.open({ url: url.href }).catch(()=>window.location.assign(url.href));
       }
     };
     document.addEventListener('click', external);
@@ -49,7 +50,7 @@ export default function MobileRuntime() {
       if (closer) { closer.click(); return; }
       if (!['/home','/home/','/dashboard','/dashboard/'].includes(pathname) && canGoBack) router.back();
       else if (window.confirm('Close NexEase?')) void App.exitApp();
-    }).then(h => { if (removed) void h.remove(); else handle = h; });
+    }).then(h => { if (removed) void h.remove(); else handle = h; }).catch(()=>{/* Browser history remains available. */});
     return () => { removed = true; void handle?.remove(); };
   }, [pathname, router]);
   return offline ? <div className="nx-offline" role="status">You’re offline. Changes cannot be saved. Reconnect before continuing.</div> : null;

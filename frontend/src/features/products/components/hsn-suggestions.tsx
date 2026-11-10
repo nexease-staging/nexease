@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect -- Clear stale lookup feedback when the query changes. */
 "use client";
 import {useEffect,useState} from 'react';
 import {useQuery} from '@tanstack/react-query';

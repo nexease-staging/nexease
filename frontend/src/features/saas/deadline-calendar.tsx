@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect -- Initialize the client clock after hydration; interval keeps it current. */
 "use client";
 import {useEffect,useState} from 'react';
 import Link from 'next/link';

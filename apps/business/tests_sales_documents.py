@@ -73,7 +73,7 @@ class SalesDocumentTests(SimpleTestCase):
 
     def test_annual_quota_resets_on_monthly_anniversary(self):
         from apps.saas.entitlements import usage_period
-        m=SimpleNamespace(cycle='yearly',start=datetime(2026,1,31,12))
+        m=SimpleNamespace(plan='pro',cycle='yearly',start=datetime(2026,1,31,12))
         with patch('apps.saas.entitlements.datetime') as clock:
             clock.utcnow.return_value=datetime(2026,3,2)
             self.assertEqual(usage_period(m),'2026-02-28T12:00:00')
@@ -100,7 +100,7 @@ class SalesDocumentTests(SimpleTestCase):
                                'invoice_date':datetime(2026,11,5),'status':'ISSUED','updated_at':datetime.utcnow(),
                                'billing_details':{'supplier_gstin':'27AAACQ3770E1Z0'}})
         self.addCleanup(lambda:collection.delete_one({'_id':invoice_id}))
-        Membership(organization_id=str(self.org.id),plan='pro',status='active',
+        Membership(organization_id=str(self.org.id),plan='pro',status='active',limits={'einvoices':100},
                    start=datetime.utcnow()-timedelta(days=1),end=datetime.utcnow()+timedelta(days=1)).save()
         def submit():
             req=self.factory.post('/api/v1/business/e-invoices/',

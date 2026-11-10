@@ -8,15 +8,15 @@ export default function StatCard({ label, value, hint, icon: Icon, tone = "neutr
   const body = (
     <>
       <span className="nx-icon-chip" data-tone={tone}><Icon size={20} aria-hidden="true" /></span>
-      <span className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1">
         <span className="nx-muted block text-xs font-semibold">{label}</span>
         {loading ? (
           <span className="nx-skeleton mt-2 block h-6 w-24" aria-hidden="true" />
         ) : (
-          <strong className="mt-0.5 block truncate text-xl font-bold tracking-tight tabular-nums" title={title}>{value}</strong>
+          <><strong className="mt-0.5 block break-words text-xl font-bold tracking-tight tabular-nums" title={title}>{value}</strong>{!href && title && title !== value ? <details className="text-xs"><summary className="cursor-pointer py-1">Exact amount</summary><span className="break-all tabular-nums">{title}</span></details> : null}</>
         )}
-        {hint && !loading ? <span className="nx-muted block truncate text-xs">{hint}</span> : null}
-      </span>
+        {hint && !loading ? <span className="nx-muted block text-xs">{hint}</span> : null}
+      </div>
       {href ? <ArrowUpRight size={16} className="nx-muted shrink-0" aria-hidden="true" /> : null}
     </>
   );

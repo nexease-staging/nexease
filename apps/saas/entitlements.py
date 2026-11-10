@@ -9,10 +9,11 @@ from pymongo.errors import DuplicateKeyError
 from mongoengine.errors import ValidationError
 from .models import Plan,Membership
 DEFAULTS={
- 'basic':('NexEase',749,dict(users=2,invoices=100,bills=100,products=500,warehouses=1,employees=0,ai=0,scan_pages=0),[]),
- 'plus':('NexEase Plus',999,dict(users=5,invoices=500,bills=500,products=5000,warehouses=3,employees=25,ai=0,scan_pages=0),['finance','advanced_reports','gst','workforce']),
- 'pro':('NexEase Pro',1299,dict(users=10,invoices=2000,bills=2000,products=20000,warehouses=10,employees=100,ai=300,scan_pages=100),['finance','advanced_reports','gst','workforce','ai','einvoice'])}
-ANNUAL_PRICES={'basic':7499,'plus':9999,'pro':12999}
+ 'free':('Free',0,dict(users=1,invoices=30,bills=30,products=100,warehouses=1,employees=0,ai=0,scan_pages=0,gst_lookups=0,einvoices=0),[]),
+ 'basic':('NexEase',749,dict(users=3,invoices=300,bills=100,products=500,warehouses=1,employees=0,ai=0,scan_pages=0,gst_lookups=0,einvoices=0),[]),
+ 'plus':('NexEase Plus',999,dict(users=10,invoices=1000,bills=500,products=5000,warehouses=3,employees=25,ai=0,scan_pages=0,gst_lookups=0,einvoices=0),['finance','advanced_reports','gst','workforce']),
+ 'pro':('NexEase Pro',1299,dict(users=25,invoices=3000,bills=2000,products=20000,warehouses=10,employees=50,ai=300,scan_pages=100,gst_lookups=0,einvoices=100),['finance','advanced_reports','gst','workforce','ai','einvoice'])}
+ANNUAL_PRICES={'free':0,'basic':7499,'plus':9999,'pro':12999}
 
 def enabled():return os.getenv('SAAS_ENFORCEMENT','true').lower()=='true'
 def seed():
@@ -79,6 +80,9 @@ def org_lock(orgid):
  finally:held.reset(h);c.delete_one({'_id':orgid,'token':token})
 
 def usage_period(m):
+ if m.plan=='free':
+  from .provider_guard import month_key
+  return month_key(datetime.utcnow())
  if m.cycle!='yearly':return m.start.isoformat()
  now=datetime.utcnow()
  offset=max(0,(now.year-m.start.year)*12+now.month-m.start.month)

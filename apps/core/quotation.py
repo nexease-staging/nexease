@@ -41,13 +41,16 @@ def deliver_one():
     # remain visible for review rather than automatically duplicating emails.
     item=db.find_one_and_update({'status':{'$in':['pending','retry']},'attempts':{'$lt':3},'$or':[{'next_at':{'$exists':False}},{'next_at':{'$lte':now}}]}, {'$set':{'status':'sending','started_at':now},'$inc':{'attempts':1}},return_document=ReturnDocument.AFTER)
     if not item:return
+    send_started=False
     try:
         if os.getenv('EMAIL_MODE','development')!='production':raise ValueError('Production email is not enabled.')
         recipient=os.getenv('CONTACT_EMAIL','nexease.contact@gmail.com')
         validate_email(recipient)
         body='\n'.join(k.title()+': '+item[k] for k in ('name','email','phone','business','service','message'))+'\nReference: '+item['_id']
-        sent=EmailMessage(subject='NexEase quotation enquiry',body=body,to=[recipient],reply_to=[item['email']],connection=get_connection(timeout=30)).send(fail_silently=False)
+        message=EmailMessage(subject='NexEase quotation enquiry',body=body,to=[recipient],reply_to=[item['email']],connection=get_connection(timeout=30))
+        send_started=True
+        sent=message.send(fail_silently=False)
         if sent!=1:raise ValueError('Email provider did not accept the enquiry.')
         db.update_one({'_id':item['_id']},{'$set':{'status':'sent','sent_at':datetime.utcnow()},'$unset':{'last_error':''}})
     except Exception as exc:
-        db.update_one({'_id':item['_id']},{'$set':{'status':'failed' if item['attempts']>=3 else 'retry','next_at':now+timedelta(minutes=5),'last_error':type(exc).__name__}})
+        db.update_one({'_id':item['_id']},{'$set':{'status':'review_required' if send_started else ('failed' if item['attempts']>=3 else 'retry'),'next_at':now+timedelta(minutes=5),'last_error':type(exc).__name__}})

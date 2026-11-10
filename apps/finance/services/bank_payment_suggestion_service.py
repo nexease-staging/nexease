@@ -1,3 +1,4 @@
+from apps.core.services.payment_operation import serialized_financial_write, hold_payment_for_review
 from datetime import timedelta, datetime
 from decimal import Decimal
 
@@ -698,6 +699,7 @@ class BankPaymentSuggestionService:
 
 
     @staticmethod
+    @serialized_financial_write
     def execute_customer_receipt(
         *,
         user,
@@ -883,29 +885,6 @@ class BankPaymentSuggestionService:
 
         bank_account.reload()
 
-        #
-        # Store original values for compensation.
-        #
-        original_amount_paid = (
-            invoice.amount_paid
-        )
-
-        original_balance_due = (
-            invoice.balance_due
-        )
-
-        original_status = (
-            invoice.status
-        )
-
-        original_paid_at = (
-            invoice.paid_at
-        )
-
-        original_bank_balance = (
-            bank_account.current_balance
-        )
-
         payment = None
         bank_transaction = None
 
@@ -938,6 +917,7 @@ class BankPaymentSuggestionService:
                     payment_date=(
                         line.transaction_date
                     ),
+                    request_key=execution_reference,
                     reference_number=(
                         execution_reference
                     ),
@@ -1048,144 +1028,14 @@ class BankPaymentSuggestionService:
             }
 
         except Exception:
-            #
-            # Compensation if failure happens
-            # after PaymentService succeeds.
-            #
-
-            if bank_transaction:
-                try:
-                    bank_transaction.reload()
-
-                    if (
-                        bank_transaction
-                        .reconciliation_status
-                        == "RECONCILED"
-                    ):
-                        bank_transaction.reconciliation_status = (
-                            "UNRECONCILED"
-                        )
-
-                        bank_transaction.reconciled_at = None
-
-                        bank_transaction.save()
-
-                except Exception:
-                    pass
-
-            #
-            # Restore statement line if matching
-            # was partially persisted.
-            #
-            try:
-                statement.reload()
-
-                current_line = (
-                    BankStatementService
-                    .get_statement_line(
-                        statement=statement,
-                        line_number=(
-                            suggestion.line_number
-                        ),
-                    )
-                )
-
-                if (
-                    current_line.match_status
-                    == "MATCHED"
-                    and
-                    current_line.matched_transaction
-                    is not None
-                    and
-                    bank_transaction
-                    is not None
-                    and
-                    current_line
-                    .matched_transaction.id
-                    == bank_transaction.id
-                ):
-                    current_line.match_status = (
-                        "UNMATCHED"
-                    )
-
-                    current_line.matched_transaction = (
-                        None
-                    )
-
-                    current_line.matched_at = None
-
-                    statement.save()
-
-                    (
-                        BankStatementService
-                        .update_statement_reconciliation_status(
-                            statement=statement,
-                        )
-                    )
-
-            except Exception:
-                pass
-
-            #
-            # Delete bank transaction and restore
-            # bank balance.
-            #
-            if bank_transaction:
-                try:
-                    bank_transaction.delete()
-
-                    bank_account.reload()
-
-                    bank_account.current_balance = (
-                        original_bank_balance
-                    )
-
-                    bank_account.save()
-
-                except Exception:
-                    pass
-
-            #
-            # Delete CustomerPayment.
-            #
+            # Never delete a payment whose accounting journal may already be posted.
+            # Preserve statement/payment evidence for reviewed reconciliation.
             if payment:
-                try:
-                    payment.delete()
-
-                except Exception:
-                    pass
-
-            #
-            # Restore Invoice.
-            #
-            try:
-                invoice.reload()
-
-                (
-                    InvoiceRepository
-                    .update_payment_totals(
-                        invoice=invoice,
-                        amount_paid=(
-                            original_amount_paid
-                        ),
-                        balance_due=(
-                            original_balance_due
-                        ),
-                        status=(
-                            original_status
-                        ),
-                        paid_at=(
-                            original_paid_at
-                        ),
-                    )
-                )
-
-            except Exception:
-                pass
-
+                hold_payment_for_review(organization, payment)
             raise
 
     @staticmethod
+    @serialized_financial_write
     def execute_supplier_payment(
         *,
         user,
@@ -1357,26 +1207,6 @@ class BankPaymentSuggestionService:
 
         bank_account.reload()
 
-        original_amount_paid = (
-            vendor_bill.amount_paid
-        )
-
-        original_balance_due = (
-            vendor_bill.balance_due
-        )
-
-        original_status = (
-            vendor_bill.status
-        )
-
-        original_paid_at = (
-            vendor_bill.paid_at
-        )
-
-        original_bank_balance = (
-            bank_account.current_balance
-        )
-
         payment = None
         bank_transaction = None
 
@@ -1402,6 +1232,7 @@ class BankPaymentSuggestionService:
                     payment_date=(
                         line.transaction_date
                     ),
+                    request_key=execution_reference,
                     reference_number=(
                         execution_reference
                     ),
@@ -1499,117 +1330,8 @@ class BankPaymentSuggestionService:
             }
 
         except Exception:
-            if bank_transaction:
-                try:
-                    bank_transaction.reload()
-
-                    if (
-                        bank_transaction
-                        .reconciliation_status
-                        == "RECONCILED"
-                    ):
-                        bank_transaction.reconciliation_status = (
-                            "UNRECONCILED"
-                        )
-
-                        bank_transaction.reconciled_at = None
-
-                        bank_transaction.save()
-
-                except Exception:
-                    pass
-
-            try:
-                statement.reload()
-
-                current_line = (
-                    BankStatementService
-                    .get_statement_line(
-                        statement=statement,
-                        line_number=(
-                            suggestion.line_number
-                        ),
-                    )
-                )
-
-                if (
-                    current_line.match_status
-                    == "MATCHED"
-                    and
-                    current_line.matched_transaction
-                    is not None
-                    and
-                    bank_transaction
-                    is not None
-                    and
-                    current_line
-                    .matched_transaction.id
-                    == bank_transaction.id
-                ):
-                    current_line.match_status = (
-                        "UNMATCHED"
-                    )
-
-                    current_line.matched_transaction = None
-                    current_line.matched_at = None
-
-                    statement.save()
-
-                    (
-                        BankStatementService
-                        .update_statement_reconciliation_status(
-                            statement=statement,
-                        )
-                    )
-
-            except Exception:
-                pass
-
-            if bank_transaction:
-                try:
-                    bank_transaction.delete()
-
-                    bank_account.reload()
-
-                    bank_account.current_balance = (
-                        original_bank_balance
-                    )
-
-                    bank_account.save()
-
-                except Exception:
-                    pass
-
+            # Never delete a payment whose accounting journal may already be posted.
+            # Preserve statement/payment evidence for reviewed reconciliation.
             if payment:
-                try:
-                    payment.delete()
-
-                except Exception:
-                    pass
-
-            try:
-                vendor_bill.reload()
-
-                (
-                    VendorBillRepository
-                    .update_payment_totals(
-                        bill=vendor_bill,
-                        amount_paid=(
-                            original_amount_paid
-                        ),
-                        balance_due=(
-                            original_balance_due
-                        ),
-                        status=(
-                            original_status
-                        ),
-                        paid_at=(
-                            original_paid_at
-                        ),
-                    )
-                )
-
-            except Exception:
-                pass
-
+                hold_payment_for_review(organization, payment)
             raise

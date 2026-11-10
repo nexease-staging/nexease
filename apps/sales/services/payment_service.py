@@ -1,3 +1,4 @@
+from apps.core.services.payment_operation import payment_operation, payment_write_started
 from datetime import datetime
 from decimal import Decimal
 from uuid import uuid4
@@ -105,15 +106,17 @@ class PaymentService:
         field_name,
     ):
         try:
-            return Decimal(
-                str(value)
-            )
+            amount = Decimal(str(value))
+            if not amount.is_finite() or amount != amount.quantize(Decimal("0.01")):
+                raise ValueError("Payment amounts must be finite with at most two decimal places.")
+            return amount
 
         except Exception:
             raise ValueError(
                 f"Invalid {field_name}."
             )
 
+    @payment_operation("customer", "invoice", "invoices.record_payment")
     def record_invoice_payment(
         *,
         user,
@@ -239,6 +242,16 @@ class PaymentService:
                 "Invalid payment method."
             )
 
+        # Resolve predictable accounting failures before persisting money movements.
+        for permission in ("bank_transactions.create", "journal_entries.create", "journal_entries.post"):
+            PaymentService._check_permission(user, permission)
+        for system_key in ("ACCOUNTS_RECEIVABLE", "CASH" if payment_method == "CASH" else "BANK"):
+            account = ChartOfAccountService.get_system_account(
+                organization=organization, system_key=system_key,
+            )
+            if account.organization.id != organization.id or not account.is_active:
+                raise ValueError("Payment accounting account is unavailable for this organization.")
+
         reference_number = (
             reference_number.strip()
         )
@@ -316,85 +329,61 @@ class PaymentService:
         payment = None
         bank_transaction = None
 
-        try:
-            payment = (
-                PaymentRepository
-                .create_payment(
-                    organization=organization,
-                    payment_number=payment_number,
-                    customer=invoice.customer,
-                    payment_date=payment_date,
-                    amount=amount,
-                    payment_method=payment_method,
-                    bank_account=bank_account,
-                    reference_number=(
-                        reference_number
-                    ),
-                    allocations=[
-                        allocation
-                    ],
-                    notes=notes.strip(),
-                    created_by=user,
-                )
+        payment_write_started(payment_number)
+        payment = (
+            PaymentRepository
+            .create_payment(
+                organization=organization,
+                payment_number=payment_number,
+                customer=invoice.customer,
+                payment_date=payment_date,
+                amount=amount,
+                payment_method=payment_method,
+                bank_account=bank_account,
+                reference_number=(
+                    reference_number
+                ),
+                allocations=[
+                    allocation
+                ],
+                notes=notes.strip(),
+                created_by=user,
             )
+        )
 
-            bank_transaction = (
-                BankTransactionService
-                .create_transaction(
-                    user=user,
-                    organization=organization,
-                    bank_account=bank_account,
-                    transaction_type="MONEY_IN",
-                    amount=amount,
-                    transaction_date=payment_date,
-                    reference_type=(
-                        "CUSTOMER_PAYMENT"
-                    ),
-                    reference_id=(
-                        payment.payment_number
-                    ),
-                    external_reference=(
-                        reference_number
-                    ),
-                    description=(
-                        "Customer payment "
-                        f"{payment.payment_number} "
-                        f"from {invoice.customer.name}"
-                    ),
-                )
+        bank_transaction = (
+            BankTransactionService
+            .create_transaction(
+                user=user,
+                organization=organization,
+                bank_account=bank_account,
+                transaction_type="MONEY_IN",
+                amount=amount,
+                transaction_date=payment_date,
+                reference_type=(
+                    "CUSTOMER_PAYMENT"
+                ),
+                reference_id=(
+                    payment.payment_number
+                ),
+                external_reference=(
+                    reference_number
+                ),
+                description=(
+                    "Customer payment "
+                    f"{payment.payment_number} "
+                    f"from {invoice.customer.name}"
+                ),
             )
+        )
 
-            InvoiceRepository.update_payment_totals(
-                invoice=invoice,
-                amount_paid=new_amount_paid,
-                balance_due=new_balance_due,
-                status=new_status,
-                paid_at=paid_at,
-            )
-
-        except Exception:
-            if bank_transaction:
-                try:
-                    bank_account.reload()
-
-                    bank_account.current_balance = (
-                        bank_transaction.balance_before
-                    )
-
-                    bank_account.save()
-
-                    bank_transaction.delete()
-
-                except Exception:
-                    pass
-
-            if payment:
-                try:
-                    payment.delete()
-                except Exception:
-                    pass
-
-            raise
+        InvoiceRepository.update_payment_totals(
+            invoice=invoice,
+            amount_paid=new_amount_paid,
+            balance_due=new_balance_due,
+            status=new_status,
+            paid_at=paid_at,
+        )
 
         # ==================================================
         # ACCOUNTING INTEGRATION
@@ -458,7 +447,13 @@ class PaymentService:
         )
 
         if existing_journal:
-            return existing_journal
+            if existing_journal.status == "POSTED":
+                return existing_journal
+            if existing_journal.status == "DRAFT":
+                return JournalEntryService.post_journal(
+                    user=user, organization=organization, journal_id=str(existing_journal.id),
+                )
+            raise ValueError("Existing payment journal requires accounting review.")
 
         # ==================================================
         # ACCOUNTS RECEIVABLE

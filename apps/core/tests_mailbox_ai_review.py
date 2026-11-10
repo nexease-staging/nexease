@@ -12,7 +12,7 @@ from apps.organizations.models import Organization
 
 class MailboxTests(SimpleTestCase):
  def setUp(self):
-  self.user=SimpleNamespace(id=uuid4().hex,email='owner@example.test');self.org=SimpleNamespace(id=uuid4().hex)
+  self.user=SimpleNamespace(id=uuid4().hex,email='owner@example.test');self.org=SimpleNamespace(id=uuid4().hex);self.user.organization=self.org
   self.env=patch.dict(os.environ,MAILBOX_ENCRYPTION_KEY=Fernet.generate_key().decode());self.env.start();self.addCleanup(self.env.stop)
  def tearDown(self):get_db().user_mailboxes.delete_many(mail.scope(self.user,self.org))
  @patch('apps.core.services.user_mailbox_service.smtplib.SMTP')

@@ -188,6 +188,7 @@ export interface VendorBillPaymentData {
 }
 
 export interface RecordVendorBillPaymentInput {
+  request_key?: string;
   amount: string;
   payment_method:
     SupplierPaymentMethod;

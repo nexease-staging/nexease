@@ -313,3 +313,35 @@ html[data-theme="dark"]{
 
 /* Professional reporting layout: stable chart heights, balanced cards and dark-mode contrast. */
 .nx-dashboard{max-width:1480px;margin:0 auto;padding-bottom:2rem}.nx-dashboard-title{padding:8px 0 16px}.nx-dashboard-title h1{font-size:clamp(1.6rem,3vw,2.15rem);font-weight:750;letter-spacing:-.035em}.nx-dashboard-analytics{--chart-ink:var(--nx-text,#102a43)}.nx-dashboard-analytics section{border-radius:16px!important;box-shadow:0 2px 8px #0b253508}.nx-dashboard-analytics .recharts-text{fill:var(--nx-text,#64748b)}.nx-dashboard-analytics .recharts-default-tooltip{color:#102a43!important;background:#fff!important;border-radius:10px!important}.nx-dashboard-analytics h2,.nx-dashboard-analytics h3{color:var(--nx-text,#102a43);font-weight:650}.nx-dashboard-toolbar{border:1px solid var(--nx-border,#e2e8f0);border-radius:14px;padding:14px;background:var(--nx-surface,#fff)}@media(max-width:640px){.nx-dashboard-analytics .recharts-wrapper{font-size:10px}.nx-dashboard-toolbar{padding:10px}.nx-dashboard-analytics{gap:12px}}
+
+/* Shared compact list primitives: 44px controls, visible financial values. */
+.nx-icon-btn{min-width:44px;min-height:44px;flex-shrink:0}
+.nx-primary-icon{background:var(--nx-primary);color:white}
+.nx-kpi-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.nx-chip-row{display:flex;flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x proximity;max-width:100%;padding-bottom:4px}
+.nx-chip-row>*{flex-shrink:0;scroll-snap-align:start}
+.nx-filter-sheet{border:1px solid var(--nx-border);border-radius:16px;padding:20px;background:var(--nx-surface);color:var(--nx-text);width:min(480px,100%);max-height:85dvh;overflow:auto;margin:auto}
+.nx-filter-sheet::backdrop{background:#001b2b80}
+.nx-invoice-cards{padding:8px;display:grid;gap:8px}
+.nx-invoice-card{border:1px solid var(--nx-border);border-radius:12px;padding:8px 12px;display:grid;gap:4px;background:var(--nx-surface)}
+.nx-amount-pill{border-radius:8px;padding:4px 8px;font-weight:700;background:#edf0f2;color:#243746;overflow-wrap:anywhere}
+.nx-amount-pill[data-tone=danger]{color:#a11212;background:#fff0f0}
+.nx-amount-pill[data-tone=success]{color:#075339;background:#ddf7eb}
+.nx-amount-pill[data-tone=warning]{color:#714000;background:#fff2d3}
+@media(min-width:768px){.nx-invoice-cards{display:none}}
+@media(max-width:767px){
+ .nx-invoice-list>header{align-items:center;gap:4px;padding-bottom:0}
+ .nx-invoice-list>header h1{font-size:20px}
+ .nx-kpi-strip{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px}
+ .nx-kpi-strip>.nx-card{min-width:190px;max-width:220px;flex-shrink:0;scroll-snap-align:start;padding:10px}
+ .nx-kpi-strip .nx-icon-chip{display:none}
+ .nx-kpi-strip strong{font-size:18px}
+ .nx-filter-sheet{margin:auto 0 0;width:100%;max-width:100%;border-radius:16px 16px 0 0;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+ .nx-workspace-main{padding-bottom:calc(148px + env(safe-area-inset-bottom))!important}
+}
+
+@media(max-width:767px){button[aria-label="Open NexEase AI"]{bottom:calc(80px + env(safe-area-inset-bottom))!important;right:16px!important;width:48px;height:48px;padding:0!important;justify-content:center;font-size:0}button[aria-label="Open NexEase AI"] svg{width:22px;height:22px}html[data-keyboard="open"] button[aria-label="Open NexEase AI"]{display:none}}
+html[data-native="true"] .nx-app-header{background:#062b40;color:#fff;padding-top:env(safe-area-inset-top);min-height:calc(56px + env(safe-area-inset-top))}
+html[data-native="true"] .nx-app-header .nx-icon-btn{color:#fff;background:transparent}
+html[data-native="true"] body:before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top);background:#062b40;z-index:100}
+.nx-button{min-height:44px}

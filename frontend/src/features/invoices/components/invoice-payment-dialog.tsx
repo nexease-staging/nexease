@@ -1,4 +1,6 @@
 "use client";
+import { paymentRetryKey } from "@/lib/payments/retry-key";
+import { useRef } from "react";
 import SearchSelect from "@/components/search-select";
 
 
@@ -227,6 +229,7 @@ export default function InvoicePaymentDialog({
   onClose,
   onRecorded,
 }: InvoicePaymentDialogProps) {
+  const submitting = useRef(false);
   const bankAccountQuery =
     useInvoiceBankAccounts(
       open,
@@ -321,13 +324,10 @@ export default function InvoicePaymentDialog({
       return;
     }
 
+    if (submitting.current) return;
+    submitting.current = true;
     try {
-      await paymentMutation
-        .mutateAsync({
-          invoiceId:
-            invoice.id,
-
-          input: {
+      const input = {
             amount:
               values.amount,
 
@@ -353,8 +353,16 @@ export default function InvoicePaymentDialog({
               values.notes.trim()
               ||
               undefined,
-          },
+      };
+      const retry = await paymentRetryKey(invoice.id, input);
+      await paymentMutation
+        .mutateAsync({
+          invoiceId:
+            invoice.id,
+
+          input: { ...input, request_key: retry.requestKey },
         });
+      retry.complete();
 
       onClose();
       onRecorded?.();
@@ -426,6 +434,8 @@ export default function InvoicePaymentDialog({
             "Unable to record the payment.",
         },
       );
+    } finally {
+      submitting.current = false;
     }
   }
 
