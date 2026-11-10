@@ -61,3 +61,8 @@ Financial transactions, financial-year numbering, partner commissions and full r
 - INV-REQ-001 — High, direct/sales-order create APIs and API client: uncertain responses and simultaneous submissions could repeat creation work. Add tenant/user/payload/numbering-bound durable receipts, response replay and persisted client identity; exercise direct stock and sales-order paths.
 - INV-REQ-002 — High, direct invoice stock failure: deleting the saved invoice could erase evidence of a partial operation. Preserve the draft, retain an interruption receipt and block issue until reconciliation.
 - INV-REQ-003 — Medium, invoice dialogs: asynchronous busy state alone did not synchronously reject another form submission; cache-refresh failure could look like a failed save. Add immediate ref guards and isolate post-save cache refresh errors.
+
+## Release stability — 11 November
+- REL-001 — High, quotation delivery: SMTP exceptions could retry an already accepted enquiry. Mark attempted sends with uncertain outcomes for review; tests prove one send attempt across repeated polling.
+- REL-002 — Medium, worker loop: quotation/subscription queue errors could starve unrelated queues. Isolate queue calls and test that partner delivery and normal job polling continue.
+- REL-003 — Test infrastructure: three legacy fixtures omitted tenant/plan/allowance fields required by newer guards. Correct fixtures without weakening runtime protections. Original app suite passes again.

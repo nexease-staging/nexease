@@ -127,3 +127,6 @@ Found legacy invoice collisions missing from reservation history, independent UU
 
 ## Invoice creation retry checkpoint
 Direct invoice retries could create another invoice/master set and deduct stock again after a lost response. Added durable header-based creation receipts on direct and sales-order APIs, client key persistence and immediate submit guards. Interrupted writes retain invoice evidence and block issuing the affected draft. General multi-document atomicity, legacy/no-key callers and real replica-set/device verification remain outside this checkpoint. See INVOICE_CREATION_RETRY.md.
+
+## Release stability review — 11 November
+Verified PR mergeability and Render deployment metadata. Upgrade head was not deployed: Singapore services still ran `51ee883` from main. Found and fixed quotation ambiguous-send retries and worker queue starvation. Ran the complete original app test suite (966 passed after correcting three stale fixtures). Added automated release checks; GitHub execution and hosted acceptance remain pending. See RELEASE_READINESS_NOV11.md.

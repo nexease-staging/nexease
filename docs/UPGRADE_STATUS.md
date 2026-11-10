@@ -50,3 +50,6 @@ Optional IST financial-year numbering, shared invoice allocation, legacy collisi
 
 ## Invoice creation retry checkpoint
 Header-based durable creation receipts, direct/sales-order response replay, browser retry persistence and submit guards are implemented. Interrupted invoice creation is held for review, with a read-only inspection command and issue protection on affected drafts. See INVOICE_CREATION_RETRY.md. Older clients/no-key callers, changed-input business duplicates, automatic repairs and true multi-document atomicity remain outside the guarantee. No deployment is implied.
+
+## Release readiness — 11 November
+PR #4 is mergeable but remains draft/unmerged. Render's Singapore services still deploy main at `51ee883`; upgrade commits are not live. Fixed ambiguous quotation SMTP retries and isolated worker queues. Both backend suites pass (297 standalone; 966 original app tests). Added GitHub Actions checks, pending actual runner execution after push. See RELEASE_READINESS_NOV11.md for rollout order and remaining scope.
