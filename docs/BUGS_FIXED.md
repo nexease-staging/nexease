@@ -56,3 +56,8 @@ Financial transactions, financial-year numbering, partner commissions and full r
 - NUM-001 — High, numbering allocator: legacy invoices were absent from reservations, so automatic creation could offer an existing number. Check persisted invoices, skip collisions and attach legacy evidence; concurrent manual/automatic and tenant tests added.
 - NUM-002 — Medium, invoice services/settings: creation routes lacked a common date-aware financial-year option. Add opt-in April–March sequences using IST and preserve existing documents and the legacy counter.
 - NUM-003 — Medium, numbering signals: repeated saves after validation failure could consume another number. Retain the same object's reservation, attach successful saves and provide a read-only audit; AI proposal reservations remain claimable only by their owning proposal.
+
+## Invoice creation retry safety
+- INV-REQ-001 — High, direct/sales-order create APIs and API client: uncertain responses and simultaneous submissions could repeat creation work. Add tenant/user/payload/numbering-bound durable receipts, response replay and persisted client identity; exercise direct stock and sales-order paths.
+- INV-REQ-002 — High, direct invoice stock failure: deleting the saved invoice could erase evidence of a partial operation. Preserve the draft, retain an interruption receipt and block issue until reconciliation.
+- INV-REQ-003 — Medium, invoice dialogs: asynchronous busy state alone did not synchronously reject another form submission; cache-refresh failure could look like a failed save. Add immediate ref guards and isolate post-save cache refresh errors.

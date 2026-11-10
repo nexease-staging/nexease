@@ -16,18 +16,19 @@ const empty=():Line=>({item_type:"goods",hsn_code:"",sku:"",name:"",unit:"PCS",q
 const today=()=>{const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)};
 export default function InvoiceDialog({open,onClose,onCreated,initialMode="order"}:{open:boolean;onClose:()=>void;onCreated?:(id:string)=>void;initialMode?:"direct"|"order"}){
  const [mode,setMode]=useState(initialMode),[supply,setSupply]=useState(""),[customer,setCustomer]=useState<Record<string,string>>({}),[details,setDetails]=useState<Record<string,string>>({}),[lines,setLines]=useState<Line[]>([empty()]),[message,setMessage]=useState(""),[busy,setBusy]=useState(false);
+ const submitting=useRef(false);
  const qc=useQueryClient();const ref=useRef<HTMLDialogElement>(null);
  const orders=useSalesOrderList({page:1,page_size:100,status:"FULFILLED",sort:"-created_at"});
  useEffect(()=>{if(open){setMode(initialMode);setCustomer({});setLines([empty()]);setSupply("");setDetails({});setMessage("");ref.current?.showModal()}else ref.current?.close()},[open,initialMode]);
  async function submit(e:React.FormEvent<HTMLFormElement>){
-  e.preventDefault();setBusy(true);setMessage("");const f=new FormData(e.currentTarget);
+  e.preventDefault();if(submitting.current)return;submitting.current=true;setBusy(true);setMessage("");const f=new FormData(e.currentTarget);
   try{
    const common={invoice_date:String(f.get("date")),due_date:String(f.get("due")||""),notes:String(f.get("notes")||""),billing_details:{...details,supply_type:supply}};
    let id="";
    if(mode==="order"){id=(await createInvoice({...common,sales_order_id:String(f.get("order"))})).id}
    else{const r=await apiRequest<{id:string}>("/business/direct-invoices/",{method:"POST",body:{...common,invoice_number:String(f.get("number")||""),customer,items:lines}});id=r.data.id}
-   await qc.invalidateQueries();onClose();onCreated?.(id);
-  }catch(error){setMessage((error as Error).message)}finally{setBusy(false)}
+   await qc.invalidateQueries().catch(()=>{});onClose();onCreated?.(id);
+  }catch(error){setMessage((error as Error).message)}finally{submitting.current=false;setBusy(false)}
  }
  const totals=lines.reduce((sum,line)=>{
   const subtotal=Math.round(Number(line.quantity)*Number(line.unit_price)*100+1e-8),discount=Math.round(Number(line.discount)*100);

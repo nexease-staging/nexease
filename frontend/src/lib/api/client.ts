@@ -1,3 +1,4 @@
+import {creationRetryKey} from "./creation-retry";
 import {notify} from "@/components/nex-feedback";
 import { apiFetch } from "./transport";
 import { Capacitor } from "@capacitor/core";
@@ -174,6 +175,13 @@ export async function apiRequest<T>(
     headers.set('X-NexEase-Numbering',JSON.stringify(await askNumber(kind,options.body)));
     options={...options,headers};
   }
+  let creationReceipt: Awaited<ReturnType<typeof creationRetryKey>> | undefined;
+  if (method === "POST" && ["/business/direct-invoices/", "/invoices/"].includes(path)
+      && !headers.has("X-NexEase-Request-Key")) {
+    creationReceipt = await creationRetryKey(path, options.body, headers.get("X-NexEase-Numbering"));
+    headers.set("X-NexEase-Request-Key", creationReceipt.key);
+    options = { ...options, headers };
+  }
   if (Capacitor.isNativePlatform()) headers.set("Origin", "https://localhost");
   headers.set(
     "Accept",
@@ -239,11 +247,9 @@ export async function apiRequest<T>(
 
       await getCSRFToken(true);
 
-      return apiRequest<T>(
-        path,
-        options,
-        false,
-      );
+      const retried = await apiRequest<T>(path, options, false);
+      creationReceipt?.complete();
+      return retried;
     }
 
     if(isUnsafeMethod(method) && !path.startsWith("/auth/")) notify(errorBody.error?.message ?? "Could not save. Please try again.", response.status===403?"warning":"error");
@@ -260,6 +266,7 @@ export async function apiRequest<T>(
     });
   }
 
+  creationReceipt?.complete();
   if(isUnsafeMethod(method) && !/\/(auth|ai|ocr|lookup|preview|validate|subscription|owner|notifications)\//.test(path)) notify(body.message || "Your changes were saved successfully.");
   return body;
 }

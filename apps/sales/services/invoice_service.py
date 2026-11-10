@@ -1,3 +1,4 @@
+from apps.core.services.invoice_creation_request import mark_invoice_write, assert_invoice_creation_complete
 from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -253,12 +254,13 @@ class InvoiceService:
             )
 
         from apps.business.numbering import incoming
-        invoice_number = incoming(organization, 'Invoice', invoice_number, document_date=invoice_date)
 
         details={}
         if billing_details is not None:
             from apps.business.billing import clean_details,settings
             details={**settings(organization),**clean_details(billing_details,organization,invoice_items)}
+        mark_invoice_write()
+        invoice_number = incoming(organization, 'Invoice', invoice_number, document_date=invoice_date)
         return (
             InvoiceRepository
             .create_invoice(
@@ -332,6 +334,8 @@ class InvoiceService:
             raise ValueError(
                 "Invoice not found."
             )
+
+        assert_invoice_creation_complete(organization, invoice)
 
         if invoice.status != "DRAFT":
             raise ValueError(

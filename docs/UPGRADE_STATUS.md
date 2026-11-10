@@ -47,3 +47,6 @@ Customer/supplier payment serialization, durable API retry receipts, web/APK dia
 
 ## Invoice numbering checkpoint
 Optional IST financial-year numbering, shared invoice allocation, legacy collision handling and read-only reservation auditing are implemented. See INVOICE_NUMBERING_SAFETY.md. Existing numbers are preserved. Full create-request idempotency, gap-free transactional numbering, real-database interruption tests and deployment remain pending.
+
+## Invoice creation retry checkpoint
+Header-based durable creation receipts, direct/sales-order response replay, browser retry persistence and submit guards are implemented. Interrupted invoice creation is held for review, with a read-only inspection command and issue protection on affected drafts. See INVOICE_CREATION_RETRY.md. Older clients/no-key callers, changed-input business duplicates, automatic repairs and true multi-document atomicity remain outside the guarantee. No deployment is implied.

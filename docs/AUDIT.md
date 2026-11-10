@@ -124,3 +124,6 @@ Customer and supplier service integration tests identified stale-snapshot paymen
 
 ## Invoice numbering checkpoint
 Found legacy invoice collisions missing from reservation history, independent UUID-style sales-order invoice numbering, missing financial-year sequences, and repeated allocation when retrying a failed model validation. Added shared invoice allocation, reservation/document linkage, optional IST financial-year sequences and read-only reservation inspection. Concurrent allocation and boundary tests run against MongoMock; real replica-set crash testing, gap-free transactional allocation and general invoice-create idempotency remain outstanding. See INVOICE_NUMBERING_SAFETY.md.
+
+## Invoice creation retry checkpoint
+Direct invoice retries could create another invoice/master set and deduct stock again after a lost response. Added durable header-based creation receipts on direct and sales-order APIs, client key persistence and immediate submit guards. Interrupted writes retain invoice evidence and block issuing the affected draft. General multi-document atomicity, legacy/no-key callers and real replica-set/device verification remain outside this checkpoint. See INVOICE_CREATION_RETRY.md.

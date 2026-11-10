@@ -153,6 +153,7 @@ export default function FastInvoice({
     return "";
   }
 
+  const submitting = useRef(false);
   async function save(issue: boolean) {
     const problem = validate();
     if (problem) {
@@ -164,6 +165,8 @@ export default function FastInvoice({
       }
       return;
     }
+    if (submitting.current) return;
+    submitting.current = true;
     setBusy(issue ? "issue" : "draft");
     setMessage("");
     try {
@@ -188,12 +191,13 @@ export default function FastInvoice({
           warning = `Saved as a draft, but it could not be issued: ${(e as Error).message}`;
         }
       }
-      await qc.invalidateQueries();
+      await qc.invalidateQueries().catch(() => {});
       setPhone(customer.phone?.trim() || null);
       setResult({ id, warning });
     } catch (e) {
       setMessage((e as Error).message);
     } finally {
+      submitting.current = false;
       setBusy("");
     }
   }

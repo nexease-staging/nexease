@@ -156,6 +156,9 @@ def attach_number(sender, document, created=False, **kwargs):
     if not created or sender.__name__ not in REGISTRY:
         return
     kind = sender.__name__; org = getattr(document, 'organization', None)
+    if kind == 'Invoice':
+        from apps.core.services.invoice_creation_request import mark_invoice_write
+        mark_invoice_write(document)
     if kind != 'Invoice' and not getattr(document, '_nexease_reserved_number', None):
         return
     field = REGISTRY[kind][0]

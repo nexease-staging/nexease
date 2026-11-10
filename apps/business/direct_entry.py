@@ -1,3 +1,4 @@
+from apps.core.services.invoice_creation_request import invoice_creation_request, mark_invoice_write
 from .numbering import incoming
 from .automation import write_lock
 from .quick_stock import warehouse_for,move
@@ -26,6 +27,7 @@ def text(d,k,required=False,limit=200):
 
 @api_login_required
 @require_http_methods(['POST'])
+@invoice_creation_request("direct")
 @write_lock
 def direct_invoice(request):
     org=request.api_organization;user=request.api_user
@@ -71,6 +73,7 @@ def direct_invoice(request):
                 prod=n['product'] or Product(name=n['name'],unit=n['unit'],item_type=n['item_type'],hsn_code=n['hsn_code'])
                 preview.append(InvoiceItem(product=prod,item_name=n['name'],item_type=n['item_type'],hsn_code=n['hsn_code'],unit=n['unit'],quantity=n['quantity'],unit_price=n['unit_price'],tax_rate=n['tax_rate']))
             clean_details(p['billing_details'],org,preview)
+        mark_invoice_write()
         if any(n['item_type']=='goods' for n in normalized):warehouse=warehouse_for(org,warehouse)
         warnings=['Direct invoice without sales order. Goods quantity is deducted immediately, including below zero.'];new_records=[]
         if not customer:
@@ -92,11 +95,9 @@ def direct_invoice(request):
         total=sum(x.line_total for x in invoice_items)
         number=incoming(org,'Invoice',number,document_date=when)
         invoice=Invoice(billing_details=details,organization=org,invoice_number=number,customer=customer,invoice_date=when,due_date=due,items=invoice_items,subtotal=sum(x.line_subtotal for x in invoice_items),tax_amount=sum(x.line_tax for x in invoice_items),discount_amount=sum(x.discount for x in invoice_items),total_amount=total,balance_due=total,billing_name=customer.name,billing_address=customer.billing_address,billing_state=customer.state,billing_city=customer.city,billing_pincode=customer.pincode,customer_gstin=customer.gstin,created_by=user,notes=('DIRECT ENTRY: stock deducted; review negative quantities. ' if goods else 'SERVICE INVOICE: no stock movement. ')+text(p,'notes',limit=700),direct_entry=True,stock_review_required=goods).save()
+        mark_invoice_write(invoice)
         if goods:
-            try:move(invoice,user,warehouse)
-            except Exception:
-                invoice.delete()
-                raise
+            move(invoice,user,warehouse)
         audit(request,'direct_invoice',invoice.id,'create')
         NotificationService.create_notification(organization=org,recipient=user,notification_type='SYSTEM',title='Review direct invoice '+invoice.invoice_number,message=(' '.join(warnings)+' New records: '+', '.join(new_records))[:1000],severity='WARNING',resource_type='invoice',resource_id=str(invoice.id),action_url='/invoices')
         return R.success(data={'id':str(invoice.id),'invoice_number':invoice.invoice_number,'status':'DRAFT','warnings':warnings,'new_records':new_records},request=request)

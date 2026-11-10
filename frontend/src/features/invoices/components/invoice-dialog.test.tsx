@@ -29,3 +29,12 @@ describe('Shared invoice creation',()=>{
  it('uses the same dialog for an order invoice',async()=>{const callbacks=mount('order');fireEvent.change(screen.getByLabelText('Fulfilled sales order *'),{target:{value:'so1'}});fireEvent.change(screen.getByLabelText('GST treatment'),{target:{value:'unregistered'}});fireEvent.click(screen.getByRole('button',{name:'Save draft invoice'}));await waitFor(()=>expect(callbacks.onCreated).toHaveBeenCalledWith('invoice2'));expect(createInvoice).toHaveBeenCalledWith(expect.objectContaining({sales_order_id:'so1'}));expect(apiRequest).not.toHaveBeenCalled()});
  it('switches modes without creating records and closes safely',()=>{const callbacks=mount();fireEvent.click(screen.getByRole('button',{name:'From sales order'}));expect(screen.getByLabelText('Fulfilled sales order *')).toBeRequired();fireEvent.click(screen.getByRole('button',{name:'Close invoice'}));expect(callbacks.onClose).toHaveBeenCalled();expect(apiRequest).not.toHaveBeenCalled()});
 });
+
+it('blocks two synchronous submits while the create request is pending',async()=>{
+ mount('order');
+ vi.mocked(createInvoice).mockReturnValue(new Promise(()=>{}));
+ const form=screen.getByRole('button',{name:'Save draft invoice'}).closest('form')!;
+ fireEvent.change(screen.getByLabelText('Fulfilled sales order *'),{target:{value:'so1'}});
+ fireEvent.submit(form);fireEvent.submit(form);
+ expect(createInvoice).toHaveBeenCalledTimes(1);
+});
