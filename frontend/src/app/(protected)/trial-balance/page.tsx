@@ -304,7 +304,7 @@ export default function TrialBalancePage() {
             />
             Generate report
           </button>
-</div>  
+</div>
         </div>
       </section>
       {trialBalanceQuery.isLoading ? (
@@ -547,8 +547,8 @@ export default function TrialBalancePage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table
-                  className="
+                <table role="table"
+ className="nx-mobile-records nx-financial-records
                     min-w-full divide-y
                     divide-slate-200
                   "
@@ -594,7 +594,7 @@ export default function TrialBalancePage() {
                             row.account.id
                           }
                         >
-                          <td className="px-4 py-3">
+                          <td data-label="Account" className="px-4 py-3">
                             <p
                               className="
                                 text-sm
@@ -628,7 +628,7 @@ export default function TrialBalancePage() {
                             </p>
                           </td>
 
-                          <td
+                          <td data-label="Type"
                             className="
                               px-4 py-3 text-sm
                               text-slate-700
@@ -640,7 +640,7 @@ export default function TrialBalancePage() {
                             }
                           </td>
 
-                          <td
+                          <td data-label="Total debit"
                             className="
                               whitespace-nowrap
                               px-4 py-3
@@ -655,7 +655,7 @@ export default function TrialBalancePage() {
                             }
                           </td>
 
-                          <td
+                          <td data-label="Total credit"
                             className="
                               whitespace-nowrap
                               px-4 py-3
@@ -670,7 +670,7 @@ export default function TrialBalancePage() {
                             }
                           </td>
 
-                          <td
+                          <td data-label="Debit balance"
                             className="
                               whitespace-nowrap
                               px-4 py-3
@@ -686,7 +686,7 @@ export default function TrialBalancePage() {
                             }
                           </td>
 
-                          <td
+                          <td data-label="Credit balance"
                             className="
                               whitespace-nowrap
                               px-4 py-3
@@ -714,7 +714,7 @@ export default function TrialBalancePage() {
                     "
                   >
                     <tr>
-                      <td
+                      <td data-label="Summary"
                         colSpan={4}
                         className="
                           px-4 py-4
@@ -725,7 +725,7 @@ export default function TrialBalancePage() {
                         Trial balance totals
                       </td>
 
-                      <td
+                      <td data-label="Total debit balance"
                         className="
                           whitespace-nowrap
                           px-4 py-4
@@ -742,7 +742,7 @@ export default function TrialBalancePage() {
                         }
                       </td>
 
-                      <td
+                      <td data-label="Total credit balance"
                         className="
                           whitespace-nowrap
                           px-4 py-4

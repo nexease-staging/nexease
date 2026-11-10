@@ -402,3 +402,17 @@ html[data-native="true"] body:before{content:"";position:fixed;top:0;left:0;righ
  .nx-mobile-records td[data-label="Actions"]>div{flex-wrap:wrap;gap:8px}
  .nx-mobile-records td[data-label="Actions"] button,.nx-mobile-records td[data-label="Actions"] a{min-height:44px;min-width:44px}
 }
+
+/* Financial records keep their document/account identifier first. */
+@media(max-width:767px){
+ .nx-financial-records tbody td:nth-child(2){grid-column:auto;grid-row:auto;font-size:13px}
+ .nx-financial-records tbody td:nth-child(2)::before{display:block}
+ .nx-financial-records tbody td:first-child{grid-column:1/-1;grid-row:1;font-weight:700}
+ .nx-financial-records td[data-label="Description"]{grid-column:1/-1}
+ .nx-financial-records tfoot{display:block;padding:12px;background:var(--nx-surface);border-top:2px solid var(--nx-border-strong)}
+ .nx-financial-records tfoot tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ .nx-financial-records tfoot td:first-child{grid-column:1/-1}
+ .nx-financial-records tfoot td:first-child::before{display:none}
+ .nx-financial-records tfoot td:nth-child(2){grid-column:auto;grid-row:auto;font-size:14px}
+ .nx-financial-records tfoot td:nth-child(2)::before{display:block}
+}

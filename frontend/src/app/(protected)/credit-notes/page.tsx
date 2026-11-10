@@ -358,7 +358,7 @@ export default function CreditNotesPage() {
           "
         >
           <div
-            className="nx-list-filters 
+            className="nx-list-filters
               grid gap-3
               md:grid-cols-2
               xl:grid-cols-4
@@ -772,8 +772,8 @@ export default function CreditNotesPage() {
                     lg:block
                   "
                 >
-                  <table
-                    className="
+                  <table role="table"
+ className="nx-mobile-records nx-financial-records
                       min-w-full divide-y
                       divide-slate-200
                     "
@@ -821,7 +821,7 @@ export default function CreditNotesPage() {
                               hover:bg-slate-50
                             "
                           >
-                            <td
+                            <td data-label="Credit note"
                               className="
                                 px-4 py-4 text-sm
                                 font-semibold
@@ -834,7 +834,7 @@ export default function CreditNotesPage() {
                               }
                             </td>
 
-                            <td
+                            <td data-label="Customer"
                               className="
                                 px-4 py-4 text-sm
                                 text-slate-700
@@ -846,7 +846,7 @@ export default function CreditNotesPage() {
                               }
                             </td>
 
-                            <td
+                            <td data-label="Sales return"
                               className="
                                 px-4 py-4 text-sm
                                 text-slate-700
@@ -859,7 +859,7 @@ export default function CreditNotesPage() {
                               }
                             </td>
 
-                            <td
+                            <td data-label="Date"
                               className="
                                 px-4 py-4 text-sm
                                 text-slate-700
@@ -871,7 +871,7 @@ export default function CreditNotesPage() {
                               )}
                             </td>
 
-                            <td
+                            <td data-label="Total"
                               className="
                                 px-4 py-4 text-sm
                                 font-semibold
@@ -884,7 +884,7 @@ export default function CreditNotesPage() {
                               )}
                             </td>
 
-                            <td
+                            <td data-label="Applied"
                               className="
                                 px-4 py-4 text-sm
                                 text-emerald-700
@@ -896,7 +896,7 @@ export default function CreditNotesPage() {
                               )}
                             </td>
 
-                            <td
+                            <td data-label="Remaining"
                               className="
                                 px-4 py-4 text-sm
                                 text-blue-700
@@ -908,7 +908,7 @@ export default function CreditNotesPage() {
                               )}
                             </td>
 
-                            <td
+                            <td data-label="Status"
                               className="
                                 px-4 py-4
                               "
@@ -929,7 +929,7 @@ export default function CreditNotesPage() {
                               </span>
                             </td>
 
-                            <td
+                            <td data-label="Actions"
                               className="
                                 px-4 py-4 text-right
                               "
