@@ -502,7 +502,7 @@ const canCreateProduct =
       </div>
 
       <div
-        className="nx-list-filters 
+        className="nx-list-filters
           grid gap-4 rounded-2xl
           border border-slate-200
           bg-white p-4 shadow-sm
@@ -785,8 +785,8 @@ const canCreateProduct =
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table
-              className="
+            <table role="table"
+ className="nx-mobile-records
                 min-w-full divide-y
                 divide-slate-200
               "
@@ -834,7 +834,7 @@ const canCreateProduct =
                         hover:bg-slate-50
                       "
                     >
-                      <td className="whitespace-nowrap px-4 py-4">
+                      <td data-label="Sales Order" className="whitespace-nowrap px-4 py-4">
                         <p className="font-semibold text-slate-900">
                           {salesOrder.so_number}
                         </p>
@@ -849,7 +849,7 @@ const canCreateProduct =
                         </p>
                       </td>
 
-                      <td className="px-4 py-4">
+                      <td data-label="Customer" className="px-4 py-4">
                         <p className="font-medium text-slate-900">
                           {salesOrder.customer.name}
                         </p>
@@ -859,7 +859,7 @@ const canCreateProduct =
                         </p>
                       </td>
 
-                      <td className="px-4 py-4">
+                      <td data-label="Warehouse" className="px-4 py-4">
                         <p className="font-medium text-slate-900">
                           {salesOrder.warehouse.name}
                         </p>
@@ -869,13 +869,13 @@ const canCreateProduct =
                         </p>
                       </td>
 
-                      <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-700">
+                      <td data-label="Order date" className="whitespace-nowrap px-4 py-4 text-sm text-slate-700">
                         {formatDate(
                           salesOrder.order_date
                         )}
                       </td>
 
-                      <td className="whitespace-nowrap px-4 py-4">
+                      <td data-label="Status" className="whitespace-nowrap px-4 py-4">
                         <span
                           className={`
                             rounded-full border
@@ -896,17 +896,17 @@ const canCreateProduct =
                         </span>
                       </td>
 
-                      <td className="whitespace-nowrap px-4 py-4 text-sm">
+                      <td data-label="Items" className="whitespace-nowrap px-4 py-4 text-sm">
                         {salesOrder.item_count}
                       </td>
 
-                      <td className="whitespace-nowrap px-4 py-4 font-semibold text-slate-900">
+                      <td data-label="Total" className="whitespace-nowrap px-4 py-4 font-semibold text-slate-900">
                         {formatAmount(
                           salesOrder.total_amount
                         )}
                       </td>
 
-                      <td className="whitespace-nowrap px-4 py-4">
+                      <td data-label="Actions" className="whitespace-nowrap px-4 py-4">
                         <button
                           type="button"
                           title="View Sales Order"

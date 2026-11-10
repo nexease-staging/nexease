@@ -386,7 +386,7 @@ export default function VendorBillsPage() {
           "
         >
           <div
-            className="nx-list-filters 
+            className="nx-list-filters
               grid gap-3
               md:grid-cols-2
               xl:grid-cols-4
@@ -658,8 +658,8 @@ export default function VendorBillsPage() {
                     overflow-x-auto
                   "
                 >
-                  <table
-                    className="
+                  <table role="table"
+ className="nx-mobile-records
                       min-w-full divide-y
                       divide-slate-200
                     "
@@ -714,7 +714,7 @@ export default function VendorBillsPage() {
                               hover:bg-slate-50
                             "
                           >
-                            <td
+                            <td data-label="Bill"
                               className="
                                 px-4 py-4
                               "
@@ -753,7 +753,7 @@ export default function VendorBillsPage() {
                               </p>
                             </td>
 
-                            <td
+                            <td data-label="Supplier"
                               className="
                                 min-w-48 px-4 py-4
                               "
@@ -783,7 +783,7 @@ export default function VendorBillsPage() {
                               </p>
                             </td>
 
-                            <td
+                            <td data-label="Bill date"
                               className="
                                 whitespace-nowrap
                                 px-4 py-4 text-sm
@@ -795,7 +795,7 @@ export default function VendorBillsPage() {
                               )}
                             </td>
 
-                            <td
+                            <td data-label="Due date"
                               className="
                                 whitespace-nowrap
                                 px-4 py-4 text-sm
@@ -807,7 +807,7 @@ export default function VendorBillsPage() {
                               )}
                             </td>
 
-                            <td
+                            <td data-label="Status"
                               className="
                                 whitespace-nowrap
                                 px-4 py-4
@@ -833,7 +833,7 @@ export default function VendorBillsPage() {
                               </span>
                             </td>
 
-                            <td
+                            <td data-label="Total"
                               className="
                                 whitespace-nowrap
                                 px-4 py-4 text-sm
@@ -847,7 +847,7 @@ export default function VendorBillsPage() {
                               )}
                             </td>
 
-                            <td
+                            <td data-label="Balance"
                               className="
                                 whitespace-nowrap
                                 px-4 py-4 text-sm
@@ -861,7 +861,7 @@ export default function VendorBillsPage() {
                               )}
                             </td>
 
-                            <td
+                            <td data-label="Actions"
                               className="
                                 px-4 py-4
                               "

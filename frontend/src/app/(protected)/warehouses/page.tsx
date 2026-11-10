@@ -365,7 +365,7 @@ export default function WarehousesPage() {
       </div>
 
       <div
-        className="nx-list-filters 
+        className="nx-list-filters
           grid gap-3 rounded-2xl
           border border-slate-200
           bg-white p-4 shadow-sm
@@ -556,8 +556,8 @@ export default function WarehousesPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table
-              className="
+            <table role="table"
+ className="nx-mobile-records
                 min-w-full divide-y
                 divide-slate-200
               "
@@ -609,7 +609,7 @@ export default function WarehousesPage() {
                         hover:bg-slate-50
                       "
                     >
-                      <td
+                      <td data-label="Code"
                         className="
                           whitespace-nowrap
                           px-4 py-4 text-sm
@@ -620,7 +620,7 @@ export default function WarehousesPage() {
                         {warehouse.code}
                       </td>
 
-                      <td
+                      <td data-label="Warehouse"
                         className="
                           px-4 py-4 text-sm
                           text-slate-700
@@ -629,7 +629,7 @@ export default function WarehousesPage() {
                         {warehouse.name}
                       </td>
 
-                      <td
+                      <td data-label="Location"
                         className="
                           px-4 py-4 text-sm
                           text-slate-600
@@ -645,7 +645,7 @@ export default function WarehousesPage() {
                           "—"}
                       </td>
 
-                      <td
+                      <td data-label="Country"
                         className="
                           px-4 py-4 text-sm
                           text-slate-600
@@ -658,7 +658,7 @@ export default function WarehousesPage() {
                         }
                       </td>
 
-                      <td className="px-4 py-4">
+                      <td data-label="Status" className="px-4 py-4">
                         <span
                           className={
                             warehouse.is_active
@@ -691,7 +691,7 @@ export default function WarehousesPage() {
                       </td>
 
                       {canUpdate ? (
-                        <td className="px-4 py-4">
+                        <td data-label="Actions" className="px-4 py-4">
                           <div
                             className="
                               flex items-center gap-2

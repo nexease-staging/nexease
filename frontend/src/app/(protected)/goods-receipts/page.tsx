@@ -268,7 +268,7 @@ export default function GoodsReceiptsPage() {
           "
         >
           <div
-            className="nx-list-filters 
+            className="nx-list-filters
               grid gap-3
               md:grid-cols-[minmax(0,1fr)_220px]
             "
@@ -532,8 +532,8 @@ export default function GoodsReceiptsPage() {
                     overflow-x-auto
                   "
                 >
-                  <table
-                    className="
+                  <table role="table"
+ className="nx-mobile-records
                       min-w-full divide-y
                       divide-slate-200
                     "
@@ -590,7 +590,7 @@ export default function GoodsReceiptsPage() {
                               hover:bg-slate-50
                             "
                           >
-                            <td
+                            <td data-label="GRN number"
                               className="
                                 whitespace-nowrap
                                 px-4 py-4
@@ -617,7 +617,7 @@ export default function GoodsReceiptsPage() {
                               </button>
                             </td>
 
-                            <td
+                            <td data-label="Purchase order"
                               className="
                                 whitespace-nowrap
                                 px-4 py-4
@@ -632,7 +632,7 @@ export default function GoodsReceiptsPage() {
                               }
                             </td>
 
-                            <td
+                            <td data-label="Supplier"
                               className="
                                 min-w-48
                                 px-4 py-4
@@ -663,7 +663,7 @@ export default function GoodsReceiptsPage() {
                               </p>
                             </td>
 
-                            <td
+                            <td data-label="Warehouse"
                               className="
                                 min-w-44
                                 px-4 py-4
@@ -694,7 +694,7 @@ export default function GoodsReceiptsPage() {
                               </p>
                             </td>
 
-                            <td
+                            <td data-label="Items"
                               className="
                                 px-4 py-4
                                 text-sm
@@ -707,7 +707,7 @@ export default function GoodsReceiptsPage() {
                               }
                             </td>
 
-                            <td
+                            <td data-label="Received at"
                               className="
                                 whitespace-nowrap
                                 px-4 py-4
@@ -721,7 +721,7 @@ export default function GoodsReceiptsPage() {
                               )}
                             </td>
 
-                            <td
+                            <td data-label="Actions"
                               className="
                                 px-4 py-4
                               "

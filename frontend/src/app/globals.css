@@ -389,7 +389,16 @@ html[data-native="true"] body:before{content:"";position:fixed;top:0;left:0;righ
  .nx-mobile-records td::before{content:attr(data-label);display:block;color:var(--nx-text-muted);font-size:11px;font-weight:600;margin-bottom:2px}
  .nx-mobile-records td:nth-child(2){grid-column:1/-1;grid-row:1;font-size:16px}
  .nx-mobile-records td:nth-child(2)::before{display:none}
- .nx-mobile-records td:last-child{grid-column:1/-1;border-top:1px solid var(--nx-border);padding-top:8px}
- .nx-mobile-records td:last-child::before{display:none}
+ .nx-mobile-records td[data-label="Actions"]{grid-column:1/-1;border-top:1px solid var(--nx-border);padding-top:8px}
+ .nx-mobile-records td[data-label="Actions"]::before{display:none}
  .nx-mobile-records td button{min-width:44px;min-height:44px}
+}
+
+@media(max-width:767px){
+ .nx-mobile-records td[data-label="Route"]{grid-column:1/-1}
+ .nx-mobile-records td[data-label="Route"]>div{flex-wrap:wrap}
+}
+@media(max-width:767px){
+ .nx-mobile-records td[data-label="Actions"]>div{flex-wrap:wrap;gap:8px}
+ .nx-mobile-records td[data-label="Actions"] button,.nx-mobile-records td[data-label="Actions"] a{min-height:44px;min-width:44px}
 }

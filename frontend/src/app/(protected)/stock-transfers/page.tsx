@@ -380,7 +380,7 @@ export default function StockTransfersPage() {
       </div>
 
       <div
-        className="nx-list-filters 
+        className="nx-list-filters
           grid gap-4 rounded-2xl
           border border-slate-200
           bg-white p-4 shadow-sm
@@ -689,8 +689,8 @@ export default function StockTransfersPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table
-              className="
+            <table role="table"
+ className="nx-mobile-records
                 min-w-full divide-y
                 divide-slate-200
               "
@@ -739,7 +739,7 @@ export default function StockTransfersPage() {
                         hover:bg-slate-50
                       "
                     >
-                      <td
+                      <td data-label="Transfer"
                         className="
                           whitespace-nowrap
                           px-4 py-4 text-sm
@@ -753,7 +753,7 @@ export default function StockTransfersPage() {
                         }
                       </td>
 
-                      <td
+                      <td data-label="Product"
                         className="
                           px-4 py-4 text-sm
                           text-slate-700
@@ -778,7 +778,7 @@ export default function StockTransfersPage() {
                         </p>
                       </td>
 
-                      <td
+                      <td data-label="Route"
                         className="
                           min-w-64 px-4 py-4
                           text-sm text-slate-700
@@ -834,7 +834,7 @@ export default function StockTransfersPage() {
                         </p>
                       </td>
 
-                      <td
+                      <td data-label="Quantity"
                         className="
                           whitespace-nowrap
                           px-4 py-4 text-sm
@@ -848,7 +848,7 @@ export default function StockTransfersPage() {
                         }
                       </td>
 
-                      <td
+                      <td data-label="Status"
                         className="
                           whitespace-nowrap
                           px-4 py-4
@@ -868,7 +868,7 @@ export default function StockTransfersPage() {
                         </span>
                       </td>
 
-                      <td
+                      <td data-label="Created"
                         className="
                           whitespace-nowrap
                           px-4 py-4 text-sm
@@ -882,7 +882,7 @@ export default function StockTransfersPage() {
                         }
                       </td>
 
-                      <td
+                      <td data-label="Completed"
                         className="
                           whitespace-nowrap
                           px-4 py-4 text-sm
@@ -896,7 +896,7 @@ export default function StockTransfersPage() {
                         }
                       </td>
 
-                      <td
+                      <td data-label="Created by"
                         className="
                           px-4 py-4 text-sm
                           text-slate-600

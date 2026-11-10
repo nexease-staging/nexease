@@ -392,7 +392,7 @@ export default function StockMovementsPage() {
       </div>
 
       <div
-        className="nx-list-filters 
+        className="nx-list-filters
           grid gap-4 rounded-2xl
           border border-slate-200
           bg-white p-4 shadow-sm
@@ -629,8 +629,8 @@ export default function StockMovementsPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table
-              className="
+            <table role="table"
+ className="nx-mobile-records
                 min-w-full divide-y
                 divide-slate-200
               "
@@ -679,7 +679,7 @@ export default function StockMovementsPage() {
                         hover:bg-slate-50
                       "
                     >
-                      <td
+                      <td data-label="Date"
                         className="
                           whitespace-nowrap
                           px-4 py-4 text-sm
@@ -693,7 +693,7 @@ export default function StockMovementsPage() {
                         }
                       </td>
 
-                      <td
+                      <td data-label="Type"
                         className="
                           whitespace-nowrap
                           px-4 py-4
@@ -719,7 +719,7 @@ export default function StockMovementsPage() {
                         </span>
                       </td>
 
-                      <td
+                      <td data-label="Product"
                         className="
                           px-4 py-4 text-sm
                           text-slate-700
@@ -744,7 +744,7 @@ export default function StockMovementsPage() {
                         </p>
                       </td>
 
-                      <td
+                      <td data-label="Warehouse"
                         className="
                           px-4 py-4 text-sm
                           text-slate-700
@@ -764,7 +764,7 @@ export default function StockMovementsPage() {
                         </p>
                       </td>
 
-                      <td
+                      <td data-label="Quantity"
                         className="
                           whitespace-nowrap
                           px-4 py-4 text-sm
@@ -778,7 +778,7 @@ export default function StockMovementsPage() {
                         }
                       </td>
 
-                      <td
+                      <td data-label="Stock change"
                         className="
                           whitespace-nowrap
                           px-4 py-4 text-sm
@@ -800,7 +800,7 @@ export default function StockMovementsPage() {
                         }
                       </td>
 
-                      <td
+                      <td data-label="Reference"
                         className="
                           px-4 py-4 text-sm
                           text-slate-600
@@ -830,7 +830,7 @@ export default function StockMovementsPage() {
                         ) : null}
                       </td>
 
-                      <td
+                      <td data-label="Created by"
                         className="
                           px-4 py-4 text-sm
                           text-slate-600
