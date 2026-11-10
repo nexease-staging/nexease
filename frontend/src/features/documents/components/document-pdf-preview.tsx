@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect -- Clear stale document and blob URL state when preview identity changes. */
 "use client";
 
 import {useEffect, useState} from "react";

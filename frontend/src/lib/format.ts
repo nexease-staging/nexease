@@ -28,11 +28,12 @@ export function formatDate(value: string | null | undefined): string {
 }
 
 function localIsoDate(d: Date): string {
-  const p = (x: number) => String(x).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  const parts = new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);
+  const get=(type:string)=>parts.find(p=>p.type===type)?.value ?? '';
+  return `${get('year')}-${get('month')}-${get('day')}`;
 }
 
-/** Unpaid and past its due date (compares calendar dates in the user's timezone). */
+/** Unpaid and past its due date (compares calendar dates in the IST). */
 export function isInvoiceOverdue(
   invoice: { status: string; due_date: string | null; balance_due: string },
   today: Date = new Date(),

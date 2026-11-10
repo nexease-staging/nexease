@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/refs -- renderInput forwards the ref to an input; it does not read ref.current during render. */
 "use client";
 import {ScanBarcode,Camera,ImagePlus,Square} from 'lucide-react';
 import type {ReactNode,RefObject} from 'react';

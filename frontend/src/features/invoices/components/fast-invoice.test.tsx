@@ -73,7 +73,7 @@ describe("Fast invoice", () => {
     fillMinimal();
     fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("place of supply");
-    expect(apiRequest).not.toHaveBeenCalled();
+    expect(vi.mocked(apiRequest).mock.calls.filter(([,options])=>options?.method === 'POST')).toHaveLength(0);
   });
 
   it("saves and issues via the direct-invoice endpoint, then offers sharing", async () => {

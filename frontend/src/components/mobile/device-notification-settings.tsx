@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect -- Hydrate device capabilities only after mounting in the browser. */
 "use client";
 
 import { useEffect, useState } from 'react';

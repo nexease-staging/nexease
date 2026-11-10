@@ -34,8 +34,19 @@ def subscription(request):
   if request.method=='POST':
    if not permitted(request,'organizations.update'):return R.forbidden(message='Organization administrator required.',request=request)
    p=payload(request);action=p.get('action')
+   if action=='activate_free':
+    with org_lock(org.id):
+     m=state(org)
+     if m and m.status in ('active','trial') and m.end>datetime.utcnow():raise ValueError('Your current access is still active. Free can be selected after it expires.')
+     seed();plan=Plan.objects.get(code='free')
+     for key in ['users','products','warehouses','employees']:
+      if resource_count(org,key)>plan.limits[key]:raise ValueError('Current '+key+' exceed Free limits. Reduce resources or select a paid plan.')
+     m=m or Membership(organization_id=str(org.id));m.plan='free';m.status='active';m.start=datetime.utcnow();m.end=datetime(2099,1,1);m.subscription_id='';m.gateway_mode='';m.limits=dict(plan.limits);m.features=[];m.save()
+    return R.success(data={'message':'Free plan activated.'},request=request)
    if action=='checkout':
-    code=p.get('plan');cycle=p.get('cycle','monthly')
+    code=p.get('plan');
+    if code=='free':raise ValueError('Free does not require payment. Use Activate Free.')
+    cycle=p.get('cycle','monthly')
     if cycle not in ('monthly','yearly'):raise ValueError('Choose monthly or annual billing.')
     plan=Plan.objects(code=code,gateway_mode=gateway.mode()).first()
     annual=cycle=='yearly'
@@ -72,7 +83,7 @@ def subscription(request):
     return R.success(data={'message':'Renewal cancelled. Paid access remains until period end.' if later else 'Unfinished subscription cancelled.'},request=request)
    raise ValueError('Unknown subscription action.')
   recent=Checkout.objects(organization_id=str(org.id)).order_by('-created_at').first()
-  return R.success(data={'membership':membership_json(m),'usage':usage(org,m),'resources':{k:resource_count(org,k) for k in ['users','products','warehouses','employees']},'pending_subscription_id':recent.subscription_id if recent and recent.status not in ('cancelled','completed','expired') else '', 'payments':json_safe(list(get_db().saas_payments.find({'organization_id':str(org.id),'mode':gateway.mode()},{'_id':0}).sort('paid_at',-1).limit(100))),'can_manage':permitted(request,'organizations.update')},request=request)
+  return R.success(data={'membership':membership_json(m),'usage':usage(org,m),'provider_usage':provider_usage(org,m),'resources':{k:resource_count(org,k) for k in ['users','products','warehouses','employees']},'pending_subscription_id':recent.subscription_id if recent and recent.status not in ('cancelled','completed','expired') else '', 'payments':json_safe(list(get_db().saas_payments.find({'organization_id':str(org.id),'mode':gateway.mode()},{'_id':0}).sort('paid_at',-1).limit(100))),'can_manage':permitted(request,'organizations.update')},request=request)
  except (ValueError,ValidationError) as e:return R.validation_error(message=str(e),request=request)
 
 @csrf_exempt
@@ -194,3 +205,10 @@ def owner_report(request):
  activity=list(get_db().saas_activity.find({'organization_id':oid},{'_id':0}).sort('at',-1).limit(100))
  ai=list(get_db().saas_ai_usage.find({'organization_id':oid},{'_id':0}).sort('period',-1).limit(12))
  return R.success(data={'organization':org.name,'users':users,'invoices':documents(Invoice,'invoice_number'),'bills':documents(VendorBill,'bill_number'),'membership':membership_json(state(org)),'usage':usage(org),'ai_usage':json_safe(ai),'activity':json_safe(activity),'payroll':[{'month':x.key,'status':x.data.get('status'),'outstanding':x.data.get('outstanding_total')} for x in BusinessRecord.objects(organization=org,kind='payruns').order_by('-created_at').limit(12)],'journals':[dict(number=j.journal_number,status=j.status,debit=str(j.total_debit),credit=str(j.total_credit)) for j in JournalEntry.objects(organization=org).order_by('-created_at').limit(100)]},request=request)
+
+
+def provider_usage(org, membership):
+ from .provider_guard import meter
+ from .provider_guard import month_key
+ period=month_key(datetime.utcnow())
+ return {'gst': meter(org.id, 'gst', membership.limits.get('gst_lookups', 0) if membership else 0), 'einvoices':{'used':get_db().saas_einvoice_usage.count_documents({'organization_id':str(org.id),'period':period}),'limit':membership.limits.get('einvoices',0) if membership else 0,'period':period}}

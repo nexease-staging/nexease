@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect -- Read native platform/server configuration after hydration. */
 "use client";
 import {apiFetch} from "@/lib/api/transport";
 import { useEffect, useState, type ReactNode } from 'react';

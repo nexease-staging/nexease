@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect -- Reload server-backed owner state when authentication or pagination changes. */
 "use client";
 import PasswordInput from "@/components/password-input";
 import {useEffect,useState} from 'react';

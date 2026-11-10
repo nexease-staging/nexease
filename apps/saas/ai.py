@@ -131,7 +131,12 @@ def prepare(request):
    if stock_fields:
     raw={};data={'kind':'stock_adjustment','fields':{**dict.fromkeys(FIELDS,''),**stock_fields},'items':[],'questions':[],'warnings':[]}
    else:
-    raw=call_model(prompt+prompt_guide(),content);data=parse_response(raw)
+    from .provider_guard import guarded_call
+    raw=guarded_call(org_id=org.id,feature='ai_extraction',
+        identity={'user':str(request.api_user.id),'model':os.getenv('OPENAI_MODEL','gpt-5.4-mini'),'schema':SCHEMA,'prompt':prompt+prompt_guide(),'content':content},
+        limit=m.limits.get('ai',0)+m.limits.get('scan_pages',0),
+        call=lambda:call_model(prompt+prompt_guide(),content),ttl_days=1)
+    data=parse_response(raw)
    if blob and data['kind']=='question':raise ValueError('No usable entry could be extracted from this document.')
    proposal.kind=data['kind'];proposal.data=data;proposal.warnings=match_masters(org,data)+data['warnings'];proposal.state='review';proposal.save()
    if blob:get_db().saas_ai_files.insert_one({'_id':str(proposal.id),'organization_id':str(org.id),'user_id':str(request.api_user.id),'name':filename,'mime':mime,'content':blob,'expires':datetime.utcnow()+timedelta(days=30)});get_db().saas_ai_files.create_index('expires',expireAfterSeconds=0)

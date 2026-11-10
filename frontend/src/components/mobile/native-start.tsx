@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect -- Read Capacitor platform after hydration to preserve server markup. */
 "use client";
 import {useEffect, useState, type ReactNode} from 'react';
 import {Capacitor} from '@capacitor/core';

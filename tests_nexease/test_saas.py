@@ -57,7 +57,7 @@ class SaaSTests(unittest.TestCase):
    if path.startswith('payments/'):return {'status':status,'currency':'INR','amount':amount,'amount_refunded':refunded}
    raise AssertionError(path)
   return api
- def test_plan_defaults(self):self.assertEqual([Plan.objects.get(code=x).price_paise for x in ['basic','plus','pro']],[74900,149900,199900]);seed();self.assertEqual(Plan.objects.count(),3)
+ def test_plan_defaults(self):self.assertEqual([Plan.objects.get(code=x).price_paise for x in ['basic','plus','pro']],[74900,99900,129900]);seed();self.assertEqual(Plan.objects.count(),4)
  def test_basic_cannot_workforce_or_ai(self):
   self.grant('basic')
   for f in ['workforce','ai','advanced_reports','gst']:

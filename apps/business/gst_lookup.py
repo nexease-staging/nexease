@@ -1,5 +1,6 @@
 """GST lookup via tenant masters or an explicitly configured provider adapter."""
 import os,re,json
+from mongoengine.errors import ValidationError
 from urllib.request import Request,build_opener,HTTPRedirectHandler
 from urllib.parse import urlparse, urlencode
 from urllib.error import URLError, HTTPError
@@ -20,7 +21,17 @@ def lookup(request):
     if os.getenv('GST_LOOKUP_PROVIDER','adapter')=='sandbox':
         try:
             from .gst_provider import sandbox_lookup, GSTLookupError
-            return R.success(data=sandbox_lookup(gstin),request=request)
+            from apps.saas.entitlements import require, state
+            from apps.saas.provider_guard import guarded_call, meter, ProviderGuardError
+            require(request.api_organization, write=True)
+            membership = state(request.api_organization)
+            limit = (membership.limits.get('gst_lookups', 0) if membership else 0)
+            result = guarded_call(org_id=request.api_organization.id, feature='gst',
+                identity={'gstin': gstin, 'provider': 'sandbox', 'environment': os.getenv('GST_SANDBOX_ENV', 'test')},
+                limit=limit, call=lambda: sandbox_lookup(gstin))
+            return R.success(data={**result, 'usage': meter(request.api_organization.id, 'gst', limit)}, request=request)
+        except (ProviderGuardError, ValidationError) as exc:
+            return R.validation_error(message=str(exc),request=request)
         except GSTLookupError as exc:
             import logging
             logging.getLogger(__name__).warning('GST lookup failed code=%s stage=%s http_status=%s reference=%s',exc.code,exc.stage,exc.status,exc.reference)

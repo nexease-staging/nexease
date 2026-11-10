@@ -276,6 +276,11 @@ class OrganizationSignupService:
 
             from apps.saas.entitlements import grant_signup_trial
             grant_signup_trial(organization)
+            from apps.saas.alerts import enqueue
+            enqueue(organization=organization.id, recipient=user.id, cycle='signup:'+str(user.id),
+                due_date=user.created_at.date(), kind='welcome', title='Welcome to NexEase',
+                message='Your NexEase workspace is ready. Sign in to configure your business and review your subscription.',
+                now=datetime.utcnow())
 
             return {
                 "organization":

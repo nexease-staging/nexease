@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect -- Reset form state on the explicit open/close transition. */
 "use client";
 import {useEffect,useState,useRef} from "react";
 import {useQueryClient} from "@tanstack/react-query";

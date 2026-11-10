@@ -1,8 +1,9 @@
+/* eslint-disable react-hooks/set-state-in-effect -- Consume route query commands once, then remove them from the URL. */
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { AlertTriangle, ChevronLeft, ChevronRight, CircleDollarSign, Eye, FilePlus2, FileText, RefreshCw, Search, TrendingUp, Zap } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, CircleDollarSign, SlidersHorizontal, Plus, Eye, FilePlus2, FileText, RefreshCw, Search, TrendingUp, Zap } from "lucide-react";
 import { InvoiceZip } from "@/features/business/operations-panels";
 import { useAuth } from "@/features/auth/auth-context";
 import { useCustomerList } from "@/features/customers/hooks";
@@ -18,6 +19,8 @@ import { formatCompactMoney, formatDate, formatMoney, isInvoiceOverdue } from "@
 import { InvoiceStatusBadge } from "@/components/ui/badge";
 import EmptyState from "@/components/ui/empty-state";
 import PageHeader from "@/components/ui/page-header";
+import IconButton from "@/components/ui/icon-button";
+import FilterSheet from "@/components/ui/filter-sheet";
 import StatCard from "@/components/ui/stat-card";
 
 const tabs: Array<{ value: InvoiceStatus | ""; label: string }> = [
@@ -41,6 +44,7 @@ export default function InvoicesView() {
   const canCreate = hasPermission(permissions, "invoices.create");
   const canPay = hasPermission(permissions, "invoices.record_payment");
 
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -90,11 +94,15 @@ export default function InvoicesView() {
   ) : null;
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-5">
-      <PageHeader eyebrow="Sales" title="Invoices" description="Bill customers, track what is owed and record payments."
-        actions={<div className="hidden items-center gap-2 md:flex">{createButtons}</div>} />
+    <div className="nx-invoice-list mx-auto max-w-[1400px] space-y-3">
+      <PageHeader title="Invoices"
+        actions={<div className="flex items-center gap-1">
+          <IconButton icon={SlidersHorizontal} label="Filter invoices" onClick={()=>setFiltersOpen(true)}/>
+          <IconButton icon={RefreshCw} label="Refresh invoices" disabled={query.isFetching} onClick={()=>void query.refetch()}/>
+          {canCreate ? <IconButton icon={Plus} label="Create invoice" onClick={()=>setCreateMode('fast')} className="nx-primary-icon"/> : null}
+        </div>} />
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="nx-kpi-strip">
         <StatCard label="Receivables" icon={CircleDollarSign} tone="info" loading={dash.isLoading}
           value={formatCompactMoney(dash.data?.kpis.receivables)} title={formatMoney(dash.data?.kpis.receivables)} hint="Owed to you" />
         <StatCard label="Overdue invoices" icon={AlertTriangle} tone={dash.data?.alerts.overdue_invoices ? "warning" : "success"} loading={dash.isLoading}
@@ -108,17 +116,9 @@ export default function InvoicesView() {
           <div className="flex flex-col gap-2 sm:flex-row">
             <div className="nx-search flex-1">
               <Search size={17} aria-hidden="true" />
-              <input type="search" className="nx-input" aria-label="Search invoices" placeholder="Search by invoice number or customer…"
+              <input type="search" className="nx-input" aria-label="Search invoices" placeholder="Search invoice or customer"
                 value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
             </div>
-            <select className="nx-input !mt-0 sm:w-56" aria-label="Filter by customer" value={customerId}
-              onChange={(e) => { setCustomerId(e.target.value); setPage(1); }}>
-              <option value="">All customers</option>
-              {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            <button type="button" className="nx-icon-btn hidden sm:grid" aria-label="Refresh" onClick={() => void query.refetch()}>
-              <RefreshCw size={17} className={query.isFetching ? "animate-spin" : ""} aria-hidden="true" />
-            </button>
           </div>
           <div className="nx-chip-row" role="group" aria-label="Filter by status">
             {tabs.map((t) => (
@@ -174,29 +174,17 @@ export default function InvoicesView() {
             </div>
 
             {/* Phones: card list */}
-            <ul className="grid gap-3 p-3 md:hidden">
+            <ul className="nx-invoice-cards md:hidden">
               {invoices.map((i) => {
                 const overdue = isInvoiceOverdue(i);
                 return (
-                  <li key={i.id} className="nx-card p-4">
-                    <button type="button" className="block w-full text-left" onClick={() => setDetailId(i.id)} aria-label={`Open invoice ${i.invoice_number}`}>
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0"><p className="font-bold">{i.invoice_number}</p><p className="nx-muted truncate text-sm">{i.customer.name}</p></div>
-                        <InvoiceStatusBadge status={i.status} overdue={overdue} />
-                      </div>
-                      <div className="mt-3 flex items-end justify-between gap-2">
-                        <div className="nx-muted text-xs">
-                          <p>Issued {formatDate(i.invoice_date)}</p>
-                          <p style={overdue ? { color: "var(--nx-danger-fg)", fontWeight: 600 } : undefined}>Due {formatDate(i.due_date)}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="nx-muted text-xs">Total {formatMoney(i.total_amount)}</p>
-                          <p className="text-lg font-bold tabular-nums">{formatMoney(i.balance_due)}</p>
-                          <p className="nx-muted text-[11px]">balance due</p>
-                        </div>
-                      </div>
-                    </button>
-                    {payable(i) ? <button type="button" className="nx-button mt-3 w-full" onClick={() => setPaying(i)}><CircleDollarSign size={17} aria-hidden="true" />Record payment</button> : null}
+                  <li key={i.id} className="nx-invoice-card">
+                    <div className="flex items-center justify-between gap-2"><strong className="min-w-0 flex-1 break-words">{i.customer.name}</strong><InvoiceStatusBadge status={i.status} overdue={overdue}/></div>
+                    <p className="nx-muted text-xs">{i.invoice_number} · {formatDate(i.invoice_date)} · Due {formatDate(i.due_date)}</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="nx-amount-pill" data-tone={overdue?'danger':i.status==='PAID'?'success':i.status==='PARTIALLY_PAID'?'warning':'neutral'}>{formatMoney(i.balance_due)} <span className="text-xs">due</span></span>
+                      <div className="flex gap-1"><IconButton icon={Eye} label={`View invoice ${i.invoice_number}`} onClick={()=>setDetailId(i.id)}/>{payable(i)?<IconButton icon={CircleDollarSign} label={`Record payment for ${i.invoice_number}`} onClick={()=>setPaying(i)}/>:null}</div>
+                    </div>
                   </li>
                 );
               })}
@@ -215,9 +203,13 @@ export default function InvoicesView() {
         )}
       </section>
 
+      <FilterSheet open={filtersOpen} onClose={()=>setFiltersOpen(false)}>
+        <label className="block">Customer<select className="nx-input" value={customerId} onChange={e=>{setCustomerId(e.target.value);setPage(1);}}><option value="">All customers</option>{customers.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+        <button type="button" className="nx-button nx-secondary" onClick={()=>{setCustomerId('');setSearchInput('');setStatus('');setPage(1);}}>Clear filters</button>
+      </FilterSheet>
       <InvoiceZip invoices={invoices} />
 
-      {canCreate ? <div className="nx-inline-actions flex gap-2 md:hidden">{createButtons}</div> : null}
+      {canCreate ? <details><summary className="cursor-pointer py-2 text-sm">More create options</summary><div className="flex gap-2">{createButtons}</div></details> : null}
 
       <InvoiceDialog open={createMode === "standard"}
         onClose={() => setCreateMode(null)} onCreated={(id) => setDetailId(id)} />
