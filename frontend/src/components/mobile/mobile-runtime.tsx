@@ -1,4 +1,5 @@
 "use client";
+import { dismissTopOverlay } from "./overlay-back";
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Capacitor, SystemBars, SystemBarsStyle, SystemBarType, type PluginListenerHandle } from '@capacitor/core';
@@ -46,8 +47,11 @@ export default function MobileRuntime() {
     if (Capacitor.getPlatform() !== 'android') return;
     let removed = false; let handle: PluginListenerHandle | undefined;
     void App.addListener('backButton', ({ canGoBack }) => {
-      const closer = Array.from(document.querySelectorAll<HTMLButtonElement>('[aria-label="Close assistant"], [aria-label="Close navigation"], [role="dialog"] button[aria-label="Close"]')).find(button => { const rect = button.getBoundingClientRect(); return rect.width > 0 && rect.height > 0 && rect.right > 0 && rect.left < window.innerWidth; });
-      if (closer) { closer.click(); return; }
+      if (document.documentElement.dataset.keyboard === 'open') {
+        void Keyboard.hide().catch(()=>{});
+        return;
+      }
+      if (dismissTopOverlay()) return;
       if (!['/home','/home/','/dashboard','/dashboard/'].includes(pathname) && canGoBack) router.back();
       else if (window.confirm('Close NexEase?')) void App.exitApp();
     }).then(h => { if (removed) void h.remove(); else handle = h; }).catch(()=>{/* Browser history remains available. */});

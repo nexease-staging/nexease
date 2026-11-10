@@ -1,5 +1,8 @@
 "use client";
 import {confirmAction} from "@/components/nex-feedback";
+import PageHeader from "@/components/ui/page-header";
+import IconButton from "@/components/ui/icon-button";
+import FilterSheet from "@/components/ui/filter-sheet";
 import SearchSelect from "@/components/search-select";
 
 
@@ -16,6 +19,7 @@ import {
   PowerOff,
   RefreshCw,
   Search,
+  SlidersHorizontal,
 } from "lucide-react";
 
 import {
@@ -63,6 +67,7 @@ function formatCurrency(
 }
 
 export default function ProductsPage() {
+  const [filtersOpen,setFiltersOpen]=useState(false);
   const [reorderId,setReorderId]=useState<string|null>(null);
   const {
     authentication,
@@ -308,206 +313,22 @@ export default function ProductsPage() {
 
   return (
     <section className="space-y-6">
-      <div
-        className="
-          flex flex-col gap-4
-          sm:flex-row sm:items-center
-          sm:justify-between
-        "
-      >
-        <div>
-          <div
-            className="
-              flex items-center gap-2
-            "
-          >
-            <Package
-              size={25}
-              className="text-blue-600"
-            />
-
-            <h1
-              className="
-                text-2xl font-bold
-                text-slate-900
-              "
-            >
-              Products
-            </h1>
-          </div>
-
-          <p
-            className="
-              mt-1 text-sm text-slate-600
-            "
-          >
-            Manage product catalog, pricing,
-            categories, and availability.
-          </p>
-        </div>
-
-        <div
-          className="
-            flex flex-col gap-2
-            sm:flex-row
-          "
-        >
-          <button title="Refresh"
-            type="button"
-            disabled={
-              productQuery.isFetching
-            }
-            onClick={() => {
-              void productQuery.refetch();
-            }}
-            className="
-              inline-flex items-center
-              justify-center gap-2
-              rounded-lg border
-              border-slate-300 bg-white
-              px-4 py-2 text-sm
-              font-semibold text-slate-700
-              hover:bg-slate-50
-              disabled:cursor-not-allowed
-              disabled:opacity-50
-            "
-          >
-            <RefreshCw
-              size={16}
-              className={
-                productQuery.isFetching
-                  ? "animate-spin"
-                  : undefined
-              }
-            />
-
-            <span className="sr-only">Refresh</span>
-          </button>
-
-          {canCreate ? (
-            <button title="New product"
-              type="button"
-              onClick={
-                openCreateDialog
-              }
-              className="
-                inline-flex items-center
-                justify-center gap-2
-                rounded-lg bg-blue-600
-                px-4 py-2 text-sm
-                font-semibold text-white
-                hover:bg-blue-700
-              "
-            >
-              <Plus size={17} /><span className="sr-only">New product</span></button>
-          ) : null}
-        </div>
-      </div>
-
-      <div
-        className="nx-list-filters 
-          grid gap-4 rounded-2xl
-          border border-slate-200
-          bg-white p-4 shadow-sm
-          md:grid-cols-[minmax(0,1fr)_240px]
-        "
-      >
-        <label className="space-y-1.5">
-          <span
-            className="
-              text-sm font-semibold
-              text-slate-700
-            "
-          >
-            Search
-          </span>
-
-          <div className="relative">
-            <Search
-              size={17}
-              className="
-                pointer-events-none
-                absolute left-3 top-1/2
-                -translate-y-1/2
-                text-slate-400
-              "
-            />
-
-            <input
-              type="search"
-              value={search}
-              placeholder="Search SKU, name, brand or barcode"
-              onChange={(event) => {
-                setSearch(
-                  event.target.value,
-                );
-
-                setPage(1);
-              }}
-              className="
-                h-10 w-full rounded-lg
-                border border-slate-300
-                bg-white pl-9 pr-3
-                text-sm text-slate-900
-                placeholder:text-slate-400
-                outline-none
-                focus:border-blue-500
-                focus:ring-2
-                focus:ring-blue-100
-              "
-            />
-          </div>
-        </label>
-
-        <label className="space-y-1.5">
-          <span
-            className="
-              text-sm font-semibold
-              text-slate-700
-            "
-          >
-            Status
-          </span>
-
-          <SearchSelect
-            value={activeFilter}
-            onChange={(event) => {
-              setActiveFilter(
-                event.target.value as (
-                  "all"
-                  |
-                  "active"
-                  |
-                  "inactive"
-                ),
-              );
-
-              setPage(1);
-            }}
-            className="
-              h-10 w-full rounded-lg
-              border border-slate-300
-              bg-white px-3 text-sm
-              text-slate-900 outline-none
-              focus:border-blue-500
-              focus:ring-2
-              focus:ring-blue-100
-            "
-          >
-            <option value="all">
-              All products
-            </option>
-
-            <option value="active">
-              Active products
-            </option>
-
-            <option value="inactive">
-              Inactive products
-            </option>
+      <PageHeader title="Products" actions={<>
+        <IconButton icon={SlidersHorizontal} label="Filter products" onClick={()=>setFiltersOpen(true)}/>
+        <IconButton icon={RefreshCw} label="Refresh products" disabled={productQuery.isFetching} onClick={()=>void productQuery.refetch()}/>
+        {canCreate && <IconButton icon={Plus} label="New product" className="nx-primary-icon" onClick={openCreateDialog}/>}
+      </>}/>
+      <label className="nx-compact-search">
+        <Search size={18} aria-hidden="true"/>
+        <input type="search" aria-label="Search products" placeholder="Search items or barcode" value={search} onChange={event=>{setSearch(event.target.value);setPage(1)}}/>
+      </label>
+      <FilterSheet open={filtersOpen} onClose={()=>setFiltersOpen(false)}>
+        <label className="block space-y-2"><span>Status</span>
+          <SearchSelect value={activeFilter} onChange={event=>{setActiveFilter(event.target.value as "all"|"active"|"inactive");setPage(1)}} className="nx-input w-full">
+            <option value="all">All products</option><option value="active">Active products</option><option value="inactive">Inactive products</option>
           </SearchSelect>
         </label>
-      </div>
+      </FilterSheet>
 
       {actionError ? (
         <div

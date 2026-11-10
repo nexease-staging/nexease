@@ -345,3 +345,36 @@ html[data-native="true"] .nx-app-header{background:#062b40;color:#fff;padding-to
 html[data-native="true"] .nx-app-header .nx-icon-btn{color:#fff;background:transparent}
 html[data-native="true"] body:before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top);background:#062b40;z-index:100}
 .nx-button{min-height:44px}
+
+/* Shared mobile layout: keep actions reachable without obscuring records. */
+.nx-compact-search{display:flex;align-items:center;gap:10px;border:1px solid var(--nx-border-strong);border-radius:10px;background:var(--nx-surface);padding:0 12px;min-height:44px}
+.nx-compact-search input{min-width:0;width:100%;border:0!important;background:transparent;outline-offset:3px;padding:10px 0!important}
+.nx-page-actions{flex-shrink:0}
+.nx-modal>header{position:sticky;top:0;z-index:2;background:var(--nx-surface,#fff)}
+.nx-modal footer{position:sticky;bottom:0;background:var(--nx-surface,#fff);padding-block:12px;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+@media(max-width:767px){
+ .nx-page-header{flex-wrap:nowrap;align-items:center;padding-bottom:0!important;gap:8px}
+ .nx-page-header h1{font-size:20px}
+ .nx-page-header>div:first-child>p{display:none}
+ .nx-page-actions{gap:4px}
+ .nx-app-header{gap:4px;padding-inline:8px}
+ .nx-app-header .nx-navigation-trigger{order:-1;margin:0;min-width:44px;min-height:44px}
+ .nx-app-header .nx-search-trigger,.nx-app-header button[aria-label="Open account menu"]{width:44px;height:44px;min-height:44px}
+ .nx-app-header .nx-header-brand{display:none}
+ .nx-app-header>div.min-w-0 p:first-child{font-size:14px}
+ .nx-modal footer{flex-direction:row;justify-content:space-between;gap:8px}
+ .nx-modal footer button{width:auto;min-height:44px}
+ .nx-modal{scroll-padding-top:90px;scroll-padding-bottom:90px}
+ html[data-keyboard="open"] .nx-workspace-main{padding-bottom:24px!important}
+ .nx-workspace-main input[type=search]{font-size:16px}
+}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+
+@media(max-width:767px){
+ .nx-master-drawer{max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px)!important;scroll-padding-block:80px}
+ .nx-master-drawer form>.grid.grid-cols-2{grid-template-columns:minmax(0,1fr)}
+ .nx-master-drawer footer{position:sticky;bottom:0;background:var(--nx-surface,#fff);z-index:2;flex-direction:row}
+ .nx-list-filters .relative>input[type="search"]{padding-left:2.25rem!important}
+}
