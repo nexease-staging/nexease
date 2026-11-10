@@ -51,3 +51,8 @@ Financial transactions, financial-year numbering, partner commissions and full r
 - PAY-005 — High, invoice/bill payment APIs and dialogs: a lost success response could produce another payment on retry. Add tenant/user/payload-bound durable request receipts and persistent client retry keys; test replay after settlement and cross-user/tenant rejection.
 - PAY-006 — High, supplier payment and bank-statement execution: compensation could remove payment/bank records after journal posting, leaving orphan accounting. Retain evidence, flag incomplete operations for review and block further payment attempts; injected journal and statement failures covered for both payment directions.
 - PAY-007 — High, bank transaction/transfer services: read-modify-write bank updates could race payment updates. Share the organization lock across these service operations. Other financial writers and real replica-set behavior still require audit; no blanket atomicity claim.
+
+## Invoice numbering safety
+- NUM-001 — High, numbering allocator: legacy invoices were absent from reservations, so automatic creation could offer an existing number. Check persisted invoices, skip collisions and attach legacy evidence; concurrent manual/automatic and tenant tests added.
+- NUM-002 — Medium, invoice services/settings: creation routes lacked a common date-aware financial-year option. Add opt-in April–March sequences using IST and preserve existing documents and the legacy counter.
+- NUM-003 — Medium, numbering signals: repeated saves after validation failure could consume another number. Retain the same object's reservation, attach successful saves and provide a read-only audit; AI proposal reservations remain claimable only by their owning proposal.

@@ -184,6 +184,21 @@ class SaaSTests(unittest.TestCase):
   self.assertEqual(response.status_code,403);self.assertEqual(BusinessRecord.objects.count(),0)
  def test_ai_invoice_creates_draft_only(self):
   p=self.proposal('invoice');p.data['fields'].update(party_name='Customer',party_code='C1',document_total='118',date='2026-10-25');p.data['items']=[dict(sku='S1',name='Item',unit='PCS',quantity='1',unit_price='100',tax_rate='18',discount='0')];p.save();r=self.call(ai.confirm,{'confirm':True},proposal_id=str(p.id));self.assertEqual(r.status_code,200,r.content);p.reload();self.assertEqual(p.state,'saved',p.result);self.assertEqual(Invoice.objects.get().status,'DRAFT');self.assertEqual(Invoice.objects.get().total_amount,118)
+ def test_ai_number_reservation_survives_corrected_form(self):
+  from apps.business.numbering import owned
+  p=self.proposal('invoice');p.data['fields'].update(party_name='',party_code='C1',document_total='118',date='2026-10-25');p.data['items']=[dict(sku='S1',name='Item',unit='PCS',quantity='1',unit_price='100',tax_rate='18',discount='0')];p.save()
+  self.call(ai.confirm,{'confirm':True},proposal_id=str(p.id));p.reload();self.assertEqual(p.state,'review');number=p.data['fields']['number'];self.assertTrue(number)
+  token=owned.set({})
+  try:
+   p.data['fields']['party_name']='Customer';p.save();r=self.call(ai.confirm,{'confirm':True},proposal_id=str(p.id));self.assertEqual(r.status_code,200,r.content);p.reload();self.assertEqual(p.state,'saved',p.result);self.assertEqual(Invoice.objects.get().invoice_number,number)
+  finally:owned.reset(token)
+ def test_ai_changed_financial_year_requires_new_reservation(self):
+  from apps.business.numbering import configure
+  configure(self.org,'Invoice','automatic','INV-',1,5,True)
+  p=self.proposal('invoice');p.data['fields'].update(party_name='',party_code='C1',document_total='118',date='2026-03-31');p.data['items']=[dict(sku='S1',name='Item',unit='PCS',quantity='1',unit_price='100',tax_rate='18',discount='0')];p.save()
+  self.call(ai.confirm,{'confirm':True},proposal_id=str(p.id));p.reload();self.assertEqual(p.state,'review')
+  p.data['fields'].update(party_name='Customer',date='2026-04-01');p.save();r=self.call(ai.confirm,{'confirm':True},proposal_id=str(p.id));self.assertGreaterEqual(r.status_code,400);self.assertEqual(Invoice.objects.count(),0)
+  p.reload();p.data['fields']['number']='';p.save();r=self.call(ai.confirm,{'confirm':True},proposal_id=str(p.id));self.assertEqual(r.status_code,200,r.content);p.reload();self.assertEqual(p.state,'saved',p.result);self.assertEqual(Invoice.objects.get().invoice_number,'INV-26-27/00001')
  def test_ai_bill_creates_draft_only(self):
   p=self.proposal('bill');p.data['fields'].update(party_name='Supplier',party_code='SUP1',number='SUP-INV-1',document_total='100',date='2026-10-25');p.data['items']=[dict(sku='S1',name='Item',unit='PCS',quantity='1',unit_price='100',tax_rate='0',discount='0')];p.save();r=self.call(ai.confirm,{'confirm':True},proposal_id=str(p.id));self.assertEqual(r.status_code,200,r.content);p.reload();self.assertEqual(p.state,'saved',p.result);self.assertEqual(VendorBill.objects.get().status,'DRAFT')
  def test_ai_pdf_page_allowance_and_no_auto_entry(self):

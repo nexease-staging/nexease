@@ -44,3 +44,6 @@ Email verification, password recovery, queued welcome/link emails, CSV/PDF revie
 
 ## Payment retry checkpoint
 Customer/supplier payment serialization, durable API retry receipts, web/APK dialog submit guards, shared bank-operation locking and read-only interrupted-operation inspection are implemented. Statement-completion failures retain financial evidence instead of deleting posted payment sources. See PAYMENT_RETRY_SAFETY.md for rollout and explicit limitations. This does not complete transaction-wide atomicity, automated repairs, the all-module audit, or deployment.
+
+## Invoice numbering checkpoint
+Optional IST financial-year numbering, shared invoice allocation, legacy collision handling and read-only reservation auditing are implemented. See INVOICE_NUMBERING_SAFETY.md. Existing numbers are preserved. Full create-request idempotency, gap-free transactional numbering, real-database interruption tests and deployment remain pending.

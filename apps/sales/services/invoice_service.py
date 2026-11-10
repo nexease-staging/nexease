@@ -1,3 +1,4 @@
+from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta
 from decimal import Decimal
 from uuid import uuid4
@@ -159,9 +160,7 @@ class InvoiceService:
             )
 
         if invoice_date is None:
-            invoice_date = (
-                datetime.utcnow()
-            )
+            invoice_date = datetime.now(ZoneInfo("Asia/Kolkata"))
 
         if due_date is None:
             due_date = (
@@ -253,35 +252,8 @@ class InvoiceService:
                 "Sales order has no fulfilled items to invoice."
             )
 
-        if invoice_number is None:
-            invoice_number = (
-                InvoiceService
-                ._generate_invoice_number()
-            )
-        else:
-            invoice_number = (
-                str(invoice_number)
-                .strip()
-                .upper()
-            )
-
-            if not invoice_number:
-                raise ValueError(
-                    "Invoice number is required."
-                )
-
-            existing_number = (
-                InvoiceRepository
-                .get_by_invoice_number(
-                    organization=organization,
-                    invoice_number=invoice_number,
-                )
-            )
-
-            if existing_number is not None:
-                raise ValueError(
-                    "Invoice number already exists."
-                )
+        from apps.business.numbering import incoming
+        invoice_number = incoming(organization, 'Invoice', invoice_number, document_date=invoice_date)
 
         details={}
         if billing_details is not None:

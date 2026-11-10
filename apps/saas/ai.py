@@ -245,7 +245,19 @@ def confirm(request,proposal_id):
     if master and f['party_gstin'] and f['party_gstin'].upper()!=str(master.gstin or '').upper():raise ValueError('Document GSTIN differs from the selected party master. Review the party and its master details first.')
     if not f['number']:
      from apps.business.numbering import allocate
-     f['number']=allocate(org,'Invoice' if kind=='invoice' else 'PurchaseOrder' if kind=='purchase_order' else 'VendorBill');proposal.data=d;proposal.save()
+     f['number']=allocate(org,'Invoice' if kind=='invoice' else 'PurchaseOrder' if kind=='purchase_order' else 'VendorBill',document_date=f['date']);proposal.data=d
+     if kind=='invoice':
+      from mongoengine.connection import get_db
+      get_db().nexease_number_reservations.update_one({'_id':str(org.id)+':Invoice:'+f['number']},{'$set':{'ai_proposal_id':str(proposal.id)}})
+     proposal.save()
+    if kind=='invoice':
+     from mongoengine.connection import get_db
+     from apps.business.numbering import owned, financial_year, settings as number_settings
+     reservation_id=str(org.id)+':Invoice:'+f['number'].strip().upper()
+     reservation=get_db().nexease_number_reservations.find_one({'_id':reservation_id,'ai_proposal_id':str(proposal.id),'status':'reserved'})
+     if reservation:
+      if number_settings(org,'Invoice')['financial_year'] and reservation.get('financial_year')!=financial_year(f['date']):raise ValueError('The reserved number belongs to a different financial year. Clear the invoice number to allocate a new one.')
+      owned.set({**(owned.get() or {}),reservation_id:True})
     party={'code':f['party_code'],'name':f['party_name'],'gstin':f['party_gstin'],'address':f['party_address'],'state':f['party_state']}
     if kind=='invoice':
      from apps.business.direct_entry import direct_invoice as view

@@ -10,7 +10,7 @@ from .views import payload,permitted,validate,key_for,audit
 from .models import BusinessRecord as Record
 from .payroll import amount,money
 from .automation import write_lock,advances,run_data,bounds
-from .numbering import REGISTRY,settings,allocate,choice
+from .numbering import REGISTRY,settings,allocate,choice,configure
 
 @api_login_required
 @require_http_methods(['GET','POST'])
@@ -19,10 +19,9 @@ def numbers(request):
     try:
         if request.method=='POST':
             p=payload(request);kind=p.get('kind');mode=p.get('mode');prefix=str(p.get('prefix','')).upper();n=int(p.get('next',1));pad=int(p.get('padding',5))
-            if kind not in REGISTRY or mode not in ('automatic','manual') or not re.fullmatch(r'[A-Z0-9._/-]{0,20}',prefix) or not 1<=n<=999999999 or not 1<=pad<=12:raise ValueError('Invalid numbering settings.')
-            get_db().nexease_numbering.update_one({'_id':str(request.api_organization.id)+':'+kind},{'$set':{'mode':mode,'prefix':prefix,'padding':pad},'$max':{'next':n}},upsert=True);audit(request,'numbering',kind,'configure')
+            configure(request.api_organization,kind,mode,prefix,n,pad,p.get('financial_year',settings(request.api_organization,kind)['financial_year'] if kind in REGISTRY else False));audit(request,'numbering',kind,'configure')
         return R.success(data={'series':[settings(request.api_organization,k) for k in REGISTRY]},request=request)
-    except (ValueError,TypeError) as e:return R.validation_error(message=str(e),request=request)
+    except (ValueError,TypeError,ValidationError) as e:return R.validation_error(message=str(e),request=request)
 
 @api_login_required
 @require_http_methods(['GET'])
@@ -126,7 +125,7 @@ def labour_invoice(request):
         from .billing import clean_details,settings
         line=InvoiceItem(product=product,item_type='service',item_name=product.name,hsn_code=p.get('hsn_code') or product.hsn_code,unit='MONTH',quantity=1,unit_price=subtotal,tax_rate=rate,line_subtotal=subtotal,line_tax=tax,line_total=total)
         details={**settings(org),**clean_details({**p['billing_details'],'site_name':site.data['name'],'service_from':first.isoformat(),'service_to':last.isoformat()},org,[line])} if 'billing_details' in p else {}
-        selected=choice.get();number=allocate(org,'Invoice',selected.get('number','') if selected and selected.get('mode')=='manual' else None)
+        selected=choice.get();number=allocate(org,'Invoice',selected.get('number','') if selected and selected.get('mode')=='manual' else None,document_date=when)
         if Invoice.objects(organization=org,invoice_number=number).first():raise ValueError('Number exists. Choose another number or higher sequence.')
         token=choice.set(None)
         try:

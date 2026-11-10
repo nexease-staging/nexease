@@ -31,7 +31,7 @@ def direct_invoice(request):
     org=request.api_organization;user=request.api_user
     if not AuthorizationService.has_permission(user,'invoices.create'):return R.forbidden(message='Permission denied.',request=request)
     try:
-        p=payload(request);number=incoming(org,'Invoice',text(p,'invoice_number',False,50));c=p.get('customer');items=p.get('items');warehouse_id=p.get('warehouse_id')
+        p=payload(request);number=text(p,'invoice_number',False,50);c=p.get('customer');items=p.get('items');warehouse_id=p.get('warehouse_id')
         if not isinstance(c,dict) or not isinstance(items,list) or not 1<=len(items)<=100:raise ValueError('Customer and 1–100 line items are required.')
         if Invoice.objects(organization=org,invoice_number=number).first():raise ValueError('Invoice number already exists.')
         when=datetime.fromisoformat(text(p,'invoice_date',True));due=datetime.fromisoformat(p['due_date']) if p.get('due_date') else None
@@ -90,6 +90,7 @@ def direct_invoice(request):
         details={**settings(org),**clean_details(p['billing_details'],org,invoice_items)} if 'billing_details' in p else {}
         goods=any(i.item_type=='goods' for i in invoice_items)
         total=sum(x.line_total for x in invoice_items)
+        number=incoming(org,'Invoice',number,document_date=when)
         invoice=Invoice(billing_details=details,organization=org,invoice_number=number,customer=customer,invoice_date=when,due_date=due,items=invoice_items,subtotal=sum(x.line_subtotal for x in invoice_items),tax_amount=sum(x.line_tax for x in invoice_items),discount_amount=sum(x.discount for x in invoice_items),total_amount=total,balance_due=total,billing_name=customer.name,billing_address=customer.billing_address,billing_state=customer.state,billing_city=customer.city,billing_pincode=customer.pincode,customer_gstin=customer.gstin,created_by=user,notes=('DIRECT ENTRY: stock deducted; review negative quantities. ' if goods else 'SERVICE INVOICE: no stock movement. ')+text(p,'notes',limit=700),direct_entry=True,stock_review_required=goods).save()
         if goods:
             try:move(invoice,user,warehouse)

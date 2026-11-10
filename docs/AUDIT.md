@@ -121,3 +121,6 @@ Confirmed MONEY-001/PAYMENT-001/JOURNAL-001 fixed as documented in PAYMENT_SAFET
 
 ## Payment operation follow-up
 Customer and supplier service integration tests identified stale-snapshot payment overwrites, missing successful-request replay, and compensation that could orphan posted journals. Fixed within the payment/statement/transfer paths described in PAYMENT_RETRY_SAFETY.md. Interrupted operations are held for reviewed reconciliation rather than automatically replayed. Audit remains incomplete for all other financial writers and for real MongoDB replica-set crashes, browser/device end-to-end behavior and previously inconsistent records.
+
+## Invoice numbering checkpoint
+Found legacy invoice collisions missing from reservation history, independent UUID-style sales-order invoice numbering, missing financial-year sequences, and repeated allocation when retrying a failed model validation. Added shared invoice allocation, reservation/document linkage, optional IST financial-year sequences and read-only reservation inspection. Concurrent allocation and boundary tests run against MongoMock; real replica-set crash testing, gap-free transactional allocation and general invoice-create idempotency remain outstanding. See INVOICE_NUMBERING_SAFETY.md.
