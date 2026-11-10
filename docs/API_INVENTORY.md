@@ -373,3 +373,9 @@ Generated from Django URL resolver. Static registration only: each runtime statu
 | `api/v1/background-jobs/<str:job_id>/retry/` | `apps.core.api.v1.background_job_views.background_job_retry_api` | UNTESTED |
 | `api/v1/notifications/` | `apps.core.api.v1.notification_views.notification_list_api` | UNTESTED |
 | `api/v1/notifications/<str:notification_id>/read/` | `apps.core.api.v1.notification_views.notification_read_api` | UNTESTED |
+
+## Partner portal additions
+- GET/POST `/api/v1/saas/partners/session/`: registration, separate partner session and logout.
+- GET `/api/v1/saas/partners/dashboard/`: approved partner scoped live statement/referrals.
+- GET/POST `/api/v1/saas/owner/partners/`: owner-only list and audited decisions with fresh authentication.
+Automated auth/isolation tests added; deployed runtime walkthrough remains pending.

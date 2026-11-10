@@ -112,3 +112,6 @@ Partner signup/approval/referral/commission/payout; recurring documents; automat
 
 ## Implementation checkpoint
 See BUGS_FIXED.md for fixes, DESIGN_SYSTEM.md for adopted UI patterns, and UPGRADE_STATUS.md for rollout and unfinished scope. Page/API runtime entries remain UNTESTED; static inspection and unit tests do not replace a route walkthrough.
+
+## New partner routes
+`/partners`, `/owner/partners`, `/api/v1/saas/partners/session/`, `/api/v1/saas/partners/dashboard/`, `/api/v1/saas/owner/partners/`: implementation and automated regression coverage added. Authenticated visual, console/network and physical-device checks remain UNTESTED. See PARTNER_PORTAL.md for walkthrough and omissions.

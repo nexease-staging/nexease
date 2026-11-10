@@ -35,3 +35,6 @@ Free users/invoices and paid core caps follow the request. Extra Free limits (30
 - TypeScript passes. ESLint exits successfully with 0 errors and 18 warnings; scoped existing hydration/ref lint exceptions are documented in BUGS_FIXED.md.
 - Next.js production build passes with a test API URL; this is not a deployed environment validation.
 - Additional signup/worker/mailbox/document-email Django suites: 73 tests pass after seeding the permission catalogue and updating the mailbox fixture to include its tenant. All SMTP calls were mocked.
+
+## Partner portal checkpoint
+Public partner registration/sign-in, owner application review, referral-link signup attribution and live review statements have now been implemented; see PARTNER_PORTAL.md. Earlier pending lists above describe the initial checkpoint. Password recovery, verification/welcome emails, statement exports and payout workflow remain pending. No production or staging deployment is implied.

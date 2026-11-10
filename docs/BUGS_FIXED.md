@@ -29,3 +29,8 @@ Financial transactions, financial-year numbering, partner commissions and full r
 - UI-004: corrected an accidental internal variable name in the access-denied user message.
 
 - COMMISSION-002: confirmed GST-exclusive basis; hold missing/stale tax evidence, reject invalid refund GST, and audit operator tax evidence. Twelve focused commission/reminder tests pass.
+
+## Partner portal increment
+- PARTNER-002: isolated partner registration and sessions, owner approval/rejection/suspension with fresh authentication and audit records.
+- PARTNER-003: approved referral-code attribution at signup; compensated rollback removes referral records on failed signup.
+- PARTNER-004: server-scoped live-only commission statement and referral pagination; regression tests reject cross-partner selection, pending access and expired/revoked sessions.
