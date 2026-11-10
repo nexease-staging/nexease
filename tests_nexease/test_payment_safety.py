@@ -2,7 +2,7 @@ import bootstrap
 import unittest
 from decimal import Decimal
 from types import SimpleNamespace as NS
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 from apps.sales.services.payment_service import PaymentService
 from apps.purchasing.services.supplier_payment_service import SupplierPaymentService
 
@@ -25,9 +25,9 @@ class PaymentSafetyTests(unittest.TestCase):
      self.assertEqual(post.call_count,1 if status=='DRAFT' else 0)
      create.assert_not_called()
  def test_missing_account_blocks_before_payment_or_bank_mutation(self):
-  org=NS(id='org');user=NS(organization=org,is_active=True)
-  invoice=NS(organization=org,status='ISSUED',customer=NS(organization=org),amount_paid=Decimal('0'),balance_due=Decimal('10'),total_amount=Decimal('10'))
-  bank=NS(organization=org,is_active=True)
+  org=NS(id='org');user=NS(id='user',organization=org,is_active=True)
+  invoice=NS(id='invoice',reload=Mock(),organization=org,status='ISSUED',customer=NS(organization=org),amount_paid=Decimal('0'),balance_due=Decimal('10'),total_amount=Decimal('10'))
+  bank=NS(id='bank',reload=Mock(),organization=org,is_active=True)
   module='apps.sales.services.payment_service'
   with patch(module+'.AuthorizationService.has_permission',return_value=True),patch(module+'.InvoiceService.get_invoice_net_receivable',return_value=Decimal('10')),patch(module+'.ChartOfAccountService.get_system_account',side_effect=ValueError('System account missing')),patch(module+'.PaymentRepository.create_payment') as create,patch(module+'.BankTransactionService.create_transaction') as bankwrite:
    with self.assertRaises(ValueError):PaymentService.record_invoice_payment(user=user,organization=org,invoice=invoice,amount='5',payment_method='CASH',bank_account=bank)

@@ -45,3 +45,9 @@ Financial transactions, financial-year numbering, partner commissions and full r
 - MONEY-001: reject non-finite and sub-paise customer/supplier payment amounts instead of allowing inconsistent model rounding.
 - PAYMENT-001: check customer payment accounting permissions/system accounts before payment and bank writes; unexpected multi-document failures remain unresolved.
 - JOURNAL-001: retry existing draft customer/supplier payment journals through normal posting validation; do not treat a draft as posted or recreate it.
+
+## Payment operation safety checkpoint
+- PAY-004 — High, customer/supplier payment services: stale document snapshots could overwrite earlier payment totals. Serialize payment execution with the organization lock and reload before validation; test stale and simultaneous submissions.
+- PAY-005 — High, invoice/bill payment APIs and dialogs: a lost success response could produce another payment on retry. Add tenant/user/payload-bound durable request receipts and persistent client retry keys; test replay after settlement and cross-user/tenant rejection.
+- PAY-006 — High, supplier payment and bank-statement execution: compensation could remove payment/bank records after journal posting, leaving orphan accounting. Retain evidence, flag incomplete operations for review and block further payment attempts; injected journal and statement failures covered for both payment directions.
+- PAY-007 — High, bank transaction/transfer services: read-modify-write bank updates could race payment updates. Share the organization lock across these service operations. Other financial writers and real replica-set behavior still require audit; no blanket atomicity claim.

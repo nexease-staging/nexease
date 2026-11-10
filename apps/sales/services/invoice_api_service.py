@@ -74,6 +74,7 @@ class InvoiceAPIService:
     }
 
     PAYMENT_FIELDS = {
+        "request_key",
         "amount",
         "payment_method",
         "bank_account_id",
@@ -619,6 +620,7 @@ class InvoiceAPIService:
             )
 
         return {
+            **({"request_key": payload["request_key"]} if "request_key" in payload else {}),
             "amount": (
                 InvoiceAPIService
                 ._normalize_decimal(

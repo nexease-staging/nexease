@@ -1,3 +1,4 @@
+from apps.core.services.payment_operation import payment_operation, payment_write_started
 from datetime import datetime
 from decimal import Decimal
 from uuid import uuid4
@@ -301,6 +302,7 @@ class SupplierPaymentService:
         return journal
 
     @staticmethod
+    @payment_operation("supplier", "vendor_bill", "bills.record_payment")
     def record_bill_payment(
         *,
         user,
@@ -460,6 +462,14 @@ class SupplierPaymentService:
                 "Invalid payment method."
             )
 
+        # Validate predictable accounting failures before recording any money movement.
+        for permission in ("bank_transactions.create", "journal_entries.create", "journal_entries.post"):
+            SupplierPaymentService._check_permission(user, permission)
+        for system_key in ("ACCOUNTS_PAYABLE", "CASH" if payment_method == "CASH" else "BANK"):
+            account = ChartOfAccountService.get_system_account(organization=organization, system_key=system_key)
+            if account.organization.id != organization.id or not account.is_active:
+                raise ValueError("Payment accounting account is unavailable for this organization.")
+
         # ==================================================
         # PAYMENT REFERENCE
         # ==================================================
@@ -518,22 +528,6 @@ class SupplierPaymentService:
         # ==================================================
         # BILL PAYMENT TOTALS
         # ==================================================
-
-        original_amount_paid = (
-            vendor_bill.amount_paid
-        )
-
-        original_balance_due = (
-            vendor_bill.balance_due
-        )
-
-        original_status = (
-            vendor_bill.status
-        )
-
-        original_paid_at = (
-            vendor_bill.paid_at
-        )
 
         new_amount_paid = (
             vendor_bill.amount_paid
@@ -600,184 +594,107 @@ class SupplierPaymentService:
 
         accounting_journal = None
 
-        try:
+        payment_write_started(payment_number)
 
-            # ==============================================
-            # 1. CREATE SUPPLIER PAYMENT
-            # ==============================================
+        # ==============================================
+        # 1. CREATE SUPPLIER PAYMENT
+        # ==============================================
 
-            payment = (
-                SupplierPaymentRepository
-                .create_payment(
-                    organization=organization,
-                    payment_number=(
-                        payment_number
-                    ),
-                    supplier=(
-                        vendor_bill.supplier
-                    ),
-                    payment_date=(
-                        payment_date
-                    ),
-                    amount=amount,
-                    payment_method=(
-                        payment_method
-                    ),
-                    bank_account=(
-                        bank_account
-                    ),
-                    reference_number=(
-                        reference_number
-                    ),
-                    allocations=[
-                        allocation
-                    ],
-                    notes=notes.strip(),
-                    created_by=user,
-                )
-            )
-
-            # ==============================================
-            # 2. CREATE MONEY_OUT BANK TRANSACTION
-            # ==============================================
-
-            bank_transaction = (
-                BankTransactionService
-                .create_transaction(
-                    user=user,
-                    organization=organization,
-                    bank_account=(
-                        bank_account
-                    ),
-                    transaction_type=(
-                        "MONEY_OUT"
-                    ),
-                    amount=amount,
-                    transaction_date=(
-                        payment_date
-                    ),
-                    reference_type=(
-                        "SUPPLIER_PAYMENT"
-                    ),
-                    reference_id=(
-                        payment.payment_number
-                    ),
-                    external_reference=(
-                        reference_number
-                    ),
-                    description=(
-                        "Supplier payment "
-                        f"{payment.payment_number} "
-                        f"to "
-                        f"{vendor_bill.supplier.name}"
-                    ),
-                )
-            )
-
-            # ==============================================
-            # 3. UPDATE VENDOR BILL
-            # ==============================================
-
-            VendorBillRepository.update_payment_totals(
-                bill=vendor_bill,
-                amount_paid=(
-                    new_amount_paid
+        payment = (
+            SupplierPaymentRepository
+            .create_payment(
+                organization=organization,
+                payment_number=(
+                    payment_number
                 ),
-                balance_due=(
-                    new_balance_due
+                supplier=(
+                    vendor_bill.supplier
                 ),
-                status=new_status,
-                paid_at=paid_at,
+                payment_date=(
+                    payment_date
+                ),
+                amount=amount,
+                payment_method=(
+                    payment_method
+                ),
+                bank_account=(
+                    bank_account
+                ),
+                reference_number=(
+                    reference_number
+                ),
+                allocations=[
+                    allocation
+                ],
+                notes=notes.strip(),
+                created_by=user,
             )
+        )
 
-            # ==============================================
-            # 4. ACCOUNTING JOURNAL
-            # ==============================================
+        # ==============================================
+        # 2. CREATE MONEY_OUT BANK TRANSACTION
+        # ==============================================
 
-            accounting_journal = (
-                SupplierPaymentService
-                ._post_supplier_payment_accounting(
-                    user=user,
-                    organization=organization,
-                    payment=payment,
-                )
+        bank_transaction = (
+            BankTransactionService
+            .create_transaction(
+                user=user,
+                organization=organization,
+                bank_account=(
+                    bank_account
+                ),
+                transaction_type=(
+                    "MONEY_OUT"
+                ),
+                amount=amount,
+                transaction_date=(
+                    payment_date
+                ),
+                reference_type=(
+                    "SUPPLIER_PAYMENT"
+                ),
+                reference_id=(
+                    payment.payment_number
+                ),
+                external_reference=(
+                    reference_number
+                ),
+                description=(
+                    "Supplier payment "
+                    f"{payment.payment_number} "
+                    f"to "
+                    f"{vendor_bill.supplier.name}"
+                ),
             )
+        )
 
-        except Exception:
+        # ==============================================
+        # 3. UPDATE VENDOR BILL
+        # ==============================================
 
-            # ==============================================
-            # ROLLBACK ACCOUNTING JOURNAL
-            # ==============================================
+        VendorBillRepository.update_payment_totals(
+            bill=vendor_bill,
+            amount_paid=(
+                new_amount_paid
+            ),
+            balance_due=(
+                new_balance_due
+            ),
+            status=new_status,
+            paid_at=paid_at,
+        )
 
-            if accounting_journal:
+        # ==============================================
+        # 4. ACCOUNTING JOURNAL
+        # ==============================================
 
-                try:
-
-                    accounting_journal.delete()
-
-                except Exception:
-                    pass
-
-            # ==============================================
-            # RESTORE VENDOR BILL
-            # ==============================================
-
-            try:
-
-                VendorBillRepository.update_payment_totals(
-                    bill=vendor_bill,
-                    amount_paid=(
-                        original_amount_paid
-                    ),
-                    balance_due=(
-                        original_balance_due
-                    ),
-                    status=(
-                        original_status
-                    ),
-                    paid_at=(
-                        original_paid_at
-                    ),
-                )
-
-            except Exception:
-                pass
-
-            # ==============================================
-            # ROLLBACK BANK LEDGER
-            # ==============================================
-
-            if bank_transaction:
-
-                try:
-
-                    bank_account.reload()
-
-                    bank_account.current_balance = (
-                        bank_transaction
-                        .balance_before
-                    )
-
-                    bank_account.save()
-
-                    bank_transaction.delete()
-
-                except Exception:
-                    pass
-
-            # ==============================================
-            # ROLLBACK SUPPLIER PAYMENT
-            # ==============================================
-
-            if payment:
-
-                try:
-
-                    payment.delete()
-
-                except Exception:
-                    pass
-
-            raise
+        accounting_journal = (
+            SupplierPaymentService
+            ._post_supplier_payment_accounting(
+                user=user,
+                organization=organization,
+                payment=payment,
+            )
+        )
 
         return payment

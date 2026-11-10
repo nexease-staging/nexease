@@ -1,3 +1,4 @@
+from apps.core.services.payment_operation import payment_operation, payment_write_started
 from datetime import datetime
 from decimal import Decimal
 from uuid import uuid4
@@ -115,6 +116,7 @@ class PaymentService:
                 f"Invalid {field_name}."
             )
 
+    @payment_operation("customer", "invoice", "invoices.record_payment")
     def record_invoice_payment(
         *,
         user,
@@ -327,85 +329,61 @@ class PaymentService:
         payment = None
         bank_transaction = None
 
-        try:
-            payment = (
-                PaymentRepository
-                .create_payment(
-                    organization=organization,
-                    payment_number=payment_number,
-                    customer=invoice.customer,
-                    payment_date=payment_date,
-                    amount=amount,
-                    payment_method=payment_method,
-                    bank_account=bank_account,
-                    reference_number=(
-                        reference_number
-                    ),
-                    allocations=[
-                        allocation
-                    ],
-                    notes=notes.strip(),
-                    created_by=user,
-                )
+        payment_write_started(payment_number)
+        payment = (
+            PaymentRepository
+            .create_payment(
+                organization=organization,
+                payment_number=payment_number,
+                customer=invoice.customer,
+                payment_date=payment_date,
+                amount=amount,
+                payment_method=payment_method,
+                bank_account=bank_account,
+                reference_number=(
+                    reference_number
+                ),
+                allocations=[
+                    allocation
+                ],
+                notes=notes.strip(),
+                created_by=user,
             )
+        )
 
-            bank_transaction = (
-                BankTransactionService
-                .create_transaction(
-                    user=user,
-                    organization=organization,
-                    bank_account=bank_account,
-                    transaction_type="MONEY_IN",
-                    amount=amount,
-                    transaction_date=payment_date,
-                    reference_type=(
-                        "CUSTOMER_PAYMENT"
-                    ),
-                    reference_id=(
-                        payment.payment_number
-                    ),
-                    external_reference=(
-                        reference_number
-                    ),
-                    description=(
-                        "Customer payment "
-                        f"{payment.payment_number} "
-                        f"from {invoice.customer.name}"
-                    ),
-                )
+        bank_transaction = (
+            BankTransactionService
+            .create_transaction(
+                user=user,
+                organization=organization,
+                bank_account=bank_account,
+                transaction_type="MONEY_IN",
+                amount=amount,
+                transaction_date=payment_date,
+                reference_type=(
+                    "CUSTOMER_PAYMENT"
+                ),
+                reference_id=(
+                    payment.payment_number
+                ),
+                external_reference=(
+                    reference_number
+                ),
+                description=(
+                    "Customer payment "
+                    f"{payment.payment_number} "
+                    f"from {invoice.customer.name}"
+                ),
             )
+        )
 
-            InvoiceRepository.update_payment_totals(
-                invoice=invoice,
-                amount_paid=new_amount_paid,
-                balance_due=new_balance_due,
-                status=new_status,
-                paid_at=paid_at,
-            )
-
-        except Exception:
-            if bank_transaction:
-                try:
-                    bank_account.reload()
-
-                    bank_account.current_balance = (
-                        bank_transaction.balance_before
-                    )
-
-                    bank_account.save()
-
-                    bank_transaction.delete()
-
-                except Exception:
-                    pass
-
-            if payment:
-                try:
-                    payment.delete()
-                except Exception:
-                    pass
-
-            raise
+        InvoiceRepository.update_payment_totals(
+            invoice=invoice,
+            amount_paid=new_amount_paid,
+            balance_due=new_balance_due,
+            status=new_status,
+            paid_at=paid_at,
+        )
 
         # ==================================================
         # ACCOUNTING INTEGRATION

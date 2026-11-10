@@ -1,4 +1,6 @@
 "use client";
+import { paymentRetryKey } from "@/lib/payments/retry-key";
+import { useRef } from "react";
 import SearchSelect from "@/components/search-select";
 
 
@@ -179,6 +181,7 @@ export default function VendorBillPaymentDialog({
     null,
   );
 
+  const submitting = useRef(false);
   const bankAccountQuery =
     useVendorBillBankAccounts(
       open,
@@ -275,12 +278,10 @@ export default function VendorBillPaymentDialog({
       return;
     }
 
+    if (submitting.current) return;
+    submitting.current = true;
     try {
-      await paymentMutation
-        .mutateAsync({
-          billId:
-            activeVendorBill.id,
-          input: {
+      const input = {
             amount,
             payment_method:
               paymentMethod,
@@ -299,8 +300,15 @@ export default function VendorBillPaymentDialog({
               notes.trim()
               ||
               undefined,
-          },
+      };
+      const retry = await paymentRetryKey(activeVendorBill.id, input);
+      await paymentMutation
+        .mutateAsync({
+          billId:
+            activeVendorBill.id,
+          input: { ...input, request_key: retry.requestKey },
         });
+      retry.complete();
 
       resetDialog();
 
@@ -313,6 +321,8 @@ export default function VendorBillPaymentDialog({
       setFormError(
         getErrorMessage(error),
       );
+    } finally {
+      submitting.current = false;
     }
   }
 

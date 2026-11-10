@@ -1,3 +1,4 @@
+from apps.core.services.payment_operation import serialized_financial_write
 from decimal import Decimal
 from uuid import uuid4
 from datetime import datetime
@@ -102,6 +103,7 @@ class BankTransactionService:
         )
 
     @staticmethod
+    @serialized_financial_write
     def create_transaction(
         *,
         user,

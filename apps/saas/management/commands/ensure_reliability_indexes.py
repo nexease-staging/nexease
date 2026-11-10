@@ -8,6 +8,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         db = get_db()
+        db.payment_operations.create_index([("organization_id", 1), ("kind", 1), ("document_id", 1), ("status", 1)])
         db.saas_payments.create_index([('organization_id', 1), ('mode', 1), ('paid_at', 1)])
         db.saas_commissions.create_index([('partner_id', 1), ('mode', 1), ('paid_at', 1)])
         db.subscription_alerts.create_index([('status', 1), ('created_at', 1)])

@@ -1,3 +1,4 @@
+from apps.core.services.payment_operation import serialized_financial_write
 from decimal import Decimal
 from uuid import uuid4
 
@@ -210,6 +211,7 @@ class BankTransferService:
         )
 
     @staticmethod
+    @serialized_financial_write
     def post_transfer(
         *,
         user,

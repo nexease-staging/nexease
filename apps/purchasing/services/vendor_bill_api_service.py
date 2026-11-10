@@ -66,6 +66,7 @@ class VendorBillAPIService:
     }
 
     PAYMENT_FIELDS = {
+        "request_key",
         "amount",
         "payment_method",
         "bank_account_id",
@@ -546,6 +547,7 @@ class VendorBillAPIService:
             )
 
         return {
+            **({"request_key": payload["request_key"]} if "request_key" in payload else {}),
             "amount":
                 amount,
             "payment_method":

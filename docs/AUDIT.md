@@ -118,3 +118,6 @@ See BUGS_FIXED.md for fixes, DESIGN_SYSTEM.md for adopted UI patterns, and UPGRA
 
 ## Payment flow inspection
 Confirmed MONEY-001/PAYMENT-001/JOURNAL-001 fixed as documented in PAYMENT_SAFETY_CHECKPOINT.md. Open high-severity findings: payment and journal writes are not one transaction; process-crash reconciliation and concurrent balance updates are not yet certified; blank-reference duplicate submissions are not yet idempotent. A tenant-scoped read-only source-link audit command is available for staging evidence. This is not a completed all-module finance audit.
+
+## Payment operation follow-up
+Customer and supplier service integration tests identified stale-snapshot payment overwrites, missing successful-request replay, and compensation that could orphan posted journals. Fixed within the payment/statement/transfer paths described in PAYMENT_RETRY_SAFETY.md. Interrupted operations are held for reviewed reconciliation rather than automatically replayed. Audit remains incomplete for all other financial writers and for real MongoDB replica-set crashes, browser/device end-to-end behavior and previously inconsistent records.

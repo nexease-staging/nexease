@@ -41,3 +41,6 @@ Public partner registration/sign-in, owner application review, referral-link sig
 
 ## Partner delivery/payout checkpoint
 Email verification, password recovery, queued welcome/link emails, CSV/PDF review statements and owner-authenticated external payout recording are implemented. See PARTNER_DELIVERY_PAYOUTS.md for configuration and limitations. These are code changes, not a deployed/inbox-verified service. Automated transfers, GL linkage, payout corrections/batches, physical-device QA and the wider financial/UI audit remain incomplete.
+
+## Payment retry checkpoint
+Customer/supplier payment serialization, durable API retry receipts, web/APK dialog submit guards, shared bank-operation locking and read-only interrupted-operation inspection are implemented. Statement-completion failures retain financial evidence instead of deleting posted payment sources. See PAYMENT_RETRY_SAFETY.md for rollout and explicit limitations. This does not complete transaction-wide atomicity, automated repairs, the all-module audit, or deployment.
