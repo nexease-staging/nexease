@@ -1,5 +1,8 @@
 "use client";
 import {confirmAction} from "@/components/nex-feedback";
+import PageHeader from "@/components/ui/page-header";
+import IconButton from "@/components/ui/icon-button";
+import FilterSheet from "@/components/ui/filter-sheet";
 import SearchSelect from "@/components/search-select";
 
 
@@ -15,6 +18,7 @@ import {
   PowerOff,
   RefreshCw,
   Search,
+  SlidersHorizontal,
   Users,
 } from "lucide-react";
 
@@ -43,6 +47,7 @@ export default function CustomersPage() {
     authentication,
   } = useAuth();
 
+  const [filtersOpen,setFiltersOpen]=useState(false);
   const [
     search,
     setSearch,
@@ -264,187 +269,21 @@ export default function CustomersPage() {
 
   return (
     <section className="space-y-6">
-      <div
-        className="
-          flex flex-col gap-4
-          sm:flex-row sm:items-center
-          sm:justify-between
-        "
-      >
-        <div>
-          <div className="flex items-center gap-2">
-            <Users
-              size={25}
-              className="text-blue-600"
-            />
-
-            <h1
-              className="
-                text-2xl font-bold
-                text-slate-900
-              "
-            >
-              Customers
-            </h1>
-          </div>
-
-          <p className="mt-1 text-sm text-slate-600">
-            Manage customer contact, tax,
-            address, and account status.
-          </p>
-        </div>
-
-        <div
-          className="
-            flex flex-col gap-2
-            sm:flex-row
-          "
-        >
-          <button title="Refresh"
-            type="button"
-            disabled={
-              customerQuery.isFetching
-            }
-            onClick={() => {
-              void customerQuery.refetch();
-            }}
-            className="
-              inline-flex items-center
-              justify-center gap-2
-              rounded-lg border
-              border-slate-300 bg-white
-              px-4 py-2 text-sm
-              font-semibold text-slate-700
-              hover:bg-slate-50
-              disabled:opacity-50
-            "
-          >
-            <RefreshCw
-              size={16}
-              className={
-                customerQuery.isFetching
-                  ? "animate-spin"
-                  : undefined
-              }
-            />
-
-            <span className="sr-only">Refresh</span>
-          </button>
-
-          {canCreate ? (
-            <button title="New customer"
-              type="button"
-              onClick={
-                openCreateDialog
-              }
-              className="
-                inline-flex items-center
-                justify-center gap-2
-                rounded-lg bg-blue-600
-                px-4 py-2 text-sm
-                font-semibold text-white
-                hover:bg-blue-700
-              "
-            >
-              <Plus size={17} /><span className="sr-only">New customer</span></button>
-          ) : null}
-        </div>
-      </div>
-
-      <div
-        className="nx-list-filters 
-          grid gap-4 rounded-2xl
-          border border-slate-200
-          bg-white p-4 shadow-sm
-          md:grid-cols-[minmax(0,1fr)_240px]
-        "
-      >
-        <label className="space-y-1.5">
-          <span className="text-sm font-semibold text-slate-700">
-            Search
-          </span>
-
-          <div className="relative">
-            <Search
-              size={17}
-              className="
-                pointer-events-none
-                absolute left-3 top-1/2
-                -translate-y-1/2
-                text-slate-400
-              "
-            />
-
-            <input
-              type="search"
-              value={search}
-              placeholder="Code, name, email, phone or GSTIN"
-              onChange={(event) => {
-                setSearch(
-                  event.target.value,
-                );
-
-                setPage(1);
-              }}
-              className="
-                h-10 w-full rounded-lg
-                border border-slate-300
-                bg-white pl-9 pr-3
-                text-sm text-slate-900
-                placeholder:text-slate-400
-                outline-none
-                focus:border-blue-500
-                focus:ring-2
-                focus:ring-blue-100
-              "
-            />
-          </div>
-        </label>
-
-        <label className="space-y-1.5">
-          <span className="text-sm font-semibold text-slate-700">
-            Status
-          </span>
-
-          <SearchSelect
-            value={activeFilter}
-            onChange={(event) => {
-              setActiveFilter(
-                event.target.value as (
-                  "all"
-                  |
-                  "active"
-                  |
-                  "inactive"
-                ),
-              );
-
-              setPage(1);
-            }}
-            className="
-              h-10 w-full rounded-lg
-              border border-slate-300
-              bg-white px-3 text-sm
-              text-slate-900 outline-none
-              focus:border-blue-500
-              focus:ring-2
-              focus:ring-blue-100
-            "
-          >
-            <option value="all">
-              All customers
-            </option>
-
-            <option value="active">
-              Active customers
-            </option>
-
-            <option value="inactive">
-              Inactive customers
-            </option>
+      <PageHeader title="Customers" actions={<>
+        <IconButton icon={SlidersHorizontal} label="Filter customers" onClick={()=>setFiltersOpen(true)}/>
+        <IconButton icon={RefreshCw} label="Refresh customers" disabled={customerQuery.isFetching} onClick={()=>void customerQuery.refetch()}/>
+        {canCreate && <IconButton icon={Plus} label="New customer" className="nx-primary-icon" onClick={openCreateDialog}/>}
+      </>}/>
+      <label className="nx-compact-search"><Search size={18} aria-hidden="true"/>
+        <input type="search" aria-label="Search customers" placeholder="Search name or GSTIN" value={search} onChange={event=>{setSearch(event.target.value);setPage(1)}}/>
+      </label>
+      <FilterSheet open={filtersOpen} onClose={()=>setFiltersOpen(false)}>
+        <label className="block space-y-2"><span>Status</span>
+          <SearchSelect value={activeFilter} onChange={event=>{setActiveFilter(event.target.value as "all"|"active"|"inactive");setPage(1)}} className="nx-input w-full">
+            <option value="all">All customers</option><option value="active">Active customers</option><option value="inactive">Inactive customers</option>
           </SearchSelect>
         </label>
-      </div>
+      </FilterSheet>
 
       {actionError ? (
         <div
@@ -543,8 +382,8 @@ export default function CustomersPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table
-              className="
+            <table role="table"
+              className="nx-mobile-records
                 min-w-full divide-y
                 divide-slate-200
               "
@@ -585,7 +424,7 @@ export default function CustomersPage() {
                       key={customer.id}
                       className="hover:bg-slate-50"
                     >
-                      <td
+                      <td data-label="Code"
                         className="
                           whitespace-nowrap
                           px-4 py-4 text-sm
@@ -595,7 +434,7 @@ export default function CustomersPage() {
                         {customer.code}
                       </td>
 
-                      <td
+                      <td data-label="Customer"
                         className="
                           px-4 py-4 text-sm
                           font-semibold
@@ -605,7 +444,7 @@ export default function CustomersPage() {
                         {customer.name}
                       </td>
 
-                      <td
+                      <td data-label="Contact"
                         className="
                           px-4 py-4 text-sm
                           text-slate-600
@@ -620,7 +459,7 @@ export default function CustomersPage() {
                         </p>
                       </td>
 
-                      <td
+                      <td data-label="GSTIN"
                         className="
                           whitespace-nowrap
                           px-4 py-4 text-sm
@@ -630,7 +469,7 @@ export default function CustomersPage() {
                         {customer.gstin ?? "—"}
                       </td>
 
-                      <td
+                      <td data-label="Location"
                         className="
                           px-4 py-4 text-sm
                           text-slate-600
@@ -650,7 +489,7 @@ export default function CustomersPage() {
                         }
                       </td>
 
-                      <td
+                      <td data-label="Status"
                         className="
                           whitespace-nowrap
                           px-4 py-4
@@ -688,7 +527,7 @@ export default function CustomersPage() {
                         </span>
                       </td>
 
-                      <td
+                      <td data-label="Actions"
                         className="
                           whitespace-nowrap
                           px-4 py-4

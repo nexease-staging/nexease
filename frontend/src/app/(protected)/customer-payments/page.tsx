@@ -795,8 +795,8 @@ export default function CustomerPaymentsPage() {
                   lg:block
                 "
               >
-                <table
-                  className="
+                <table role="table"
+ className="nx-mobile-records nx-financial-records
                     min-w-full divide-y
                     divide-slate-200
                   "
@@ -844,7 +844,7 @@ export default function CustomerPaymentsPage() {
                             hover:bg-slate-50
                           "
                         >
-                          <td
+                          <td data-label="Payment"
                             className="
                               whitespace-nowrap
                               px-4 py-3
@@ -879,7 +879,7 @@ export default function CustomerPaymentsPage() {
                             </p>
                           </td>
 
-                          <td
+                          <td data-label="Customer"
                             className="
                               whitespace-nowrap
                               px-4 py-3 text-sm
@@ -889,7 +889,7 @@ export default function CustomerPaymentsPage() {
                             {payment.customer.name}
                           </td>
 
-                          <td
+                          <td data-label="Date"
                             className="
                               whitespace-nowrap
                               px-4 py-3 text-sm
@@ -901,7 +901,7 @@ export default function CustomerPaymentsPage() {
                             )}
                           </td>
 
-                          <td
+                          <td data-label="Method"
                             className="
                               whitespace-nowrap
                               px-4 py-3 text-sm
@@ -913,7 +913,7 @@ export default function CustomerPaymentsPage() {
                             )}
                           </td>
 
-                          <td
+                          <td data-label="Account"
                             className="
                               whitespace-nowrap
                               px-4 py-3 text-sm
@@ -926,7 +926,7 @@ export default function CustomerPaymentsPage() {
                               "—"}
                           </td>
 
-                          <td
+                          <td data-label="Reference"
                             className="
                               whitespace-nowrap
                               px-4 py-3 text-sm
@@ -938,7 +938,7 @@ export default function CustomerPaymentsPage() {
                               "—"}
                           </td>
 
-                          <td
+                          <td data-label="Amount"
                             className="
                               whitespace-nowrap
                               px-4 py-3 text-sm
@@ -952,7 +952,7 @@ export default function CustomerPaymentsPage() {
                             )}
                           </td>
 
-                          <td
+                          <td data-label="Actions"
                             className="
                               whitespace-nowrap
                               px-4 py-3

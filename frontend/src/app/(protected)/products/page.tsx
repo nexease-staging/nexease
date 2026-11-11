@@ -444,8 +444,8 @@ export default function ProductsPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table
-              className="
+            <table role="table"
+              className="nx-mobile-records
                 min-w-full divide-y
                 divide-slate-200
               "
@@ -495,7 +495,7 @@ export default function ProductsPage() {
                         hover:bg-slate-50
                       "
                     >
-                      <td
+                      <td data-label="SKU"
                         className="
                           whitespace-nowrap
                           px-4 py-4 text-sm
@@ -505,7 +505,7 @@ export default function ProductsPage() {
                         {product.sku}
                       </td>
 
-                      <td
+                      <td data-label="Product"
                         className="
                           px-4 py-4 text-sm
                           text-slate-700
@@ -532,7 +532,7 @@ export default function ProductsPage() {
                         </p>
                       </td>
 
-                      <td
+                      <td data-label="Category"
                         className="
                           px-4 py-4 text-sm
                           text-slate-700
@@ -541,7 +541,7 @@ export default function ProductsPage() {
                         {product.category.name}
                       </td>
 
-                      <td
+                      <td data-label="Unit"
                         className="
                           whitespace-nowrap
                           px-4 py-4 text-sm
@@ -551,7 +551,7 @@ export default function ProductsPage() {
                         {product.unit}
                       </td>
 
-                      <td
+                      <td data-label="Cost price"
                         className="
                           whitespace-nowrap
                           px-4 py-4 text-sm
@@ -563,7 +563,7 @@ export default function ProductsPage() {
                         }
                       </td>
 
-                      <td
+                      <td data-label="Selling price"
                         className="
                           whitespace-nowrap
                           px-4 py-4 text-sm
@@ -579,8 +579,8 @@ export default function ProductsPage() {
                         }
                       </td>
 
-                      <td className="whitespace-nowrap px-4 py-4 text-sm"><span className={Number(stockQuery.data?.quantities[product.id]??0)<0?'font-semibold text-red-700':''}>{product.item_type==='service'?'—':hasPermission(permissions,'inventory.read')?(stockQuery.data?.quantities[product.id]??(stockQuery.error?'Unavailable':'…')):'Restricted'}</span></td>
-                      <td
+                      <td data-label="Stock quantity" className="whitespace-nowrap px-4 py-4 text-sm"><span className={Number(stockQuery.data?.quantities[product.id]??0)<0?'font-semibold text-red-700':''}>{product.item_type==='service'?'—':hasPermission(permissions,'inventory.read')?(stockQuery.data?.quantities[product.id]??(stockQuery.error?'Unavailable':'…')):'Restricted'}</span></td>
+                      <td data-label="Status"
                         className="
                           whitespace-nowrap
                           px-4 py-4
@@ -618,7 +618,7 @@ export default function ProductsPage() {
                         </span>
                       </td>
 
-                      <td
+                      <td data-label="Actions"
                         className="
                           whitespace-nowrap
                           px-4 py-4

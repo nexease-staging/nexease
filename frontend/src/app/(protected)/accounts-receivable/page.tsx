@@ -737,8 +737,8 @@ export default function AccountsReceivablePage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table
-              className="
+            <table role="table"
+              className="nx-mobile-records nx-financial-records
                 min-w-full divide-y
                 divide-slate-200
               "
@@ -780,7 +780,7 @@ export default function AccountsReceivablePage() {
                     <tr
                       key={item.customer.id}
                     >
-                      <td
+                      <td data-label="Customer"
                         className="
                           whitespace-nowrap
                           px-4 py-3
@@ -805,7 +805,7 @@ export default function AccountsReceivablePage() {
                         </p>
                       </td>
 
-                      <td
+                      <td data-label="Invoices"
                         className="
                           px-4 py-3 text-sm
                           text-slate-700
@@ -814,7 +814,7 @@ export default function AccountsReceivablePage() {
                         {item.invoice_count}
                       </td>
 
-                      <td
+                      <td data-label="Overdue Invoices"
                         className="
                           px-4 py-3 text-sm
                           text-red-700
@@ -826,7 +826,7 @@ export default function AccountsReceivablePage() {
                         }
                       </td>
 
-                      <td
+                      <td data-label="Outstanding"
                         className="
                           whitespace-nowrap
                           px-4 py-3 text-sm
@@ -841,7 +841,7 @@ export default function AccountsReceivablePage() {
                         )}
                       </td>
 
-                      <td
+                      <td data-label="Overdue"
                         className="
                           whitespace-nowrap
                           px-4 py-3 text-sm
@@ -913,8 +913,8 @@ export default function AccountsReceivablePage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table
-                className="
+              <table role="table"
+                className="nx-mobile-records nx-financial-records
                   min-w-full divide-y
                   divide-slate-200
                 "
@@ -957,7 +957,7 @@ export default function AccountsReceivablePage() {
                       <tr
                         key={item.invoice.id}
                       >
-                        <td
+                        <td data-label="Invoice"
                           className="
                             whitespace-nowrap
                             px-4 py-3
@@ -988,7 +988,7 @@ export default function AccountsReceivablePage() {
                           </p>
                         </td>
 
-                        <td
+                        <td data-label="Customer"
                           className="
                             whitespace-nowrap
                             px-4 py-3 text-sm
@@ -998,7 +998,7 @@ export default function AccountsReceivablePage() {
                           {item.customer.name}
                         </td>
 
-                        <td
+                        <td data-label="Due Date"
                           className="
                             whitespace-nowrap
                             px-4 py-3 text-sm
@@ -1010,7 +1010,7 @@ export default function AccountsReceivablePage() {
                           )}
                         </td>
 
-                        <td
+                        <td data-label="Days Overdue"
                           className="
                             whitespace-nowrap
                             px-4 py-3 text-sm
@@ -1032,7 +1032,7 @@ export default function AccountsReceivablePage() {
                           </span>
                         </td>
 
-                        <td
+                        <td data-label="Invoice Balance"
                           className="
                             whitespace-nowrap
                             px-4 py-3 text-sm
@@ -1046,7 +1046,7 @@ export default function AccountsReceivablePage() {
                           )}
                         </td>
 
-                        <td
+                        <td data-label="Net Receivable"
                           className="
                             whitespace-nowrap
                             px-4 py-3 text-sm

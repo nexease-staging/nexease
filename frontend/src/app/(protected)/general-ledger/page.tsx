@@ -224,7 +224,7 @@ export default function GeneralLedgerPage() {
         "
       >
         <div
-          className="nx-list-filters 
+          className="nx-list-filters
             grid gap-4
             md:grid-cols-2
             xl:grid-cols-4
@@ -625,8 +625,8 @@ export default function GeneralLedgerPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table
-                  className="
+                <table role="table"
+ className="nx-mobile-records nx-financial-records
                     min-w-full divide-y
                     divide-slate-200
                   "
@@ -676,7 +676,7 @@ export default function GeneralLedgerPage() {
                             `${entry.journal_number}-${index}`
                           }
                         >
-                          <td
+                          <td data-label="Date"
                             className="
                               whitespace-nowrap
                               px-4 py-3 text-sm
@@ -691,7 +691,7 @@ export default function GeneralLedgerPage() {
                             }
                           </td>
 
-                          <td
+                          <td data-label="Journal"
                             className="
                               whitespace-nowrap
                               px-4 py-3 text-sm
@@ -705,7 +705,7 @@ export default function GeneralLedgerPage() {
                             }
                           </td>
 
-                          <td
+                          <td data-label="Description"
                             className="
                               px-4 py-3 text-sm
                               text-slate-600
@@ -718,7 +718,7 @@ export default function GeneralLedgerPage() {
                             }
                           </td>
 
-                          <td
+                          <td data-label="Source"
                             className="
                               px-4 py-3 text-sm
                               text-slate-600
@@ -727,7 +727,7 @@ export default function GeneralLedgerPage() {
                             {entry.source_type}
                           </td>
 
-                          <td
+                          <td data-label="Debit"
                             className="
                               whitespace-nowrap
                               px-4 py-3
@@ -742,7 +742,7 @@ export default function GeneralLedgerPage() {
                             }
                           </td>
 
-                          <td
+                          <td data-label="Credit"
                             className="
                               whitespace-nowrap
                               px-4 py-3
@@ -757,7 +757,7 @@ export default function GeneralLedgerPage() {
                             }
                           </td>
 
-                          <td
+                          <td data-label="Balance"
                             className="
                               whitespace-nowrap
                               px-4 py-3

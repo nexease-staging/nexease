@@ -447,7 +447,7 @@ export default function JournalEntriesPage() {
           "
         >
           <div
-            className="nx-list-filters 
+            className="nx-list-filters
               grid gap-3
               md:grid-cols-2
               xl:grid-cols-4
@@ -685,8 +685,8 @@ export default function JournalEntriesPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table
-                className="
+              <table role="table"
+ className="nx-mobile-records nx-financial-records
                   min-w-full divide-y
                   divide-slate-200
                 "
@@ -732,7 +732,7 @@ export default function JournalEntriesPage() {
                           hover:bg-slate-50/70
                         "
                       >
-                        <td className="px-5 py-4">
+                        <td data-label="Journal" className="px-5 py-4">
                           <p
                             className="
                               text-sm font-semibold
@@ -760,7 +760,7 @@ export default function JournalEntriesPage() {
                           </p>
                         </td>
 
-                        <td
+                        <td data-label="Date"
                           className="
                             whitespace-nowrap
                             px-5 py-4 text-sm
@@ -775,7 +775,7 @@ export default function JournalEntriesPage() {
                           }
                         </td>
 
-                        <td
+                        <td data-label="Source"
                           className="
                             px-5 py-4 text-sm
                             text-slate-700
@@ -801,7 +801,7 @@ export default function JournalEntriesPage() {
                           </p>
                         </td>
 
-                        <td className="px-5 py-4">
+                        <td data-label="Status" className="px-5 py-4">
                           <span
                             className={`
                               inline-flex rounded-full
@@ -818,7 +818,7 @@ export default function JournalEntriesPage() {
                           </span>
                         </td>
 
-                        <td
+                        <td data-label="Debit"
                           className="
                             whitespace-nowrap
                             px-5 py-4 text-right
@@ -834,7 +834,7 @@ export default function JournalEntriesPage() {
                           }
                         </td>
 
-                        <td
+                        <td data-label="Credit"
                           className="
                             whitespace-nowrap
                             px-5 py-4 text-right
@@ -850,7 +850,7 @@ export default function JournalEntriesPage() {
                           }
                         </td>
 
-                        <td className="px-5 py-4">
+                        <td data-label="Actions" className="px-5 py-4">
                           <button
                             type="button"
                             onClick={() => {

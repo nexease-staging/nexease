@@ -378,3 +378,41 @@ html[data-native="true"] body:before{content:"";position:fixed;top:0;left:0;righ
  .nx-master-drawer footer{position:sticky;bottom:0;background:var(--nx-surface,#fff);z-index:2;flex-direction:row}
  .nx-list-filters .relative>input[type="search"]{padding-left:2.25rem!important}
 }
+
+/* Explicitly opted-in master tables become labelled cards on small screens. */
+@media(max-width:767px){
+ .nx-mobile-records,.nx-mobile-records tbody{display:block;width:100%;min-width:0}
+ .nx-mobile-records thead{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+ .nx-mobile-records tbody{padding:8px}
+ .nx-mobile-records tbody tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;border:1px solid var(--nx-border);border-radius:12px;margin-bottom:8px;padding:12px;background:var(--nx-surface)}
+ .nx-workspace-main .nx-mobile-records td{display:block;padding:0;border:0;min-width:0;white-space:normal;overflow-wrap:anywhere}
+ .nx-mobile-records td::before{content:attr(data-label);display:block;color:var(--nx-text-muted);font-size:11px;font-weight:600;margin-bottom:2px}
+ .nx-mobile-records td:nth-child(2){grid-column:1/-1;grid-row:1;font-size:16px}
+ .nx-mobile-records td:nth-child(2)::before{display:none}
+ .nx-mobile-records td[data-label="Actions"]{grid-column:1/-1;border-top:1px solid var(--nx-border);padding-top:8px}
+ .nx-mobile-records td[data-label="Actions"]::before{display:none}
+ .nx-mobile-records td button{min-width:44px;min-height:44px}
+}
+
+@media(max-width:767px){
+ .nx-mobile-records td[data-label="Route"]{grid-column:1/-1}
+ .nx-mobile-records td[data-label="Route"]>div{flex-wrap:wrap}
+}
+@media(max-width:767px){
+ .nx-mobile-records td[data-label="Actions"]>div{flex-wrap:wrap;gap:8px}
+ .nx-mobile-records td[data-label="Actions"] button,.nx-mobile-records td[data-label="Actions"] a{min-height:44px;min-width:44px}
+}
+
+/* Financial records keep their document/account identifier first. */
+@media(max-width:767px){
+ .nx-financial-records tbody td:nth-child(2){grid-column:auto;grid-row:auto;font-size:13px}
+ .nx-financial-records tbody td:nth-child(2)::before{display:block}
+ .nx-financial-records tbody td:first-child{grid-column:1/-1;grid-row:1;font-weight:700}
+ .nx-financial-records td[data-label="Description"]{grid-column:1/-1}
+ .nx-financial-records tfoot{display:block;padding:12px;background:var(--nx-surface);border-top:2px solid var(--nx-border-strong)}
+ .nx-financial-records tfoot tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ .nx-financial-records tfoot td:first-child{grid-column:1/-1}
+ .nx-financial-records tfoot td:first-child::before{display:none}
+ .nx-financial-records tfoot td:nth-child(2){grid-column:auto;grid-row:auto;font-size:14px}
+ .nx-financial-records tfoot td:nth-child(2)::before{display:block}
+}

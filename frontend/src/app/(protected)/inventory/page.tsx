@@ -566,8 +566,8 @@ export default function InventoryPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table
-              className="
+            <table role="table"
+ className="nx-mobile-records
                 min-w-full divide-y
                 divide-slate-200
               "
@@ -617,7 +617,7 @@ export default function InventoryPage() {
                         hover:bg-slate-50
                       "
                     >
-                      <td
+                      <td data-label="SKU"
                         className="
                           whitespace-nowrap
                           px-4 py-4 text-sm
@@ -628,7 +628,7 @@ export default function InventoryPage() {
                         {inventory.product.sku}
                       </td>
 
-                      <td
+                      <td data-label="Product"
                         className="
                           px-4 py-4 text-sm
                           text-slate-700
@@ -649,7 +649,7 @@ export default function InventoryPage() {
                         </p>
                       </td>
 
-                      <td
+                      <td data-label="Warehouse"
                         className="
                           px-4 py-4 text-sm
                           text-slate-600
@@ -669,7 +669,7 @@ export default function InventoryPage() {
                         </p>
                       </td>
 
-                      <td
+                      <td data-label="Physical"
                         className="
                           whitespace-nowrap
                           px-4 py-4 text-sm
@@ -684,7 +684,7 @@ export default function InventoryPage() {
                         }
                       </td>
 
-                      <td
+                      <td data-label="Reserved"
                         className="
                           whitespace-nowrap
                           px-4 py-4 text-sm
@@ -700,7 +700,7 @@ export default function InventoryPage() {
                         }
                       </td>
 
-                      <td
+                      <td data-label="Available"
                         className="
                           whitespace-nowrap
                           px-4 py-4 text-sm
@@ -716,7 +716,7 @@ export default function InventoryPage() {
                         }
                       </td>
                       {canAdjust ? (
-                        <td
+                        <td data-label="Actions"
                           className="
                             whitespace-nowrap
                             px-4 py-4

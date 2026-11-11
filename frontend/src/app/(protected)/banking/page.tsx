@@ -561,7 +561,7 @@ export default function BankingPage() {
             ) : (
               <>
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-slate-200">
+                  <table role="table" className="nx-mobile-records nx-financial-records min-w-full divide-y divide-slate-200">
                     <thead className="bg-slate-50">
                       <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                         <th className="px-5 py-3">Account</th>
@@ -575,24 +575,24 @@ export default function BankingPage() {
                     <tbody className="divide-y divide-slate-100">
                       {(accountQuery.data?.bank_accounts ?? []).map((account) => (
                         <tr key={account.id} className="hover:bg-slate-50/70">
-                          <td className="px-5 py-4">
+                          <td data-label="Account" className="px-5 py-4">
                             <p className="text-sm font-semibold text-slate-900">{account.account_name}</p>
                             <p className="mt-1 text-xs text-slate-500">
                               {account.bank_name ?? "Cash account"}
                               {account.account_number ? ` â€¢ ${account.account_number}` : ""}
                             </p>
                           </td>
-                          <td className="px-5 py-4 text-sm text-slate-700">{account.account_type}</td>
-                          <td className="px-5 py-4 text-sm text-slate-700">{account.currency}</td>
-                          <td className="px-5 py-4 text-sm font-semibold text-slate-900">
+                          <td data-label="Type" className="px-5 py-4 text-sm text-slate-700">{account.account_type}</td>
+                          <td data-label="Currency" className="px-5 py-4 text-sm text-slate-700">{account.currency}</td>
+                          <td data-label="Balance" className="px-5 py-4 text-sm font-semibold text-slate-900">
                             {formatAmount(account.current_balance, account.currency)}
                           </td>
-                          <td className="px-5 py-4">
+                          <td data-label="Status" className="px-5 py-4">
                             <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${account.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
                               {account.is_active ? "Active" : "Inactive"}
                             </span>
                           </td>
-                          <td className="px-5 py-4">
+                          <td data-label="Actions" className="px-5 py-4">
                             <div className="flex gap-2">
                               {canUpdateAccount ? (
                                 <button
@@ -635,7 +635,7 @@ export default function BankingPage() {
             ) : (
               <>
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-slate-200">
+                  <table role="table" className="nx-mobile-records nx-financial-records min-w-full divide-y divide-slate-200">
                     <thead className="bg-slate-50">
                       <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                         <th className="px-5 py-3">Transaction</th>
@@ -649,21 +649,21 @@ export default function BankingPage() {
                     <tbody className="divide-y divide-slate-100">
                       {(transactionQuery.data?.bank_transactions ?? []).map((transaction) => (
                         <tr key={transaction.id} className="hover:bg-slate-50/70">
-                          <td className="px-5 py-4">
+                          <td data-label="Transaction" className="px-5 py-4">
                             <p className="text-sm font-semibold text-slate-900">{transaction.transaction_number}</p>
                             <p className="mt-1 text-xs text-slate-500">{transaction.transaction_type}</p>
                           </td>
-                          <td className="px-5 py-4 text-sm text-slate-700">{transaction.bank_account.account_name}</td>
-                          <td className="px-5 py-4 text-sm text-slate-700">{formatDate(transaction.transaction_date)}</td>
-                          <td className="px-5 py-4 text-sm font-semibold text-slate-900">
+                          <td data-label="Account" className="px-5 py-4 text-sm text-slate-700">{transaction.bank_account.account_name}</td>
+                          <td data-label="Date" className="px-5 py-4 text-sm text-slate-700">{formatDate(transaction.transaction_date)}</td>
+                          <td data-label="Amount" className="px-5 py-4 text-sm font-semibold text-slate-900">
                             {formatAmount(transaction.amount, transaction.bank_account.currency)}
                           </td>
-                          <td className="px-5 py-4">
+                          <td data-label="Reconciliation" className="px-5 py-4">
                             <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${transaction.reconciliation_status === "RECONCILED" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
                               {transaction.reconciliation_status}
                             </span>
                           </td>
-                          <td className="px-5 py-4">
+                          <td data-label="Actions" className="px-5 py-4">
                             <button
                               type="button"
                               onClick={() => setTransactionDetailId(transaction.id)}
@@ -689,7 +689,7 @@ export default function BankingPage() {
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200">
+                <table role="table" className="nx-mobile-records nx-financial-records min-w-full divide-y divide-slate-200">
                   <thead className="bg-slate-50">
                     <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                       <th className="px-5 py-3">Transfer</th>
@@ -704,19 +704,19 @@ export default function BankingPage() {
                   <tbody className="divide-y divide-slate-100">
                     {(transferQuery.data?.bank_transfers ?? []).map((transfer) => (
                       <tr key={transfer.id} className="hover:bg-slate-50/70">
-                        <td className="px-5 py-4 text-sm font-semibold text-slate-900">{transfer.transfer_number}</td>
-                        <td className="px-5 py-4 text-sm text-slate-700">{transfer.source_account.account_name}</td>
-                        <td className="px-5 py-4 text-sm text-slate-700">{transfer.destination_account.account_name}</td>
-                        <td className="px-5 py-4 text-sm text-slate-700">{formatDate(transfer.transfer_date)}</td>
-                        <td className="px-5 py-4 text-sm font-semibold text-slate-900">
+                        <td data-label="Transfer" className="px-5 py-4 text-sm font-semibold text-slate-900">{transfer.transfer_number}</td>
+                        <td data-label="From" className="px-5 py-4 text-sm text-slate-700">{transfer.source_account.account_name}</td>
+                        <td data-label="To" className="px-5 py-4 text-sm text-slate-700">{transfer.destination_account.account_name}</td>
+                        <td data-label="Date" className="px-5 py-4 text-sm text-slate-700">{formatDate(transfer.transfer_date)}</td>
+                        <td data-label="Amount" className="px-5 py-4 text-sm font-semibold text-slate-900">
                           {formatAmount(transfer.amount, transfer.source_account.currency)}
                         </td>
-                        <td className="px-5 py-4">
+                        <td data-label="Status" className="px-5 py-4">
                           <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${transfer.status === "POSTED" ? "bg-emerald-100 text-emerald-700" : transfer.status === "CANCELLED" ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-700"}`}>
                             {transfer.status}
                           </span>
                         </td>
-                        <td className="px-5 py-4">
+                        <td data-label="Actions" className="px-5 py-4">
                           <button
                             type="button"
                             onClick={() => setTransferDetailId(transfer.id)}
@@ -741,7 +741,7 @@ export default function BankingPage() {
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200">
+                <table role="table" className="nx-mobile-records nx-financial-records min-w-full divide-y divide-slate-200">
                   <thead className="bg-slate-50">
                     <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                       <th className="px-5 py-3">Statement</th>
@@ -762,25 +762,25 @@ export default function BankingPage() {
 
                       return (
                         <tr key={statement.id} className="hover:bg-slate-50/70">
-                          <td className="px-5 py-4">
+                          <td data-label="Statement" className="px-5 py-4">
                             <p className="text-sm font-semibold text-slate-900">{statement.statement_number}</p>
                             <p className="mt-1 text-xs text-slate-500">
                               {statement.source_type}
                               {statement.source_filename ? ` · ${statement.source_filename}` : ""}
                             </p>
                           </td>
-                          <td className="px-5 py-4 text-sm text-slate-700">
+                          <td data-label="Bank account" className="px-5 py-4 text-sm text-slate-700">
                             {statement.bank_account.account_name}
                           </td>
-                          <td className="px-5 py-4 text-sm text-slate-700 whitespace-nowrap">
+                          <td data-label="Period" className="px-5 py-4 text-sm text-slate-700 whitespace-nowrap">
                             {formatDate(statement.statement_start_date)}
                             {" — "}
                             {formatDate(statement.statement_end_date)}
                           </td>
-                          <td className="px-5 py-4 text-sm font-semibold text-slate-900 whitespace-nowrap">
+                          <td data-label="Closing balance" className="px-5 py-4 text-sm font-semibold text-slate-900 whitespace-nowrap">
                             {formatAmount(statement.closing_balance, statement.bank_account.currency)}
                           </td>
-                          <td className="px-5 py-4">
+                          <td data-label="Progress" className="px-5 py-4">
                             <div className="min-w-32">
                               <div className="flex justify-between text-xs text-slate-500">
                                 <span>{completed}/{statement.line_count}</span>
@@ -794,7 +794,7 @@ export default function BankingPage() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-5 py-4">
+                          <td data-label="Status" className="px-5 py-4">
                             <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                               statement.status === "RECONCILED"
                                 ? "bg-emerald-100 text-emerald-700"
@@ -807,7 +807,7 @@ export default function BankingPage() {
                               {statement.status}
                             </span>
                           </td>
-                          <td className="px-5 py-4">
+                          <td data-label="Actions" className="px-5 py-4">
                             <button
                               type="button"
                               onClick={() => setStatementDetailId(statement.id)}

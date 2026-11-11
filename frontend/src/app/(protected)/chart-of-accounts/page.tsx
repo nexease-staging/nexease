@@ -371,7 +371,7 @@ export default function ChartOfAccountsPage() {
           "
         >
           <div
-            className="nx-list-filters 
+            className="nx-list-filters
               grid gap-3
               md:grid-cols-2
               xl:grid-cols-4
@@ -612,8 +612,8 @@ export default function ChartOfAccountsPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table
-                className="
+              <table role="table"
+ className="nx-mobile-records nx-financial-records
                   min-w-full divide-y
                   divide-slate-200
                 "
@@ -659,7 +659,7 @@ export default function ChartOfAccountsPage() {
                           hover:bg-slate-50/70
                         "
                       >
-                        <td className="px-5 py-4">
+                        <td data-label="Account" className="px-5 py-4">
                           <p
                             className="
                               text-sm font-semibold
@@ -694,7 +694,7 @@ export default function ChartOfAccountsPage() {
                           </p>
                         </td>
 
-                        <td className="px-5 py-4">
+                        <td data-label="Type" className="px-5 py-4">
                           <span
                             className={`
                               inline-flex rounded-full
@@ -716,7 +716,7 @@ export default function ChartOfAccountsPage() {
                           </span>
                         </td>
 
-                        <td
+                        <td data-label="Normal balance"
                           className="
                             px-5 py-4 text-sm
                             text-slate-700
@@ -727,7 +727,7 @@ export default function ChartOfAccountsPage() {
                           }
                         </td>
 
-                        <td
+                        <td data-label="Manual posting"
                           className="
                             px-5 py-4 text-sm
                             text-slate-700
@@ -741,7 +741,7 @@ export default function ChartOfAccountsPage() {
                           }
                         </td>
 
-                        <td className="px-5 py-4">
+                        <td data-label="Status" className="px-5 py-4">
                           <span
                             className={`
                               inline-flex rounded-full
@@ -770,7 +770,7 @@ export default function ChartOfAccountsPage() {
                           </span>
                         </td>
 
-                        <td className="px-5 py-4">
+                        <td data-label="Actions" className="px-5 py-4">
                           <div
                             className="
                               flex items-center
