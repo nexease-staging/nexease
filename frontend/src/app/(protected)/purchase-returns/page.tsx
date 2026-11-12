@@ -798,8 +798,8 @@ export default function PurchaseReturnsPage() {
                     lg:block
                   "
                 >
-                  <table
-                    className="
+                  <table role="table"
+                    className="nx-mobile-records nx-financial-records
                       min-w-full
                       divide-y
                       divide-slate-200
@@ -854,7 +854,7 @@ export default function PurchaseReturnsPage() {
                               hover:bg-slate-50
                             "
                           >
-                            <td
+                            <td data-label="Return"
                               className="
                                 px-4 py-4
                                 text-sm font-semibold
@@ -867,7 +867,7 @@ export default function PurchaseReturnsPage() {
                               }
                             </td>
 
-                            <td
+                            <td data-label="Supplier"
                               className="
                                 px-4 py-4
                                 text-sm
@@ -880,7 +880,7 @@ export default function PurchaseReturnsPage() {
                               }
                             </td>
 
-                            <td
+                            <td data-label="Purchase order"
                               className="
                                 px-4 py-4
                                 text-sm
@@ -894,7 +894,7 @@ export default function PurchaseReturnsPage() {
                               }
                             </td>
 
-                            <td
+                            <td data-label="Return date"
                               className="
                                 px-4 py-4
                                 text-sm
@@ -907,7 +907,7 @@ export default function PurchaseReturnsPage() {
                               )}
                             </td>
 
-                            <td
+                            <td data-label="Amount"
                               className="
                                 px-4 py-4
                                 text-sm font-semibold
@@ -920,7 +920,7 @@ export default function PurchaseReturnsPage() {
                               )}
                             </td>
 
-                            <td
+                            <td data-label="Status"
                               className="
                                 px-4 py-4
                               "
@@ -945,7 +945,7 @@ export default function PurchaseReturnsPage() {
                               </span>
                             </td>
 
-                            <td
+                            <td data-label="Actions"
                               className="
                                 px-4 py-4
                                 text-right

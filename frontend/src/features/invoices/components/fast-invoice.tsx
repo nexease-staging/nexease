@@ -7,6 +7,8 @@
  */
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import {discountedPayload,previewDiscount,discountAmount} from "../discount";
+import DiscountMode from "./discount-mode";
 import { Check, ChevronLeft, Eye, FilePlus2, MessageCircle, Minus, Plus, Trash2 } from "lucide-react";
 
 import { apiRequest } from "@/lib/api/client";
@@ -31,6 +33,7 @@ type Line = {
   unit_price: string;
   tax_rate: string;
   discount: string;
+  discount_mode?: "amount"|"percent";
 };
 
 const GST_SLABS = ["0", "0.25", "3", "5", "12", "18", "28"];
@@ -58,7 +61,7 @@ const num = (v: string): number => {
 };
 
 function lineAmounts(l: Line) {
-  const base = Math.max(0, num(l.quantity) * num(l.unit_price) - num(l.discount));
+  const base = Math.max(0, num(l.quantity) * num(l.unit_price) - previewDiscount(l));
   const tax = (base * num(l.tax_rate)) / 100;
   return { base, tax, total: base + tax };
 }
@@ -131,7 +134,7 @@ export default function FastInvoice({
     for (const l of lines) {
       const a = lineAmounts(l);
       subtotal += num(l.quantity) * num(l.unit_price);
-      discount += num(l.discount);
+      discount += previewDiscount(l);
       tax += a.tax;
     }
     return { subtotal, discount, tax, total: subtotal - discount + tax };
@@ -146,7 +149,8 @@ export default function FastInvoice({
     const filled = lines.filter((l) => l.name.trim());
     if (filled.length === 0) return "Add at least one item.";
     if (filled.some((l) => num(l.quantity) <= 0)) return "Every item needs a quantity above zero.";
-    if (filled.some((l) => num(l.unit_price) < 0 || num(l.discount) < 0)) return "Rate and discount cannot be negative.";
+    if (filled.some((l) => num(l.unit_price) < 0 || previewDiscount(l) < 0)) return "Rate and discount cannot be negative.";
+    try { filled.forEach(discountAmount); } catch(error) { return (error as Error).message; }
     if (supply === "taxable" && !/^\d{2}$/.test(placeOfSupply.trim())) {
       return "Enter the 2-digit state code for place of supply, e.g. 27.";
     }
@@ -179,7 +183,7 @@ export default function FastInvoice({
           billing_details: { supply_type: supply, place_of_supply: placeOfSupply.trim() },
           invoice_number: "",
           customer,
-          items: lines.filter((l) => l.name.trim()),
+          items: lines.filter((l) => l.name.trim()).map(discountedPayload),
         },
       });
       const id = created.data.id;
@@ -432,7 +436,8 @@ export default function FastInvoice({
                       </select>
                     </label>
                     <label className="text-sm">
-                      Discount (₹)
+                      Discount
+                      <DiscountMode label={`Discount mode line ${i+1}`} value={line.discount_mode} onChange={discount_mode=>patchLine(i,{discount_mode})}/>
                       <input
                         aria-label={`discount line ${i + 1}`}
                         inputMode="decimal"

@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { AlertTriangle, ChevronLeft, ChevronRight, CircleDollarSign, SlidersHorizontal, Plus, Eye, FilePlus2, FileText, RefreshCw, Search, TrendingUp, Zap } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, CircleDollarSign, SlidersHorizontal, Plus, FilePlus2, FileText, RefreshCw, Search, TrendingUp, Zap } from "lucide-react";
 import { InvoiceZip } from "@/features/business/operations-panels";
 import { useAuth } from "@/features/auth/auth-context";
 import { useCustomerList } from "@/features/customers/hooks";
@@ -153,7 +153,7 @@ export default function InvoicesView() {
                     const overdue = isInvoiceOverdue(i);
                     return (
                       <tr key={i.id} className="cursor-pointer" onClick={() => setDetailId(i.id)}>
-                        <td className="font-semibold">{i.invoice_number}</td>
+                        <td className="font-semibold"><button type="button" className="underline underline-offset-4" onClick={e=>{e.stopPropagation();setDetailId(i.id)}} aria-label={`View invoice ${i.invoice_number}`}>{i.invoice_number}</button></td>
                         <td className="max-w-[240px] truncate">{i.customer.name}</td>
                         <td className="whitespace-nowrap">{formatDate(i.invoice_date)}</td>
                         <td className="whitespace-nowrap" style={overdue ? { color: "var(--nx-danger-fg)", fontWeight: 600 } : undefined}>{formatDate(i.due_date)}</td>
@@ -163,7 +163,7 @@ export default function InvoicesView() {
                         <td onClick={(e) => e.stopPropagation()}>
                           <div className="flex justify-end gap-1.5">
                             {payable(i) ? <button type="button" className="nx-button nx-btn-sm" onClick={() => setPaying(i)}><CircleDollarSign size={15} aria-hidden="true" />Pay</button> : null}
-                            <button type="button" className="nx-icon-btn !h-9 !w-9" aria-label={`View invoice ${i.invoice_number}`} onClick={() => setDetailId(i.id)}><Eye size={16} aria-hidden="true" /></button>
+
                           </div>
                         </td>
                       </tr>
@@ -178,12 +178,13 @@ export default function InvoicesView() {
               {invoices.map((i) => {
                 const overdue = isInvoiceOverdue(i);
                 return (
-                  <li key={i.id} className="nx-invoice-card">
+                  <li key={i.id} className="nx-invoice-card relative">
+                    <button type="button" className="absolute inset-0 z-0 rounded-xl focus-visible:outline-2 focus-visible:outline-emerald-600" aria-label={`View invoice ${i.invoice_number}`} onClick={()=>setDetailId(i.id)}/>
                     <div className="flex items-center justify-between gap-2"><strong className="min-w-0 flex-1 break-words">{i.customer.name}</strong><InvoiceStatusBadge status={i.status} overdue={overdue}/></div>
                     <p className="nx-muted text-xs">{i.invoice_number} · {formatDate(i.invoice_date)} · Due {formatDate(i.due_date)}</p>
                     <div className="flex items-center justify-between gap-2">
                       <span className="nx-amount-pill" data-tone={overdue?'danger':i.status==='PAID'?'success':i.status==='PARTIALLY_PAID'?'warning':'neutral'}>{formatMoney(i.balance_due)} <span className="text-xs">due</span></span>
-                      <div className="flex gap-1"><IconButton icon={Eye} label={`View invoice ${i.invoice_number}`} onClick={()=>setDetailId(i.id)}/>{payable(i)?<IconButton icon={CircleDollarSign} label={`Record payment for ${i.invoice_number}`} onClick={()=>setPaying(i)}/>:null}</div>
+                      <div className="relative z-10 flex gap-1">{payable(i)?<IconButton icon={CircleDollarSign} label={`Record payment for ${i.invoice_number}`} onClick={()=>setPaying(i)}/>:null}</div>
                     </div>
                   </li>
                 );

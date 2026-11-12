@@ -1426,8 +1426,8 @@ export default function DataMigrationPage() {
            overflow-x-auto
           "
          >
-          <table
-           className="
+          <table role="table"
+           className="nx-mobile-records nx-financial-records
             min-w-full
             divide-y
             divide-slate-200
@@ -1489,7 +1489,7 @@ export default function DataMigrationPage() {
                  hover:bg-slate-50
                 "
                >
-                <td
+                <td data-label="Type"
                  className="
                   whitespace-nowrap
                   px-4 py-4
@@ -1505,7 +1505,7 @@ export default function DataMigrationPage() {
                   ).label
                  }
                 </td>
-                <td
+                <td data-label="Source"
                  className="
                   whitespace-nowrap
                   px-4 py-4
@@ -1518,7 +1518,7 @@ export default function DataMigrationPage() {
                    .source_system
                  }
                 </td>
-                <td
+                <td data-label="Status"
                  className="
                   whitespace-nowrap
                   px-4 py-4
@@ -1545,7 +1545,7 @@ export default function DataMigrationPage() {
                   }
                  </span>
                 </td>
-                <td
+                <td data-label="Rows"
                  className="
                   px-4 py-4
                   text-sm
@@ -1557,7 +1557,7 @@ export default function DataMigrationPage() {
                    .total_rows
                  }
                 </td>
-                <td
+                <td data-label="Imported"
                  className="
                   px-4 py-4
                   text-sm
@@ -1570,7 +1570,7 @@ export default function DataMigrationPage() {
                    .imported_rows
                  }
                 </td>
-                <td
+                <td data-label="Failed"
                  className="
                   px-4 py-4
                   text-sm

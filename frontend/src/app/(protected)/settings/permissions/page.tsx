@@ -463,8 +463,8 @@ export default function PermissionsPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table
-              className="
+            <table role="table"
+              className="nx-mobile-records nx-financial-records
                 min-w-full divide-y
                 divide-slate-200
               "
@@ -510,7 +510,7 @@ export default function PermissionsPage() {
                         hover:bg-slate-50
                       "
                     >
-                      <td
+                      <td data-label="Permission"
                         className="
                           px-4 py-4
                           text-sm font-semibold
@@ -520,7 +520,7 @@ export default function PermissionsPage() {
                         {permission.name}
                       </td>
 
-                      <td
+                      <td data-label="Code"
                         className="
                           whitespace-nowrap
                           px-4 py-4
@@ -539,7 +539,7 @@ export default function PermissionsPage() {
                         </code>
                       </td>
 
-                      <td
+                      <td data-label="Module"
                         className="
                           whitespace-nowrap
                           px-4 py-4
@@ -561,7 +561,7 @@ export default function PermissionsPage() {
                         </span>
                       </td>
 
-                      <td
+                      <td data-label="Description"
                         className="
                           max-w-lg px-4 py-4
                           text-sm text-slate-600
@@ -574,7 +574,7 @@ export default function PermissionsPage() {
                         }
                       </td>
 
-                      <td
+                      <td data-label="Status"
                         className="
                           whitespace-nowrap
                           px-4 py-4

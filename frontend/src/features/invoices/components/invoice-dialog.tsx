@@ -1,5 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect -- Reset form state on the explicit open/close transition. */
 "use client";
+import {discountedPayload,previewDiscount} from "../discount";
+import DiscountMode from "./discount-mode";
 import {useEffect,useState,useRef} from "react";
 import {useQueryClient} from "@tanstack/react-query";
 import {Plus,Save,Trash2,X,UserRound,FileText} from "lucide-react";
@@ -11,7 +13,7 @@ import MasterEntry from "@/components/master-entry";
 import {TaxSelection,invoiceDetailFields} from "@/features/business/invoice-settings";
 import GstLookup from "@/features/business/gst-lookup";
 import BarcodeScan from "@/features/business/barcode-scan";
-type Line={item_type:string;hsn_code:string;sku:string;name:string;unit:string;quantity:string;unit_price:string;tax_rate:string;discount:string};
+type Line={item_type:string;hsn_code:string;sku:string;name:string;unit:string;quantity:string;unit_price:string;tax_rate:string;discount:string;discount_mode?:"amount"|"percent"};
 const empty=():Line=>({item_type:"goods",hsn_code:"",sku:"",name:"",unit:"PCS",quantity:"1",unit_price:"0",tax_rate:"0",discount:"0"});
 const today=()=>{const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)};
 export default function InvoiceDialog({open,onClose,onCreated,initialMode="order"}:{open:boolean;onClose:()=>void;onCreated?:(id:string)=>void;initialMode?:"direct"|"order"}){
@@ -26,12 +28,12 @@ export default function InvoiceDialog({open,onClose,onCreated,initialMode="order
    const common={invoice_date:String(f.get("date")),due_date:String(f.get("due")||""),notes:String(f.get("notes")||""),billing_details:{...details,supply_type:supply}};
    let id="";
    if(mode==="order"){id=(await createInvoice({...common,sales_order_id:String(f.get("order"))})).id}
-   else{const r=await apiRequest<{id:string}>("/business/direct-invoices/",{method:"POST",body:{...common,invoice_number:String(f.get("number")||""),customer,items:lines}});id=r.data.id}
+   else{const r=await apiRequest<{id:string}>("/business/direct-invoices/",{method:"POST",body:{...common,invoice_number:String(f.get("number")||""),customer,items:lines.map(discountedPayload)}});id=r.data.id}
    await qc.invalidateQueries().catch(()=>{});onClose();onCreated?.(id);
   }catch(error){setMessage((error as Error).message)}finally{submitting.current=false;setBusy(false)}
  }
  const totals=lines.reduce((sum,line)=>{
-  const subtotal=Math.round(Number(line.quantity)*Number(line.unit_price)*100+1e-8),discount=Math.round(Number(line.discount)*100);
+  const subtotal=Math.round(Number(line.quantity)*Number(line.unit_price)*100+1e-8),discount=Math.round(previewDiscount(line)*100);
   return {subtotal:sum.subtotal+subtotal,discount:sum.discount+discount,tax:sum.tax+Math.round((subtotal-discount)*Number(line.tax_rate)/100+1e-8)}
  },{subtotal:0,discount:0,tax:0});
  const amount=(cents:number)=>formatMoney(String(cents/100));
@@ -75,8 +77,8 @@ export default function InvoiceDialog({open,onClose,onCreated,initialMode="order
          {(["hsn_code","sku","unit"] as const).map(key=><label key={key} className="text-xs">{{hsn_code:"HSN/SAC",sku:"SKU (auto)",unit:"Unit"}[key]}<input aria-label={key+" line "+(i+1)} className="nx-input" value={line[key]} onChange={e=>update(i,{[key]:e.target.value})}/></label>)}
         </div></details>
        </td>
-       {(["quantity","unit_price","discount","tax_rate"] as const).map(key=><td key={key} data-label={{quantity:"Quantity",unit_price:"Rate ₹",discount:"Discount ₹",tax_rate:"GST %"}[key]}><input aria-label={key+" line "+(i+1)} className="nx-input" value={line[key]} required={key==="quantity"||key==="unit_price"} type="number" min={key==="quantity"?"0.01":"0"} max={key==="tax_rate"?100:undefined} step="0.01" onChange={e=>update(i,{[key]:e.target.value})}/></td>)}
-       <td data-label="Line total" className="text-right font-semibold">{amount(Math.round((Math.round(Number(line.quantity)*Number(line.unit_price)*100+1e-8)-Math.round(Number(line.discount)*100))*(1+Number(line.tax_rate)/100)+1e-8))}</td>
+       {(["quantity","unit_price","discount","tax_rate"] as const).map(key=><td key={key} data-label={{quantity:"Quantity",unit_price:"Rate ₹",discount:"Discount",tax_rate:"GST %"}[key]}>{key==="discount"&&<DiscountMode label={"Discount mode line "+(i+1)} value={line.discount_mode} onChange={discount_mode=>update(i,{discount_mode})}/>}<input aria-label={key+" line "+(i+1)} className="nx-input" value={line[key]} required={key==="quantity"||key==="unit_price"} type="number" min={key==="quantity"?"0.01":"0"} max={key==="tax_rate"?100:undefined} step="0.01" onChange={e=>update(i,{[key]:e.target.value})}/></td>)}
+       <td data-label="Line total" className="text-right font-semibold">{amount(Math.round((Math.round(Number(line.quantity)*Number(line.unit_price)*100+1e-8)-Math.round(previewDiscount(line)*100))*(1+Number(line.tax_rate)/100)+1e-8))}</td>
        <td><button type="button" className="nx-icon-btn" aria-label={"Remove line "+(i+1)} disabled={lines.length===1} onClick={()=>setLines(prev=>prev.filter((_,j)=>j!==i))}><Trash2 size={17}/></button></td>
       </tr>)}
      </tbody></table></div>
