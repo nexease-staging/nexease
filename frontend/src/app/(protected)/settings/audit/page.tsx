@@ -496,8 +496,8 @@ export default function AuditPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table
-              className="
+            <table role="table"
+              className="nx-mobile-records nx-financial-records
                 min-w-full divide-y
                 divide-slate-200
               "
@@ -545,7 +545,7 @@ export default function AuditPage() {
                         hover:bg-slate-50
                       "
                     >
-                      <td
+                      <td data-label="Event"
                         className="
                           whitespace-nowrap
                           px-4 py-4
@@ -568,7 +568,7 @@ export default function AuditPage() {
                         </span>
                       </td>
 
-                      <td
+                      <td data-label="User"
                         className="
                           whitespace-nowrap
                           px-4 py-4
@@ -582,7 +582,7 @@ export default function AuditPage() {
                         }
                       </td>
 
-                      <td
+                      <td data-label="Identifier"
                         className="
                           whitespace-nowrap
                           px-4 py-4
@@ -596,7 +596,7 @@ export default function AuditPage() {
                         }
                       </td>
 
-                      <td
+                      <td data-label="IP address"
                         className="
                           whitespace-nowrap
                           px-4 py-4
@@ -611,7 +611,7 @@ export default function AuditPage() {
                         }
                       </td>
 
-                      <td
+                      <td data-label="Time"
                         className="
                           whitespace-nowrap
                           px-4 py-4
@@ -623,7 +623,7 @@ export default function AuditPage() {
                         )}
                       </td>
 
-                      <td
+                      <td data-label="Integrity"
                         className="
                           whitespace-nowrap
                           px-4 py-4

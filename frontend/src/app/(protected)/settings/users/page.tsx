@@ -601,8 +601,8 @@ export default function UsersPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table
-              className="
+            <table role="table"
+              className="nx-mobile-records nx-financial-records
                 min-w-full divide-y
                 divide-slate-200
               "
@@ -660,7 +660,7 @@ export default function UsersPage() {
                           hover:bg-slate-50
                         "
                       >
-                        <td
+                        <td data-label="User"
                           className="
                             px-4 py-4 text-sm
                           "
@@ -713,7 +713,7 @@ export default function UsersPage() {
                           </div>
                         </td>
 
-                        <td
+                        <td data-label="Email"
                           className="
                             px-4 py-4 text-sm
                             text-slate-700
@@ -722,7 +722,7 @@ export default function UsersPage() {
                           {user.email}
                         </td>
 
-                        <td
+                        <td data-label="Role"
                           className="
                             px-4 py-4 text-sm
                             text-slate-700
@@ -735,7 +735,7 @@ export default function UsersPage() {
                           }
                         </td>
 
-                        <td
+                        <td data-label="Status"
                           className="
                             whitespace-nowrap
                             px-4 py-4
@@ -773,7 +773,7 @@ export default function UsersPage() {
                           </span>
                         </td>
 
-                        <td
+                        <td data-label="Actions"
                           className="
                             whitespace-nowrap
                             px-4 py-4

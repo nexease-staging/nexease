@@ -552,8 +552,8 @@ export default function RolesPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table
-              className="
+            <table role="table"
+              className="nx-mobile-records nx-financial-records
                 min-w-full divide-y
                 divide-slate-200
               "
@@ -600,7 +600,7 @@ export default function RolesPage() {
                         hover:bg-slate-50
                       "
                     >
-                      <td
+                      <td data-label="Role"
                         className="
                           px-4 py-4 text-sm
                           font-semibold
@@ -610,7 +610,7 @@ export default function RolesPage() {
                         {role.name}
                       </td>
 
-                      <td
+                      <td data-label="Description"
                         className="
                           max-w-md px-4 py-4
                           text-sm text-slate-600
@@ -623,7 +623,7 @@ export default function RolesPage() {
                         }
                       </td>
 
-                      <td
+                      <td data-label="Type"
                         className="
                           whitespace-nowrap
                           px-4 py-4
@@ -661,7 +661,7 @@ export default function RolesPage() {
                         </span>
                       </td>
 
-                      <td
+                      <td data-label="Permissions"
                         className="
                           whitespace-nowrap
                           px-4 py-4 text-sm
@@ -672,7 +672,7 @@ export default function RolesPage() {
                         {role.permission_count}
                       </td>
 
-                      <td
+                      <td data-label="Status"
                         className="
                           whitespace-nowrap
                           px-4 py-4
@@ -710,7 +710,7 @@ export default function RolesPage() {
                         </span>
                       </td>
 
-                      <td
+                      <td data-label="Actions"
                         className="
                           whitespace-nowrap
                           px-4 py-4

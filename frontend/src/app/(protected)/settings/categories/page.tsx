@@ -651,8 +651,8 @@ export default function CategoriesPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table
-              className="
+            <table role="table"
+              className="nx-mobile-records nx-financial-records
                 min-w-full divide-y
                 divide-slate-200
               "
@@ -698,7 +698,7 @@ export default function CategoriesPage() {
                         hover:bg-slate-50/70
                       "
                     >
-                      <td
+                      <td data-label="Category"
                         className="
                           whitespace-nowrap
                           px-4 py-4
@@ -714,7 +714,7 @@ export default function CategoriesPage() {
                         </div>
                       </td>
 
-                      <td
+                      <td data-label="Description"
                         className="
                           max-w-md px-4 py-4
                           text-sm text-slate-600
@@ -733,7 +733,7 @@ export default function CategoriesPage() {
                           )}
                       </td>
 
-                      <td
+                      <td data-label="Status"
                         className="
                           whitespace-nowrap
                           px-4 py-4
@@ -768,7 +768,7 @@ export default function CategoriesPage() {
                         </span>
                       </td>
 
-                      <td
+                      <td data-label="Actions"
                         className="
                           whitespace-nowrap
                           px-4 py-4

@@ -16,5 +16,9 @@ export function dismissTopOverlay(): boolean {
     return rect.width > 0 && rect.height > 0 && rect.right > 0 && rect.left < window.innerWidth;
   });
   if (closer) { closer.click(); return true; }
+  const menu = document.querySelector<HTMLButtonElement>(
+    'button[aria-label="Open account menu"][aria-expanded="true"], button[aria-label="Notifications"][aria-expanded="true"]',
+  );
+  if (menu) { menu.click(); return true; }
   return false;
 }

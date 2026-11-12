@@ -1,3 +1,5 @@
+> Latest checkpoint: see [RELEASE_CANDIDATE_NOV13.md](RELEASE_CANDIDATE_NOV13.md) for current tests and remaining scope. Earlier rollout/deployment statements below are historical, not a live service status check. The user reported login, invoice, payment and email smoke tests passing after the reliability deployment.
+
 # Upgrade status and rollout
 
 This branch is a reviewable first implementation, **not completion of the full requested upgrade**. No deployment, live email, live GST/OpenAI call, production database migration or APK release was performed.

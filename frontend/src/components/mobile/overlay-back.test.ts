@@ -21,3 +21,9 @@ describe('Android overlay dismissal',()=>{
  });
  it('allows navigation when no overlay is open',()=>{expect(dismissTopOverlay()).toBe(false);});
 });
+
+it('closes an expanded account menu before navigating',()=>{
+ document.body.innerHTML='<button aria-label="Open account menu" aria-expanded="true">Account</button>';
+ const click=vi.fn();document.querySelector('button')!.addEventListener('click',click);
+ expect(dismissTopOverlay()).toBe(true);expect(click).toHaveBeenCalledOnce();
+});
