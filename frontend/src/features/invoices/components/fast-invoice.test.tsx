@@ -122,3 +122,11 @@ describe("Fast invoice", () => {
     expect(whatsappLink("+91 98765-43210", "a b")).toBe("https://wa.me/919876543210?text=a%20b");
   });
 });
+
+it("updates the quick-invoice preview when a percent discount is selected",()=>{
+ mount();fillMinimal();
+ fireEvent.change(screen.getByLabelText("quantity line 1"),{target:{value:"2"}});
+ fireEvent.click(screen.getByRole("button",{name:"Discount in percent"}));
+ fireEvent.change(screen.getByLabelText("discount line 1"),{target:{value:"10"}});
+ expect(screen.getAllByText("₹212.40")).toHaveLength(2);
+});

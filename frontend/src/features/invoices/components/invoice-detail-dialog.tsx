@@ -320,7 +320,7 @@ export default function InvoiceDetailDialog({
         aria-labelledby="invoice-detail-title"
         className="
           max-h-[calc(100vh-2rem)]
-          w-full max-w-5xl
+          nx-invoice-detail w-full max-w-5xl
           overflow-y-auto rounded-2xl
           border border-slate-200
           bg-white text-slate-900
@@ -413,166 +413,6 @@ export default function InvoiceDetailDialog({
 
         {invoice ? (
           <>
-            <div
-              className="
-                flex flex-wrap items-center
-                justify-between gap-3
-                border-b border-slate-200
-                px-5 py-4 sm:px-6
-              "
-            >
-              <div
-                className="
-                  flex flex-wrap
-                  items-center gap-3
-                "
-              >
-                <span
-                  className={`
-                    rounded-full border
-                    px-3 py-1 text-xs
-                    font-semibold
-                    ${statusClassName(
-                      invoice.status,
-                    )}
-                  `}
-                >
-                  {displayStatus(
-                    invoice.status,
-                  )}
-                </span>
-
-                <span
-                  className="
-                    text-sm text-slate-600
-                  "
-                >
-                  {invoice.sales_order
-                    ?.so_number
-                    ??
-                    "No sales order"}
-                </span>
-              </div>
-
-              <div
-                className="
-                  flex flex-wrap gap-2
-                "
-              >
-                {["DRAFT","ISSUED","PARTIALLY_PAID","PAID"].includes(invoice.status) && <><InvoiceEditor key={invoice.id+"edit"} id={invoice.id}/><InvoiceDetails key={invoice.id+"details"} id={invoice.id} issued={invoice.status!=="DRAFT"}/><InvoiceDescriptions key={invoice.id} invoice={invoice}/></>}
-                <DocumentActions
-                  documentType="INVOICE"
-                  documentId={invoice.id}
-                  documentNumber={
-                    invoice.invoice_number
-                  }
-                  defaultRecipient={
-                    invoice.customer.email
-                  }
-                  disabled={actionPending}
-                  whatsappMessage={["ISSUED", "PARTIALLY_PAID", "PAID"].includes(invoice.status)
-                    ? `Hello, here are the details for invoice ${invoice.invoice_number}. Total: ₹${formatAmount(invoice.total_amount)}. Balance due: ₹${formatAmount(invoice.balance_due)}.`
-                    : undefined}
-                />
-                {(
-                  canIssue
-                  &&
-                  invoice.status === "DRAFT"
-                ) ? (
-                  <button
-                    type="button"
-                    disabled={actionPending}
-                    onClick={() => {
-                      void issue();
-                    }}
-                    className="
-                      inline-flex items-center
-                      gap-2 rounded-lg
-                      bg-violet-600
-                      px-3 py-2 text-sm
-                      font-semibold text-white
-                      hover:bg-violet-700
-                      disabled:opacity-50
-                    "
-                  >
-                    <Send size={16} />
-                    Issue
-                  </button>
-                ) : null}
-
-                {(
-                  canRecordPayment
-                  &&
-                  (
-                    invoice.status === "ISSUED"
-                    ||
-                    invoice.status
-                    ===
-                    "PARTIALLY_PAID"
-                  )
-                  &&
-                  Number(
-                    invoice.balance_due,
-                  ) > 0
-                ) ? (
-                  <button
-                    type="button"
-                    disabled={actionPending}
-                    onClick={() => {
-                      onRecordPayment(
-                        invoice,
-                      );
-                    }}
-                    className="
-                      inline-flex items-center
-                      gap-2 rounded-lg
-                      bg-emerald-600
-                      px-3 py-2 text-sm
-                      font-semibold text-white
-                      hover:bg-emerald-700
-                      disabled:opacity-50
-                    "
-                  >
-                    <CircleDollarSign
-                      size={16}
-                    />
-                    Record Payment
-                  </button>
-                ) : null}
-
-                {(
-                  canCancel
-                  &&
-                  (
-                    invoice.status === "DRAFT"
-                    ||
-                    invoice.status === "ISSUED"
-                  )
-                ) ? (
-                  <button
-                    type="button"
-                    disabled={actionPending}
-                    onClick={() => {
-                      void cancel();
-                    }}
-                    className="
-                      inline-flex items-center
-                      gap-2 rounded-lg
-                      border border-red-200
-                      bg-white px-3 py-2
-                      text-sm font-semibold
-                      text-red-700
-                      hover:bg-red-50
-                      disabled:opacity-50
-                    "
-                  >
-                    <Ban size={16} />
-                    Cancel
-                  </button>
-                ) : null}
-              </div>
-            </div>
-
             {actionError ? (
               <div
                 className="
@@ -592,7 +432,7 @@ export default function InvoiceDetailDialog({
 
             <div
               className="
-                grid gap-4 px-5 py-5
+                nx-invoice-facts grid grid-cols-2 gap-3 px-5 py-3
                 sm:grid-cols-2
                 lg:grid-cols-4 sm:px-6
               "
@@ -1084,6 +924,170 @@ export default function InvoiceDetailDialog({
                     </span>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {["DRAFT","ISSUED","PARTIALLY_PAID","PAID"].includes(invoice.status) && <section className="px-5 py-3 space-y-3">
+              <details className="nx-invoice-extra"><summary>Description and print details</summary><InvoiceDescriptions key={invoice.id} invoice={invoice}/><InvoiceDetails key={invoice.id+"details"} id={invoice.id} issued={invoice.status!=="DRAFT"}/></details>
+              <details className="nx-invoice-extra"><summary>Edit invoice</summary><InvoiceEditor key={invoice.id+"edit"} id={invoice.id}/></details>
+            </section>}
+            <div
+              className="
+                flex flex-wrap items-center
+                justify-between gap-3
+                border-b border-slate-200
+                px-5 py-4 sm:px-6
+              "
+            >
+              <div
+                className="
+                  flex flex-wrap
+                  items-center gap-3
+                "
+              >
+                <span
+                  className={`
+                    rounded-full border
+                    px-3 py-1 text-xs
+                    font-semibold
+                    ${statusClassName(
+                      invoice.status,
+                    )}
+                  `}
+                >
+                  {displayStatus(
+                    invoice.status,
+                  )}
+                </span>
+
+                <span
+                  className="
+                    text-sm text-slate-600
+                  "
+                >
+                  {invoice.sales_order
+                    ?.so_number
+                    ??
+                    "No sales order"}
+                </span>
+              </div>
+
+              <div
+                className="
+                  flex flex-wrap gap-2
+                "
+              >
+
+                <DocumentActions
+                  documentType="INVOICE"
+                  documentId={invoice.id}
+                  documentNumber={
+                    invoice.invoice_number
+                  }
+                  defaultRecipient={
+                    invoice.customer.email
+                  }
+                  disabled={actionPending}
+                  whatsappMessage={["ISSUED", "PARTIALLY_PAID", "PAID"].includes(invoice.status)
+                    ? `Hello, here are the details for invoice ${invoice.invoice_number}. Total: ₹${formatAmount(invoice.total_amount)}. Balance due: ₹${formatAmount(invoice.balance_due)}.`
+                    : undefined}
+                />
+                {(
+                  canIssue
+                  &&
+                  invoice.status === "DRAFT"
+                ) ? (
+                  <button
+                    type="button"
+                    disabled={actionPending}
+                    onClick={() => {
+                      void issue();
+                    }}
+                    className="
+                      inline-flex items-center
+                      gap-2 rounded-lg
+                      bg-violet-600
+                      px-3 py-2 text-sm
+                      font-semibold text-white
+                      hover:bg-violet-700
+                      disabled:opacity-50
+                    "
+                  >
+                    <Send size={16} />
+                    Issue
+                  </button>
+                ) : null}
+
+                {(
+                  canRecordPayment
+                  &&
+                  (
+                    invoice.status === "ISSUED"
+                    ||
+                    invoice.status
+                    ===
+                    "PARTIALLY_PAID"
+                  )
+                  &&
+                  Number(
+                    invoice.balance_due,
+                  ) > 0
+                ) ? (
+                  <button
+                    type="button"
+                    disabled={actionPending}
+                    onClick={() => {
+                      onRecordPayment(
+                        invoice,
+                      );
+                    }}
+                    className="
+                      inline-flex items-center
+                      gap-2 rounded-lg
+                      bg-emerald-600
+                      px-3 py-2 text-sm
+                      font-semibold text-white
+                      hover:bg-emerald-700
+                      disabled:opacity-50
+                    "
+                  >
+                    <CircleDollarSign
+                      size={16}
+                    />
+                    Record Payment
+                  </button>
+                ) : null}
+
+                {(
+                  canCancel
+                  &&
+                  (
+                    invoice.status === "DRAFT"
+                    ||
+                    invoice.status === "ISSUED"
+                  )
+                ) ? (
+                  <button
+                    type="button"
+                    disabled={actionPending}
+                    onClick={() => {
+                      void cancel();
+                    }}
+                    className="
+                      inline-flex items-center
+                      gap-2 rounded-lg
+                      border border-red-200
+                      bg-white px-3 py-2
+                      text-sm font-semibold
+                      text-red-700
+                      hover:bg-red-50
+                      disabled:opacity-50
+                    "
+                  >
+                    <Ban size={16} />
+                    Cancel
+                  </button>
+                ) : null}
               </div>
             </div>
 

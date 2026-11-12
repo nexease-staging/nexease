@@ -38,3 +38,18 @@ it('blocks two synchronous submits while the create request is pending',async()=
  fireEvent.submit(form);fireEvent.submit(form);
  expect(createInvoice).toHaveBeenCalledTimes(1);
 });
+
+it('saves a percent discount as the calculated rupee line discount',async()=>{
+ const callbacks=mount();
+ fireEvent.change(screen.getByLabelText('Customer name *'),{target:{value:'Customer'}});
+ fireEvent.change(screen.getByLabelText('GST treatment'),{target:{value:'unregistered'}});
+ fireEvent.change(screen.getByLabelText('name line 1'),{target:{value:'Service'}});
+ fireEvent.change(screen.getByLabelText('unit_price line 1'),{target:{value:'100'}});
+ fireEvent.change(screen.getByLabelText('quantity line 1'),{target:{value:'3'}});
+ fireEvent.click(screen.getByRole('button',{name:'Discount in percent'}));
+ fireEvent.change(screen.getByLabelText('discount line 1'),{target:{value:'10'}});
+ expect(screen.getByLabelText('Estimated total')).toHaveTextContent('₹270.00');
+ fireEvent.click(screen.getByRole('button',{name:'Save draft invoice'}));
+ await waitFor(()=>expect(callbacks.onCreated).toHaveBeenCalled());
+ expect(apiRequest).toHaveBeenCalledWith('/business/direct-invoices/',expect.objectContaining({body:expect.objectContaining({items:[expect.objectContaining({discount:'30.00'})]})}));
+});

@@ -416,3 +416,15 @@ html[data-native="true"] body:before{content:"";position:fixed;top:0;left:0;righ
  .nx-financial-records tfoot td:nth-child(2){grid-column:auto;grid-row:auto;font-size:14px}
  .nx-financial-records tfoot td:nth-child(2)::before{display:block}
 }
+
+.nx-invoice-card:has(>button:focus-visible){outline:2px solid var(--nx-primary);outline-offset:2px}
+.nx-invoice-card>button:first-child{cursor:pointer}
+.nx-invoice-extra{border:1px solid var(--nx-border);border-radius:10px;padding:12px}
+.nx-invoice-extra>summary{cursor:pointer;font-weight:600;min-height:24px}
+@media(max-width:767px){
+ .nx-invoice-detail>div[class*="grid"]{gap:10px;padding:12px}
+ .nx-invoice-detail h3{font-size:14px}
+}
+.nx-discount-toggle{display:inline-flex;gap:2px;border:1px solid var(--nx-border);border-radius:8px;padding:2px;margin:4px 0}
+.nx-discount-toggle button{min-width:44px;min-height:44px;border-radius:6px}
+.nx-discount-toggle button[aria-pressed=true]{background:var(--nx-primary);color:white}
