@@ -5,3 +5,5 @@ EXAMPLES={
 EXAMPLES.update(joining_date="2026-10-01",basis="daily",rate=700,overtime_rate=100,active="true",pf_member="false",esi_member="false",department="Operations",designation="Warehouse worker",bank_account="",ifsc="")
 
 EXAMPLES.update(end_date="",uan="",esi_number="")
+
+EXAMPLES['employment_type']='site'

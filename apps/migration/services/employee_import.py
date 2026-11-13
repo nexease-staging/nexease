@@ -14,7 +14,15 @@ def validate_employee(org,row,seen):
                 text=str(v if v is not None else ('true' if k=='active' else 'false')).strip().lower()
                 if text not in ('true','false','yes','no','1','0',''):raise ValueError(k+' must be true or false.')
                 d[k]=text in ('true','yes','1')
-            elif v is not None:d[k]=str(v).strip()
+            elif v is not None:
+                d[k]=str(v).strip()
+                if spec['type']=='select' and d[k]:
+                    value=d[k].lower()
+                    if k=='employment_type':
+                        value=value.replace(' ', '').replace('-', '').replace('_', '')
+                    if value not in spec['choices']:
+                        return {'valid':False,'errors':[{'field':k,'code':'INVALID_CHOICE','message':spec['label']+' must be one of: '+', '.join(spec['choices'])+'.'+(' Use site for client-site workers or inhouse for your own office staff.' if k=='employment_type' else '')}],'normalized':{}}
+                    d[k]=value
         if not d.get('code'):raise ValueError('Employee code is required for duplicate-safe migration.')
         clean=validate('employees',d,org);clean['code']=clean['code'].upper();code=clean['code']
         if code in seen:raise ValueError('Duplicate employee code in file.')
