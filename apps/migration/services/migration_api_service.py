@@ -97,6 +97,11 @@ class MigrationAPIService:
         "SALES_ORDERS",
         "PURCHASE_ORDERS",
         "SALES_INVOICES",
+        "CUSTOMER_PAYMENTS",
+        "GOODS_RECEIPTS",
+        "EMPLOYEES",
+        "VENDOR_BILLS",
+        "SUPPLIER_PAYMENTS",
     }
 
     ALLOWED_MIGRATION_OPTIONS = {
@@ -551,6 +556,11 @@ class MigrationAPIService:
                 "failed_rows",
                 0,
             ),
+            "validation_issues": [
+                {"row_number": row.get("row_number"), "errors": row.get("errors", [])}
+                for row in (getattr(batch, "validation_result", None) or {}).get("rows", [])
+                if not row.get("valid", True)
+            ][:200],
             "created_by":
                 created_by_id,
             "created_at":
