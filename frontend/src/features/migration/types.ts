@@ -55,6 +55,7 @@ export interface MigrationBatch {
   skipped_rows: number;
   failed_rows: number;
 
+  validation_issues?: Array<{row_number: number; errors: Array<{field: string | null; code: string; message: string}>}>;
   validation_result: MigrationResult;
   import_result: MigrationResult;
   error_summary: MigrationResult;

@@ -157,7 +157,10 @@ class MigrationPreviewService:
             "valid"
         ]:
             raise MigrationPreviewError(
-                "Migration mapping is invalid."
+                "Migration mapping is invalid. " + " ".join(
+                    f"{error.get('field') or error.get('source_column') or 'Mapping'}: {error.get('message') or error.get('code') or 'Check the column mapping.'}"
+                    for error in mapping_validation["errors"]
+                )
             )
 
         mapped_rows = (

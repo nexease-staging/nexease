@@ -1,4 +1,5 @@
 "use client";
+import { migrationErrorMessage } from "@/features/migration/errors";
 import SearchSelect from "@/components/search-select";
 
 import { apiRequest } from "@/lib/api/client";
@@ -158,6 +159,8 @@ export default function DataMigrationPage() {
   ||
   importMigration.isPending;
  function resetUpload(): void {
+  setFields({});
+  setMapping({});
   setSelectedFile(
    null,
   );
@@ -187,6 +190,8 @@ export default function DataMigrationPage() {
  function handleFileChange(
   event: ChangeEvent<HTMLInputElement>,
  ): void {
+  setFields({});
+  setMapping({});
   const file =
    event.target.files?.[0]
    ??
@@ -270,13 +275,7 @@ export default function DataMigrationPage() {
    );
   } catch (error) {
    setUploadError(
-    error instanceof Error
-     ? error.message
-     : (
-      "Unable to upload "
-      +
-      "migration file."
-     ),
+    migrationErrorMessage(error, "Unable to upload migration file."),
    );
   }
  }
@@ -298,9 +297,7 @@ export default function DataMigrationPage() {
    await migrationQuery.refetch();
   } catch (error) {
    setUploadError(
-    error instanceof Error
-     ? error.message
-     : "Unable to validate migration.",
+    migrationErrorMessage(error, "Unable to validate migration."),
    );
   }
  }
@@ -321,9 +318,7 @@ export default function DataMigrationPage() {
    await migrationQuery.refetch();
   } catch (error) {
    setUploadError(
-    error instanceof Error
-     ? error.message
-     : "Unable to import migration.",
+    migrationErrorMessage(error, "Unable to import migration."),
    );
   }
  }
@@ -754,10 +749,10 @@ export default function DataMigrationPage() {
         text-sm text-red-700
        "
       >
-       {uploadError}
+       <span className="whitespace-pre-line">{uploadError}</span>
       </div>
      ) : null}
-     {uploadedFile ? (
+     {uploadedFile || activeMigration ? (
       <div
        className="
         mt-4 rounded-xl
@@ -766,6 +761,7 @@ export default function DataMigrationPage() {
         bg-emerald-50 p-4
        "
       >
+       {uploadedFile && <>
        <div
         className="
          flex items-start gap-3
@@ -943,6 +939,7 @@ export default function DataMigrationPage() {
          )
          : null
        }
+       </>}
        {activeBatchId ? (
         <p
          className="
@@ -994,7 +991,7 @@ export default function DataMigrationPage() {
             </span>
            </p>
           </div>
-          {activeMigration.status === "UPLOADED" ? (
+          {uploadedFile && ["UPLOADED", "VALIDATED"].includes(activeMigration.status) ? (
            <button
             type="button"
             disabled={workflowPending}
@@ -1118,6 +1115,13 @@ export default function DataMigrationPage() {
            a new migration file before importing.
           </p>
          ) : null}
+         {!!activeMigration.validation_issues?.length && <div className="mt-3 space-y-2" role="status">
+          <h3 className="font-semibold">Corrections needed</h3>
+          <p className="text-sm">Row numbers include the header (first data row is 2). Fix the listed fields in your file and upload again, or correct the column mapping and validate again. Showing up to 200 rejected rows.</p>
+          <ul className="max-h-80 overflow-auto space-y-2">{activeMigration.validation_issues.map(row => <li key={row.row_number} className="rounded border border-red-200 p-3 text-sm">
+           <strong>Row {row.row_number}</strong><ul>{row.errors.map((error, index) => <li key={index}>{error.field ? `${error.field}: ` : ""}{error.message}</li>)}</ul>
+          </li>)}</ul>
+         </div>}
          {activeMigration.status === "COMPLETED" ? (
           <p
            className="
@@ -1499,10 +1503,7 @@ export default function DataMigrationPage() {
                  "
                 >
                  {
-                  getMigrationTypeConfig(
-                   migration
-                    .migration_type,
-                  ).label
+                  <button type="button" className="underline" onClick={() => { resetUpload(); setActiveBatchId(migration.id); }}>{getMigrationTypeConfig(migration.migration_type).label}</button>
                  }
                 </td>
                 <td data-label="Source"
