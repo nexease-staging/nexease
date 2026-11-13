@@ -80,7 +80,7 @@ export default function DeviceNotificationSettings() {
   }
 
   return (
-    <section className="mt-6 rounded-xl border p-4">
+    <section className="nx-device-alert-settings mt-6 rounded-xl border p-4">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h3 className="font-semibold">Device notifications</h3>

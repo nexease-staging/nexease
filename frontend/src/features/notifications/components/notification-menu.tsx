@@ -344,7 +344,7 @@ export default function NotificationMenu() {
       {open && (
         <div
           className="
-            fixed right-3 top-[calc(4.5rem+env(safe-area-inset-top))] sm:absolute sm:right-0 sm:top-11
+            nx-notification-panel fixed right-3 top-[calc(4.5rem+env(safe-area-inset-top))] sm:absolute sm:right-0 sm:top-11
             z-50 w-[min(24rem,calc(100vw-2rem))]
             overflow-hidden rounded-xl
             border border-slate-200

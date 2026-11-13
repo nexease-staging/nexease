@@ -197,7 +197,7 @@ export default function GoodsReceiptsPage() {
     <>
       <div className="space-y-6">
         <header
-          className="
+          className="nx-mobile-page-toolbar
             flex flex-col gap-4
             sm:flex-row
             sm:items-start

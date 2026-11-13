@@ -88,9 +88,9 @@ export default function SalesDocuments({mode}:{mode:keyof typeof paths}) {
     <label>Search documents<input className={input} value={search} onChange={e=>setSearch(e.target.value)} placeholder="Document number"/></label>
     {list.isLoading&&<p role="status">Loading…</p>}
     {list.isError&&<p role="alert">{list.error.message}</p>}
-    {data&&<div className="overflow-x-auto nx-panel"><table className="w-full text-left text-sm"><thead><tr>{['Number / date','Customer','Status','Actions'].map(x=><th key={x} className="p-2">{x}</th>)}</tr></thead><tbody>
-      {data.records.map(row=><tr className="border-t" key={row.id}><td className="p-2">{row.number}<br/>{row.date}{row.invoice_number&&<><br/>Invoice: {row.invoice_number}</>}</td><td className="p-2">{row.customer||row.customer_name}</td><td className="p-2">{row.status?.replaceAll('_',' ')||'Not submitted'}{row.irn&&<div className="max-w-56 break-all">IRN: {row.irn}<br/>Ack: {row.ack_no} {row.ack_date}</div>}</td>
-      <td className="p-2"><div className="flex flex-wrap gap-2">
+    {data&&<div className="overflow-x-auto nx-panel"><table className="nx-mobile-records nx-financial-records w-full text-left text-sm"><thead><tr>{['Number / date','Customer','Status','Actions'].map(x=><th key={x} className="p-2">{x}</th>)}</tr></thead><tbody>
+      {data.records.map(row=><tr className="border-t" key={row.id}><td data-label="Number / date" className="p-2">{row.number}<br/>{row.date}{row.invoice_number&&<><br/>Invoice: {row.invoice_number}</>}</td><td data-label="Customer" className="p-2">{row.customer||row.customer_name}</td><td data-label="Status" className="p-2">{row.status?.replaceAll('_',' ')||'Not submitted'}{row.irn&&<div className="max-w-56 break-all">IRN: {row.irn}<br/>Ack: {row.ack_no} {row.ack_date}</div>}</td>
+      <td data-label="Actions" className="p-2"><div className="flex flex-wrap gap-2">
         {irp?<>{!row.status&&data.can_issue&&data.configured&&row.invoice_status!=='CANCELLED'&&<button className="nx-button" disabled={busy} onClick={()=>irpAction(row,'generate')}>Generate IRN</button>}
         {row.status==='pending'&&data.can_issue&&<button className="nx-button" disabled={busy} onClick={()=>irpAction(row,'recover')}>Recover IRN</button>}
         {row.status==='registered'&&data.can_cancel&&<button className="nx-button nx-secondary" disabled={busy} onClick={()=>setCancel(row)}>Cancel IRN</button>}
