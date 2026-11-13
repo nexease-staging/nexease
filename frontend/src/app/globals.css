@@ -428,3 +428,34 @@ html[data-native="true"] body:before{content:"";position:fixed;top:0;left:0;righ
 .nx-discount-toggle{display:inline-flex;gap:2px;border:1px solid var(--nx-border);border-radius:8px;padding:2px;margin:4px 0}
 .nx-discount-toggle button{min-width:44px;min-height:44px;border-radius:6px}
 .nx-discount-toggle button[aria-pressed=true]{background:var(--nx-primary);color:white}
+
+/* Screenshot audit: mobile overlays own the viewport; content never sits under actions. */
+@media(max-width:767px){
+ .nx-master-drawer-overlay{padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)!important;align-items:stretch!important}
+ .nx-master-drawer-overlay .nx-master-drawer{height:100%!important;max-height:100%!important;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding-bottom:0}
+ .nx-master-drawer>div:first-child{flex-shrink:0;padding:12px 16px}
+ .nx-master-drawer>form{min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:16px;scroll-padding-block:16px;flex:1}
+ .nx-master-drawer form>div:last-child:has(>button[type=submit]){position:static;padding-bottom:16px}
+ .nx-master-drawer label,.nx-tax-export-fields label{min-width:0;display:block}
+ .nx-master-drawer input,.nx-master-drawer select,.nx-master-drawer textarea,.nx-tax-export-fields input{width:100%;min-width:0;text-align:left}
+ .nx-master-drawer form>.grid.grid-cols-2{grid-template-columns:minmax(0,1fr);padding:0}
+ .nx-master-drawer form>div,.nx-master-drawer form>label{min-width:0}
+ body:has([role=dialog][aria-modal=true]) .nx-bottom-nav,body:has([role=dialog][aria-modal=true]) .easy-nav,body:has([role=dialog][aria-modal=true]) button[aria-label="Open NexEase AI"]{visibility:hidden}
+ .fixed.inset-0:has(>[role=dialog]):not(.nx-master-drawer-overlay){padding-top:calc(8px + env(safe-area-inset-top,0px));padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));align-items:flex-start;overflow-y:auto}
+ .fixed.inset-0>[role=dialog]:not(.nx-master-drawer){max-height:calc(100dvh - 16px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));min-width:0}
+ .nx-notification-panel{left:12px;right:12px;width:auto!important;max-height:calc(100dvh - 160px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow-y:auto}
+ .nx-notification-panel .nx-device-alert-settings{margin-top:8px;padding:12px;min-height:0}
+ .nx-device-alert-settings>div{min-height:0;align-items:center}.nx-device-alert-settings h3{font-size:14px}.nx-device-alert-settings p{font-size:12px}
+ .nx-quick-purchase-heading{flex-direction:column}.nx-quick-purchase-heading h2{font-size:18px}.nx-quick-purchase-heading p{font-size:13px;line-height:1.45}.nx-quick-purchase-heading>button{align-self:stretch}
+ .nx-tax-export-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.nx-tax-export-fields>button{grid-column:1/-1}
+ .nx-list-filters input{ text-indent:0; text-align:left; }
+}
+@media(max-width:767px){
+ .nx-mobile-page-toolbar{display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:12px}
+ .nx-mobile-page-toolbar>div{min-width:0}.nx-mobile-page-toolbar>div>p{display:none}.nx-mobile-page-toolbar h1{font-size:20px;margin:0}
+ .nx-mobile-page-toolbar>button{width:44px;height:44px;padding:10px;flex-shrink:0}
+}
+@media(max-width:767px){
+ html[data-native=true] .nx-app-shell{padding-top:0}
+ html[data-native=true] .nx-master-drawer-overlay{padding-top:max(24px,env(safe-area-inset-top,0px))!important}
+}

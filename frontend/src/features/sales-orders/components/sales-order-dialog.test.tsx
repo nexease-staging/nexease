@@ -703,9 +703,14 @@ describe(
       },
     );
 
-    it(
-      "submits selected customer warehouse and product IDs",
-      async () => {
+    it.each([
+      {mode:"amount",value:"10",expected:"10.00",error:""},
+      {mode:"percent",value:"10",expected:"12.50",error:""},
+      {mode:"percent",value:"101",expected:"",error:"Discount percentage must be between 0 and 100."},
+      {mode:"amount",value:"126",expected:"",error:"Discount cannot exceed the line value."},
+    ])(
+      "validates and submits $value in $mode discount mode",
+      async ({mode,value,expected,error}) => {
         mockUseCustomerList
           .mockReturnValue({
             data: {
@@ -767,6 +772,10 @@ describe(
           ),
         );
 
+        fireEvent.click(screen.getByRole("button", {name: mode === "percent" ? "Discount in percent" : "Discount in rupees"}));
+        const fields = screen.getAllByRole("spinbutton");
+        changeControl(fields[3], {target: {value}});
+
         fireEvent.click(
           screen.getByRole(
             "button",
@@ -777,6 +786,12 @@ describe(
           ),
         );
 
+        if (error) {
+          await screen.findByText(error);
+          expect(mockCreateMutateAsync).not.toHaveBeenCalled();
+          expect(onClose).not.toHaveBeenCalled();
+          return;
+        }
         await waitFor(() => {
           expect(
             mockCreateMutateAsync,
@@ -799,6 +814,7 @@ describe(
                   "product-existing",
                 unit_price:
                   "125.00",
+                discount: expected,
               }),
             ],
           }),

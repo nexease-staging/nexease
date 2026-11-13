@@ -356,7 +356,7 @@ export default function PurchaseOrdersPage() {
 <QuickPurchase kind="purchase_order" />
       <div className="space-y-6">
         <header
-          className="
+          className="nx-mobile-page-toolbar
             flex flex-col gap-4
             sm:flex-row
             sm:items-start
@@ -414,7 +414,7 @@ export default function PurchaseOrdersPage() {
                 "
               >
                 <FilePlus2 size={18} />
-                New purchase order
+                <span className="hidden sm:inline">New purchase order</span><span className="sr-only sm:hidden">New purchase order</span>
               </button>
             )
             : null}

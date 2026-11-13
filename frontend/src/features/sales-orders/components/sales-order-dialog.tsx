@@ -1,4 +1,6 @@
 "use client";
+import DiscountMode from "@/features/invoices/components/discount-mode";
+import {discountedPayload, previewDiscount} from "@/features/invoices/discount";
 import SearchSelect from "@/components/search-select";
 
 
@@ -150,6 +152,7 @@ const salesOrderSchema = z.object({
         tax_rate:
           nonNegativeNumber,
 
+        discount_mode: z.enum(["amount", "percent"]).optional(),
         discount:
           nonNegativeNumber,
       }),
@@ -605,12 +608,7 @@ export default function SalesOrderDialog({
           ||
           0;
 
-        const discount =
-          Number(
-            item.discount
-          )
-          ||
-          0;
+        const discount = previewDiscount(item);
 
         const subtotal =
           quantity
@@ -720,6 +718,7 @@ export default function SalesOrderDialog({
   async function submit(
     values: SalesOrderFormValues,
   ): Promise<void> {
+    try {
     const input = {
       customer_id:
         values.customer_id,
@@ -732,12 +731,11 @@ export default function SalesOrderDialog({
         ||
         undefined,
       items:
-        values.items,
+        values.items.map(discountedPayload),
       notes:
         values.notes,
     };
 
-    try {
       if (salesOrderId) {
         await updateMutation.mutateAsync({
           salesOrderId,
@@ -752,6 +750,7 @@ export default function SalesOrderDialog({
       onClose();
 
     } catch (error) {
+      setError("root", {message: error instanceof Error ? error.message : "Unable to save sales order."});
       if (
         error instanceof APIRequestError
       ) {
@@ -776,10 +775,7 @@ export default function SalesOrderDialog({
     ??
     updateMutation.error;
 
-  const generalError =
-    mutationError instanceof Error
-      ? mutationError.message
-      : null;
+  const generalError = errors.root?.message ?? (mutationError instanceof Error ? mutationError.message : null);
 
   const lookupPending =
     warehouseQuery.isPending;
@@ -1140,12 +1136,7 @@ export default function SalesOrderDialog({
                       ||
                       0;
 
-                    const discount =
-                      Number(
-                        item?.discount
-                      )
-                      ||
-                      0;
+                    const discount = item ? previewDiscount(item) : 0;
 
                     const subtotal =
                       quantity
@@ -1356,6 +1347,7 @@ export default function SalesOrderDialog({
                               <span className="text-xs font-semibold">
                                 {label}
                               </span>
+                              {name === "discount" && <DiscountMode label={`Discount mode for item ${index + 1}`} value={item?.discount_mode} onChange={mode=>setValue(`items.${index}.discount_mode`,mode,{shouldDirty:true})}/>}
 
                               <input
                                 {...register(
