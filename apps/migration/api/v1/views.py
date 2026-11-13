@@ -698,5 +698,7 @@ def migration_template_api(request, migration_type):
         note='Use an existing organization record.' if key.endswith(('_id','_code','_sku','_number')) else 'Enter a value.'
         if key.endswith('_date'):note='Use YYYY-MM-DD.'
         if key=='bank_account_id':note='Copy the ID from the bank account detail/API; bank account must be active.'
+        if spec.get('choices'):note='Allowed values: '+', '.join(spec['choices'])+'.'
+        if migration_type=='EMPLOYEES' and key=='employment_type':note+=' site = client site; inhouse = own office staff.'
         guides.append([key,'Yes' if spec.get('required') else 'No',note])
     return workbook_response({'Data':[list(fields)],'Example only':[list(fields),[('Example worker' if k=='name' else EXAMPLES.get(k,'')) if migration_type=='EMPLOYEES' else EXAMPLES.get(k,'Example') for k in fields]],'Column guide':guides,'Read me':[['NexEase migration template'],['Fill the Data sheet. Do not rename the column headers.'],['Import master records before transactions. Run validation before import.'],['Opening inventory requires existing product and warehouse codes.'],['Sales invoices require fulfilled sales orders; vendor bills require fully received purchase orders.'],['Payment imports require issued/posted documents and an existing bank account.'],['Use one payment allocation per row with a unique reference number.'],['Review the validation results. Imported draft invoices/bills must be issued/posted separately.']]},'NexEase-'+migration_type)

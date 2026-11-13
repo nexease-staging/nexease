@@ -869,3 +869,10 @@ for _kind, _fields in FIELDS.items():
 
 from apps.migration.services.employee_import import FIELDS as EMPLOYEE_FIELDS
 MigrationSchemaService.SCHEMAS["EMPLOYEES"]={"migration_type":"EMPLOYEES","label":"Employees","fields":{k:{"label":k.replace("_"," ").title(),"required":v,"aliases":(k,k.replace("_"," "))} for k,v in EMPLOYEE_FIELDS.items()}}
+
+# Keep template guidance aligned with workforce select choices.
+from apps.business.schema import SCHEMAS as BUSINESS_SCHEMAS
+for _key, _spec in BUSINESS_SCHEMAS['employees']['fields'].items():
+    if _spec.get('choices'):
+        MigrationSchemaService.SCHEMAS['EMPLOYEES']['fields'][_key]['choices'] = list(_spec['choices'])
+MigrationSchemaService.SCHEMAS['EMPLOYEES']['fields']['employment_type']['aliases'] += ('work location type', 'work_location_type')
