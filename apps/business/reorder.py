@@ -108,7 +108,8 @@ def scan(user):
         .no_dereference()
         .only("product", "quantity")
     ):
-        key = str(stock.product.id)
+        reference = stock.product
+        key = str(getattr(reference, "id", reference))
         totals[key] = totals.get(key, Decimal(0)) + stock.quantity
     for rule in rules:
         product = products.get(rule.key)

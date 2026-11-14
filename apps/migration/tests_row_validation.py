@@ -579,7 +579,7 @@ class MigrationRowValidationServiceTestCase(
         "migration_row_validation_service."
         "ProductRepository.sku_exists"
     )
-    def test_missing_category_rejected(
+    def test_new_category_allowed_during_preview(
         self,
         sku_exists_mock,
         category_mock,
@@ -609,7 +609,7 @@ class MigrationRowValidationServiceTestCase(
             in result["rows"][0]["errors"]
         }
 
-        self.assertIn(
+        self.assertNotIn(
             "CATEGORY_NOT_FOUND",
             codes,
         )

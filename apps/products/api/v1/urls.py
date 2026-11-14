@@ -11,6 +11,7 @@ app_name = "products_api_v1"
 
 
 urlpatterns = [
+    path("units/", views.product_units, name="product_units"),
     path(
         "products/",
         views.product_collection_api,

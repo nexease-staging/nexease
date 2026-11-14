@@ -1,3 +1,5 @@
+import re
+from .import_dates import calendar_date
 from decimal import (
     Decimal,
     InvalidOperation,
@@ -155,21 +157,10 @@ class MigrationRowValidationService:
 
         text = str(value).strip()
 
-        formats = (
-            "%Y-%m-%d",
-            "%d-%m-%Y",
-            "%d/%m/%Y",
-            "%Y/%m/%d",
-        )
-
-        for date_format in formats:
-            try:
-                return datetime.strptime(
-                    text,
-                    date_format,
-                ).date()
-            except ValueError:
-                continue
+        try:
+            return calendar_date(text)
+        except ValueError:
+            pass
 
         cls._add_error(
             errors,
@@ -273,9 +264,10 @@ class MigrationRowValidationService:
             return None
 
         try:
-            price = Decimal(
-                str(value).strip()
-            )
+            raw = str(value).strip().removeprefix("₹").strip()
+            if re.fullmatch(r"(?:\d{1,3}(?:,\d{3})+|\d{1,2}(?:,\d{2})+,\d{3})(?:\.\d+)?", raw):
+                raw = raw.replace(",", "")
+            price = Decimal(raw)
 
         except (
             InvalidOperation,
@@ -576,18 +568,6 @@ class MigrationRowValidationService:
                     name=category_name,
                 )
             )
-
-            if not category:
-                cls._add_error(
-                    errors,
-                    field="category",
-                    code="CATEGORY_NOT_FOUND",
-                    message=(
-                        "Active category was "
-                        "not found in the "
-                        "current organization."
-                    ),
-                )
 
         return {
             "valid": not errors,

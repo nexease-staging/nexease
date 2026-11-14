@@ -32,6 +32,37 @@ from apps.products.services.category_api_service import (
     CategoryAPIValidationError,
 )
 
+from django.views.decorators.http import require_http_methods
+from apps.business.models import BusinessRecord
+from apps.products.models import Product
+
+
+@api_login_required
+@require_http_methods(["GET", "POST"])
+def product_units(request):
+    org = request.api_organization
+    permission = "products.create" if request.method == "POST" else "products.read"
+    if not AuthorizationService.has_permission(request.api_user, permission):
+        return APIResponseService.forbidden(message="Permission denied.", request=request)
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+        except (ValueError, UnicodeDecodeError):
+            return APIResponseService.bad_request(message="Invalid JSON.", request=request)
+        name = data.get("name") if isinstance(data, dict) else None
+        if not isinstance(name, str) or not 1 <= len(name.strip()) <= 30:
+            return APIResponseService.validation_error(message="Enter a unit of 1 to 30 characters.", request=request)
+        name = name.strip()
+        BusinessRecord.objects(organization=org, kind="product_unit", key=name.casefold()).update_one(
+            upsert=True, set_on_insert__data={"name": name}, set_on_insert__created_by=request.api_user,
+        )
+        return APIResponseService.success(data={"unit": name}, request=request)
+    names = Product.objects(organization=org).distinct("unit")
+    names.extend(r.data["name"] for r in BusinessRecord.objects(organization=org, kind="product_unit").only("data"))
+    units = {name.casefold(): name for name in names if name}
+    return APIResponseService.success(data={"units": [units[key] for key in sorted(units)]}, request=request)
+
+
 @api_login_required
 @api_rate_limit(
     scope="categories.collection",

@@ -450,10 +450,21 @@ class MigrationImportService:
         category = normalized.get("category")
 
         if category is None:
-            raise MigrationImportError(
-                "Validated product category "
-                "is unavailable."
-            )
+            name = str(normalized.get("category_name") or "").strip()
+            if not name:
+                raise MigrationImportError("Product category name is required.")
+            from apps.products.models import Category
+            existing = list(Category.objects(organization=organization, name__iexact=name).limit(2))
+            if len(existing) > 1 or (existing and not existing[0].is_active):
+                raise MigrationImportError(f"Category '{name}' is inactive or ambiguous. Review it in Settings.")
+            if existing:
+                category = existing[0]
+            else:
+                category = Category.objects(organization=organization, name=name).modify(
+                    upsert=True, new=True, set_on_insert__is_active=True,
+                )
+                if not category.is_active:
+                    raise MigrationImportError(f"Activate category '{name}' before importing.")
 
         # Validation results are persisted before import.
         # A referenced category may therefore be either:

@@ -38,7 +38,7 @@ import type {
 } from "@/features/products/types";
 
 import {
-  APIRequestError,
+  apiRequest, APIRequestError,
 } from "@/lib/api/client";
 
 const optionalPriceSchema = z
@@ -199,6 +199,12 @@ export default function ProductDialog({
       open && isEditing,
     );
 
+  const units = useQuery({
+    queryKey: ["product-units"],
+    queryFn: async () => (await apiRequest<{units: string[]}>("/units/")).data.units,
+    enabled: open,
+    staleTime: 0,
+  });
   const categoryQuery =
     useProductCategories();
 
@@ -676,6 +682,7 @@ export default function ProductDialog({
 
                 <input
                   {...register("unit")}
+                  list="product-unit-options"
                   type="text"
                   placeholder="piece"
                   disabled={isPending}
@@ -693,6 +700,10 @@ export default function ProductDialog({
                   "
                 />
 
+                <datalist id="product-unit-options">
+                  {units.data?.map(unit => <option key={unit} value={unit} />)}
+                </datalist>
+                <small>Choose an existing unit or type a new one.</small>
                 {errors.unit ? (
                   <p className="text-sm text-red-600">
                     {errors.unit.message}

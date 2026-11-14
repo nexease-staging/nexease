@@ -390,6 +390,8 @@ class BankTransfer(Document):
 class BankStatementLine(
     EmbeddedDocument
 ):
+    suggested_id = StringField(default="")
+    suggestion_reason = StringField(default="")
     line_number = StringField(
         required=True,
         max_length=50,

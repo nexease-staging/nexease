@@ -191,6 +191,25 @@ def execute_bank_statement_import(
             )
         )
 
+        # Persist the import receipt before attempting optional reconciliation.
+        from apps.finance.services.bank_statement_service import BankStatementService
+        from apps.finance.models import BankTransaction
+        for line in getattr(statement, "lines", []):
+            if not line.suggested_id or not line.external_reference:
+                continue
+            transaction = BankTransaction.objects(
+                id=line.suggested_id, organization=job.organization, bank_account=statement.bank_account,
+                external_reference=line.external_reference, reconciliation_status="UNRECONCILED",
+            ).first()
+            if transaction is None:
+                continue
+            try:
+                BankStatementService.apply_match(user=job.created_by, organization=job.organization,
+                                                 statement=statement, line=line, transaction=transaction)
+            except ValueError:
+                # A competing match is visible in the statement detail on refresh.
+                continue
+
         return result
 
     finally:
