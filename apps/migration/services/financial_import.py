@@ -1,4 +1,5 @@
 """Additional migration types. One payment allocation per row, unique reference required."""
+from .import_dates import calendar_date
 from datetime import datetime
 from mongoengine.errors import ValidationError
 from decimal import Decimal
@@ -20,7 +21,8 @@ def validate_financial(org,kind,row,seen):
             if required and not v:raise ValueError(k+' is required.')
             if len(v)>1000:raise ValueError(k+' is too long.')
             d[k]=v
-            if k.endswith('_date') and v:datetime.fromisoformat(v)
+            if k.endswith('_date') and v:
+                d[k] = calendar_date(v).isoformat()
         key=d.get('reference_number') or d.get('supplier_invoice_number')
         if key in seen:raise ValueError('Duplicate reference in file.')
         seen.add(key)

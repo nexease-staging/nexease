@@ -1,3 +1,4 @@
+from .import_dates import calendar_date
 from apps.business.schema import SCHEMAS
 from apps.business.models import BusinessRecord as Record
 from apps.business.views import validate
@@ -16,6 +17,11 @@ def validate_employee(org,row,seen):
                 d[k]=text in ('true','yes','1')
             elif v is not None:
                 d[k]=str(v).strip()
+                if spec['type'] == 'date' and d[k]:
+                    try:
+                        d[k] = calendar_date(d[k]).isoformat()
+                    except ValueError as exc:
+                        return {'valid': False, 'errors': [{'field': k, 'code': 'INVALID_DATE', 'message': str(exc)}], 'normalized': {}}
                 if spec['type']=='select' and d[k]:
                     value=d[k].lower()
                     if k=='employment_type':

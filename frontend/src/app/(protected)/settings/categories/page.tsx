@@ -16,6 +16,7 @@ import {
   Tags,
 } from "lucide-react";
 
+import UnitSettings from "@/features/products/components/unit-settings";
 import CategoryDialog from "@/features/categories/components/category-dialog";
 
 import {
@@ -333,6 +334,7 @@ export default function CategoriesPage() {
 
   return (
     <section className="space-y-6">
+      <UnitSettings canCreate={canCreate} />
       <div
         className="
           flex flex-col gap-4

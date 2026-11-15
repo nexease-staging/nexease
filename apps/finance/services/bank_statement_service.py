@@ -363,6 +363,10 @@ class BankStatementService:
                 "reconcile with statement lines."
             )
 
+        if source_type in {"CSV", "XLSX"} and user.has_permission("bank_statements.reconcile"):
+            from .statement_suggestions import prepare
+            prepare(lines, organization, bank_account, BankStatementService._get_line_direction)
+
         statement_number = (
             BankStatementService
             ._generate_statement_number()
@@ -622,9 +626,9 @@ class BankStatementService:
             statement.bank_account
         )
         if line.external_reference:
-            exact_match = (
+            exact_matches = list(
                 BankTransactionRepository
-                .get_match_candidate_by_reference(
+                .list_match_candidates_by_reference(
                     organization=organization,
                     bank_account=bank_account,
                     transaction_types=(
@@ -637,12 +641,14 @@ class BankStatementService:
                 )
             )
 
-            if exact_match:
+            if len(exact_matches) > 1:
+                return {"match_type": "AMBIGUOUS", "transaction": None, "candidate_count": len(exact_matches)}
+            if exact_matches:
                 return {
                     "match_type":
                         "EXACT_REFERENCE",
                     "transaction":
-                        exact_match,
+                        exact_matches[0],
                 }
         transaction_date = (
             line.transaction_date
@@ -848,58 +854,25 @@ class BankStatementService:
             matched_at
         )
 
-        transaction = (
-            BankTransactionRepository
-            .update_reconciliation(
-                transaction=transaction,
-                reconciliation_status=(
-                    "RECONCILED"
-                ),
-                reconciled_at=(
-                    matched_at
-                ),
-            )
-        )
-
-        try:
-            (
-                BankStatementRepository
-                .save_statement(
-                    statement=statement
-                )
-            )
-
-            statement = (
-                BankStatementService
-                .update_statement_reconciliation_status(
-                    statement=statement,
-                )
-            )
-
-        except Exception:
-            try:
-                (
-                    BankTransactionRepository
-                    .update_reconciliation(
-                        transaction=transaction,
-                        reconciliation_status=(
-                            "UNRECONCILED"
-                        ),
-                        reconciled_at=None,
-                    )
-                )
-
-                line.match_status = (
-                    "UNMATCHED"
-                )
-
-                line.matched_transaction = None
-                line.matched_at = None
-
-            except Exception:
-                pass
-
-            raise
+        from apps.finance.models import BankTransaction, BankStatement
+        claimed = BankTransaction.objects(
+            id=transaction.id, organization=organization, bank_account=statement.bank_account,
+            reconciliation_status="UNRECONCILED",
+        ).update_one(set__reconciliation_status="RECONCILED", set__reconciled_at=matched_at)
+        if not claimed:
+            raise ValueError("Another operation already reconciled this transaction.")
+        changed = BankStatement.objects(
+            id=statement.id, organization=organization, status__ne="CANCELLED",
+            __raw__={"lines": {"$elemMatch": {"line_number": line.line_number, "match_status": "UNMATCHED"}}},
+        ).update_one(set__lines__S__match_status="MATCHED",
+                     set__lines__S__matched_transaction=transaction,
+                     set__lines__S__matched_at=matched_at)
+        if not changed:
+            BankTransaction.objects(id=transaction.id, reconciled_at=matched_at).update_one(
+                set__reconciliation_status="UNRECONCILED", unset__reconciled_at=1)
+            raise ValueError("This statement line changed. Refresh to see its current match.")
+        statement.reload()
+        statement = BankStatementService.update_statement_reconciliation_status(statement=statement)
 
         return statement
 
@@ -1070,21 +1043,10 @@ class BankStatementService:
             BankStatement,
         )
 
-        statements = BankStatement.objects(
-            organization=organization,
-            status__ne="CANCELLED",
-        )
-
-        return any(
-            (
-                line.match_status == "MATCHED"
-                and line.matched_transaction is not None
-                and line.matched_transaction.id
-                == transaction.id
-            )
-            for statement in statements
-            for line in statement.lines
-        )
+        return BankStatement.objects(
+            organization=organization, status__ne="CANCELLED",
+            lines__match={"match_status": "MATCHED", "matched_transaction": transaction},
+        ).only("id").first() is not None
 
     @staticmethod
     def get_statement_line(

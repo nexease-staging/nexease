@@ -236,6 +236,8 @@ export type BankStatementLineMatchStatus =
   | "IGNORED";
 
 export interface BankStatementLine {
+  suggested_id?: string;
+  suggestion_reason?: string;
   line_number: number;
   transaction_date: string;
   value_date: string | null;

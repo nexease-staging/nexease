@@ -996,6 +996,8 @@ class BankStatementAPISerializer:
                 )
                 else None
             ),
+            "suggested_id": line.suggested_id,
+            "suggestion_reason": line.suggestion_reason,
             "match_status":
                 line.match_status,
             "matched_transaction": (

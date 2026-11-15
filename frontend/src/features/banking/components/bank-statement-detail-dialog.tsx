@@ -263,9 +263,10 @@ function autoMatch(
 
 function manualMatch(
   lineNumber: number,
+  suggestion?: string,
 ): void {
   const transactionId =
-    selectedTransactions[lineNumber];
+    suggestion ?? selectedTransactions[lineNumber];
 
   if (!transactionId) {
     return;
@@ -690,6 +691,13 @@ function cancelStatement(): void {
                           &&
                           statement.status !== "CANCELLED" ? (
                             <div className="min-w-80 space-y-2">
+                              {line.suggested_id && <div className="space-y-1">
+                                <p>{line.suggestion_reason}</p>
+                                <button type="button" disabled={isMutating} className="nx-button"
+                                  onClick={() => manualMatch(line.line_number, line.suggested_id)}>
+                                  Confirm suggested match
+                                </button>
+                              </div>}
                               <div className="flex gap-2">
                                 <SearchSelect
                                   value={

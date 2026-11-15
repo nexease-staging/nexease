@@ -226,7 +226,7 @@ class BankTransactionRepository:
         )
 
     @staticmethod
-    def get_match_candidate_by_reference(
+    def list_match_candidates_by_reference(
         *,
         organization,
         bank_account,
@@ -250,7 +250,7 @@ class BankTransactionRepository:
         ).order_by(
             "transaction_date",
             "created_at",
-        ).first()
+        ).limit(2)
 
     @staticmethod
     def queryset_for_organization(

@@ -1,4 +1,5 @@
-from csv import DictReader
+from datetime import datetime, time
+from csv import DictReader, Sniffer, Error
 from io import BytesIO, StringIO
 from pathlib import Path
 
@@ -32,6 +33,14 @@ class MigrationFileParser:
             .strip()
             .split()
         )
+
+    @staticmethod
+    def _csv_reader(text):
+        try:
+            dialect = Sniffer().sniff(text[:8192], delimiters=",;\t|")
+        except Error:
+            dialect = "excel"
+        return DictReader(StringIO(text), dialect=dialect)
 
     @classmethod
     def parse(
@@ -175,9 +184,7 @@ class MigrationFileParser:
                 "CSV file must use UTF-8 encoding."
             ) from exc
 
-        reader = DictReader(
-            StringIO(text)
-        )
+        reader = cls._csv_reader(text)
 
         if reader.fieldnames is None:
             raise MigrationFileParserError(
@@ -316,9 +323,7 @@ class MigrationFileParser:
                 "CSV file must use UTF-8 encoding."
             ) from exc
 
-        reader = DictReader(
-            StringIO(text)
-        )
+        reader = cls._csv_reader(text)
 
         if reader.fieldnames is None:
             raise MigrationFileParserError(
@@ -542,6 +547,9 @@ class MigrationFileParser:
     ):
         if value is None:
             return None
+
+        if isinstance(value, datetime) and value.time() == time.min:
+            return value.date().isoformat()
 
         if hasattr(
             value,
