@@ -3,13 +3,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { AlertTriangle, ChevronLeft, ChevronRight, CircleDollarSign, SlidersHorizontal, Plus, FilePlus2, FileText, RefreshCw, Search, TrendingUp, Zap } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, CircleDollarSign, SlidersHorizontal, Plus, FilePlus2, FileText, RefreshCw, Search, TrendingUp } from "lucide-react";
 import { InvoiceZip } from "@/features/business/operations-panels";
 import { useAuth } from "@/features/auth/auth-context";
 import { useCustomerList } from "@/features/customers/hooks";
 import { useInvoiceOverview } from "@/features/invoices/overview-hook";
 import InvoiceDetailDialog from "@/features/invoices/components/invoice-detail-dialog";
-import FastInvoice from "@/features/invoices/components/fast-invoice";
+
 import InvoiceDialog from "@/features/invoices/components/invoice-dialog";
 import InvoicePaymentDialog from "@/features/invoices/components/invoice-payment-dialog";
 import { useInvoiceList } from "@/features/invoices/hooks";
@@ -86,20 +86,13 @@ export default function InvoicesView() {
     return <div className="nx-card"><EmptyState icon={FileText} title="No access to invoices" description="Ask an administrator to grant the Invoices permission to your role." /></div>;
   }
 
-  const createButtons = canCreate ? (
-    <>
-      <button type="button" className="nx-button nx-secondary nx-btn-sm" onClick={() => setCreateMode("fast")}><Zap size={16} aria-hidden="true" />Quick invoice</button>
-      <button type="button" className="nx-button nx-btn-sm" onClick={() => setCreateMode("standard")}><FilePlus2 size={16} aria-hidden="true" />New invoice</button>
-    </>
-  ) : null;
-
   return (
     <div className="nx-invoice-list mx-auto max-w-[1400px] space-y-3">
       <PageHeader title="Invoices"
         actions={<div className="flex items-center gap-1">
           <IconButton icon={SlidersHorizontal} label="Filter invoices" onClick={()=>setFiltersOpen(true)}/>
           <IconButton icon={RefreshCw} label="Refresh invoices" disabled={query.isFetching} onClick={()=>void query.refetch()}/>
-          {canCreate ? <IconButton icon={Plus} label="Create invoice" onClick={()=>setCreateMode('fast')} className="nx-primary-icon"/> : null}
+          {canCreate ? <IconButton icon={Plus} label="Create invoice" onClick={()=>setCreateMode("standard")} className="nx-primary-icon"/> : null}
         </div>} />
 
       <div className="nx-kpi-strip">
@@ -210,11 +203,8 @@ export default function InvoicesView() {
       </FilterSheet>
       <InvoiceZip invoices={invoices} />
 
-      {canCreate ? <details><summary className="cursor-pointer py-2 text-sm">More create options</summary><div className="flex gap-2">{createButtons}</div></details> : null}
-
-      <InvoiceDialog open={createMode === "standard"}
+      <InvoiceDialog open={createMode !== null} initialMode="direct"
         onClose={() => setCreateMode(null)} onCreated={(id) => setDetailId(id)} />
-      {createMode === "fast" ? <FastInvoice onClose={() => setCreateMode(null)} onCreated={(id) => setDetailId(id)} /> : null}
       <InvoiceDetailDialog open={detailId !== null} invoiceId={detailId} onClose={() => setDetailId(null)}
         onRecordPayment={(inv) => { setDetailId(null); setPaying(inv); }} />
       <InvoicePaymentDialog open={paying !== null} invoice={paying} onClose={() => setPaying(null)} />

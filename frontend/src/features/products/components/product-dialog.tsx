@@ -156,6 +156,7 @@ const emptyValues: ProductFormValues = {
 };
 
 interface ProductDialogProps {
+  defaultType?: "goods"|"service";
   open: boolean;
   productId: string | null;
   onClose: () => void;
@@ -186,7 +187,7 @@ export default function ProductDialog({
   open,
   productId,
   onClose,
-  onCreated,
+  onCreated, defaultType="goods",
 }: ProductDialogProps) {
   const costConfig=useQuery({queryKey:["business-config"],queryFn:getConfig});
   const canReadCost=costConfig.data?.can_read_cost===true;
@@ -249,11 +250,11 @@ export default function ProductDialog({
 
     if (!productId) {
       reset(
-        emptyValues,
+        {...emptyValues,item_type:defaultType},
       );
     }
   }, [
-    open,
+    open, defaultType,
     productId,
     reset,
     resetCreateMutation,

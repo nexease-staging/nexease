@@ -491,6 +491,7 @@ def product_collection_api(
                     queryset,
                     request,
                     allowed_filters={
+                        "item_type": {"field":"item_type","parser":"string"},
                         "is_active": {
                             "field":
                                 "is_active",

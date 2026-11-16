@@ -4,6 +4,8 @@ import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
 import InvoiceDialog from './invoice-dialog';
 import {apiRequest} from '@/lib/api/client';
 import {createInvoice} from '@/features/invoices/api';
+vi.mock('@/features/auth/auth-context',()=>({useAuth:()=>({authentication:{role:{permissions:[]}}})}));
+vi.mock('@/features/invoices/hooks',()=>({useInvoiceBankAccounts:()=>({data:{bank_accounts:[]}})}));
 vi.mock('@/lib/api/client',()=>({apiRequest:vi.fn()}));
 vi.mock('@/features/invoices/api',()=>({createInvoice:vi.fn()}));
 vi.mock('@/features/sales-orders/hooks',()=>({useSalesOrderList:()=>({data:{sales_orders:[{id:'so1',so_number:'SO-001',customer:{name:'QA Client'}}]}})}));
