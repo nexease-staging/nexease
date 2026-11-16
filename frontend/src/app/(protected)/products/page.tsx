@@ -66,7 +66,11 @@ function formatCurrency(
   ).format(amount);
 }
 
+import CategoriesPage from "../settings/categories/page";
+import UnitSettings from "@/features/products/components/unit-settings";
+
 export default function ProductsPage() {
+  const [section,setSection]=useState<"Products"|"Services"|"Categories"|"Units">("Products");
   const [filtersOpen,setFiltersOpen]=useState(false);
   const [reorderId,setReorderId]=useState<string|null>(null);
   const {
@@ -145,6 +149,7 @@ export default function ProductsPage() {
   const listParameters = useMemo(
     () => ({
       page,
+      item_type: section==="Services"?"service":"goods",
       page_size: 25,
       search:
         search.trim()
@@ -157,7 +162,7 @@ export default function ProductsPage() {
       sort: "name",
     }),
     [
-      activeFilter,
+      activeFilter, section,
       page,
       search,
     ],
@@ -313,7 +318,9 @@ export default function ProductsPage() {
 
   return (
     <section className="space-y-6">
-      <PageHeader title="Products" actions={<>
+      <nav aria-label="Item classification" className="nx-chip-row">{(["Products","Services","Categories","Units"] as const).map(tab=><button key={tab} className="nx-button nx-secondary" aria-pressed={tab===section} onClick={()=>{setSection(tab);setPage(1);setSearch("")}}>{tab}</button>)}</nav>
+      {section==="Categories"?<CategoriesPage/>:section==="Units"?<UnitSettings canCreate={canCreate} expanded/>:<>
+      <PageHeader title={section} actions={<>
         <IconButton icon={SlidersHorizontal} label="Filter products" onClick={()=>setFiltersOpen(true)}/>
         <IconButton icon={RefreshCw} label="Refresh products" disabled={productQuery.isFetching} onClick={()=>void productQuery.refetch()}/>
         {canCreate && <IconButton icon={Plus} label="New product" className="nx-primary-icon" onClick={openCreateDialog}/>}
@@ -802,7 +809,7 @@ export default function ProductsPage() {
       </div>
 
       {reorderId&&<ReorderLevel productId={reorderId} onClose={()=>setReorderId(null)}/>}
-      <ProductDialog
+      <ProductDialog defaultType={section==="Services"?"service":"goods"}
         open={
           productDialogOpen
         }
@@ -819,6 +826,6 @@ export default function ProductsPage() {
           );
         }}
       />
-    </section>
+    </>}</section>
   );
 }

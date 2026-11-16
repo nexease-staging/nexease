@@ -72,6 +72,7 @@ export async function listProducts(
             parameters.page,
           page_size:
             parameters.page_size,
+          item_type: parameters.item_type,
           search:
             parameters.search,
           is_active:

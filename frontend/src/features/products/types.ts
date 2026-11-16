@@ -54,6 +54,7 @@ export interface ProductCategoryListData {
 }
 
 export interface ProductListParameters {
+  item_type?: string;
   page?: number;
   page_size?: number;
   search?: string;

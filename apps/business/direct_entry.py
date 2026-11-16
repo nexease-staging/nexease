@@ -62,7 +62,7 @@ def direct_invoice(request):
             tax=Decimal(money((subtotal-discount)*rate/100))
             item_type=product.item_type if product else raw.get('item_type','goods');hsn=product.hsn_code if product else raw.get('hsn_code','')
             Product(item_type=item_type,hsn_code=hsn).clean()
-            normalized.append(dict(item_type=item_type,hsn_code=hsn,item_name=itemname,sku=sku,name=itemname,unit=unit,product=product,quantity=qty,unit_price=price,tax_rate=rate,discount=discount,line_subtotal=subtotal,line_tax=tax,line_total=subtotal-discount+tax))
+            normalized.append(dict(category_name=text(raw,"category_name",limit=100),item_type=item_type,hsn_code=hsn,item_name=itemname,sku=sku,name=itemname,unit=unit,product=product,quantity=qty,unit_price=price,tax_rate=rate,discount=discount,line_subtotal=subtotal,line_tax=tax,line_total=subtotal-discount+tax))
         warehouse=Warehouse.objects(organization=org,id=warehouse_id,is_active=True).first() if warehouse_id else None
         if warehouse_id and not warehouse:raise ValueError('Warehouse not found.')
         if customer and not customer.is_active:raise ValueError('Customer is inactive.')
@@ -81,9 +81,10 @@ def direct_invoice(request):
         invoice_items=[]
         for n in normalized:
             product=n.pop('product');sku=n.pop('sku');name=n.pop('name');unit=n.pop('unit')
+            category_name=n.pop('category_name') or 'Pending review'
             if not product:
-                category=Category.objects(organization=org,name='Pending review').first()
-                if not category:category=Category(organization=org,name='Pending review',description='Automatically created masters awaiting review.').save()
+                category=Category.objects(organization=org,name__iexact=category_name,is_active=True).first()
+                if not category:category=Category(organization=org,name=category_name).save()
                 product=Product(organization=org,sku=sku,name=name,unit=unit,item_type=n['item_type'],hsn_code=n['hsn_code'],category=category,selling_price=n['unit_price']).save();new_records.append('Product '+sku)
             if warehouse and product.item_type=="goods":
                 stock=Inventory.objects(organization=org,warehouse=warehouse,product=product).first();available=stock.quantity-stock.reserved_quantity if stock else Decimal(0)
@@ -91,6 +92,7 @@ def direct_invoice(request):
             invoice_items.append(InvoiceItem(product=product,unit=unit,**n))
         from .billing import clean_details,settings
         details={**settings(org),**clean_details(p['billing_details'],org,invoice_items)} if 'billing_details' in p else {}
+        if p.get("sale_mode") in ("cash","credit"):details["sale_mode"]=p["sale_mode"]
         goods=any(i.item_type=='goods' for i in invoice_items)
         total=sum(x.line_total for x in invoice_items)
         number=incoming(org,'Invoice',number,document_date=when)

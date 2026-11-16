@@ -116,6 +116,8 @@ export const navigationSections:
           icon: ShoppingCart,
           permission: "sales_orders.read",
         },
+        {label: "Estimates / Quotations", href: "/quotations", icon: FileText, permission:"invoices.read"},
+        {label: "Reports", href: "/reports", icon: ChartSpline},
         {
           label: "Invoices",
           href: "/invoices",
