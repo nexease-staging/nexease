@@ -2,7 +2,7 @@ import json,os
 from datetime import datetime,timedelta
 from uuid import uuid4
 from unittest.mock import patch
-from django.test import SimpleTestCase,RequestFactory
+from django.test import SimpleTestCase,RequestFactory,override_settings
 from mongoengine.connection import get_db
 from apps.organizations.models import Organization
 from apps.accounts.models import User
@@ -63,13 +63,14 @@ class UpgradeTests(SimpleTestCase):
   self.assertTrue(permitted(self.req(),'payroll.manage'))
   self.role.organization=Organization(name='Other',email=self.key+'other@example.com').save();self.role.save()
   self.user.reload();self.assertFalse(permitted(self.req(),'payroll.manage'));self.role.organization.delete()
+ @override_settings(EMAIL_MODE='production')
  def test_quotation_is_saved_and_sent_to_fixed_inbox(self):
   data={'name':'Test','email':'test@example.com','message':'Need inventory','consent':True,'to':'attacker@example.com'}
   with patch('apps.core.quotation.rate'):
    response=quotation(self.req(data))
   self.assertEqual(response.status_code,200,response.content)
   key=json.loads(response.content)['data']['reference']
-  with patch.dict(os.environ,EMAIL_MODE='production',CONTACT_EMAIL='nexease.contact@gmail.com'),patch('django.core.mail.EmailMessage') as message,patch('django.core.mail.get_connection'):
+  with patch.dict(os.environ,CONTACT_EMAIL='nexease.contact@gmail.com'),patch('django.core.mail.EmailMessage') as message,patch('django.core.mail.get_connection'):
    message.return_value.send.return_value=1;deliver_one()
    self.assertEqual(message.call_args.kwargs['to'],['nexease.contact@gmail.com'])
    self.assertEqual(message.call_args.kwargs['reply_to'],['test@example.com'])
