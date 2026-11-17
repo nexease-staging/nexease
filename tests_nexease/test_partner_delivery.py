@@ -33,6 +33,18 @@ class DeliveryTests(unittest.TestCase):
   with self.assertRaises(ValueError):partner_mail.consume(token,'reset','NewSecure#3498')
   get_db().saas_partners.update_one({'_id':'p1'},{'$set':{'verify_expires':datetime.utcnow()-timedelta(seconds=1)}})
   with self.assertRaises(ValueError):partner_mail.consume(token,'verify')
+ def test_welcome_link_verifies_once(self):
+  from urllib.parse import urlparse, parse_qs
+  get_db().saas_partners.update_one({'_id':'p1'},{'$set':{'email_verified':False}})
+  partner_mail.queue_welcome('p1','p@example.com')
+  send=Mock()
+  partner_mail.deliver_one(send)
+  body=send.call_args.args[1]['message']
+  url=next(line for line in body.splitlines() if line.startswith('https://example.com/partners?'))
+  token=parse_qs(urlparse(url).query)['token'][0]
+  partner_mail.consume(token,'verify')
+  self.assertTrue(get_db().saas_partners.find_one({'_id':'p1'})['email_verified'])
+  with self.assertRaises(ValueError):partner_mail.consume(token,'verify')
  def test_delivery_replay_and_ambiguity(self):
   partner_mail.queue_welcome('p1','p@example.com');partner_mail.queue_welcome('p1','p@example.com')
   send=Mock();partner_mail.deliver_one(send);partner_mail.deliver_one(send);self.assertEqual(send.call_count,1)

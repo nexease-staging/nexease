@@ -14,17 +14,41 @@ from pymongo import ReturnDocument
 from .security import cipher
 
 
+def partner_url():
+    base = str(settings.FRONTEND_BASE_URL).rstrip('/')
+    if not base.startswith('https://'):
+        raise ValueError('Secure frontend URL is required for partner email.')
+    return base + '/partners'
+
+
+def issue_link(partner, purpose, welcome=False):
+    if purpose not in ('verify', 'reset'):
+        raise ValueError('Invalid link purpose.')
+    base = partner_url()
+    nonce = secrets.token_urlsafe(32)
+    digest = hashlib.sha256(nonce.encode()).hexdigest()
+    now = datetime.utcnow()
+    identity = {'_id': partner['_id'], 'generation': partner['generation'], 'email': partner['email']}
+    if welcome:
+        identity.update({'email_verified': {'$ne': True}, '$or': [
+            {'verify_digest': {'$exists': False}}, {'verify_expires': {'$lte': now}}]})
+    result = get_db().saas_partners.update_one(identity, {'$set': {
+        purpose+'_digest': digest, purpose+'_expires': now + timedelta(hours=1)}})
+    if not result.matched_count:
+        return None
+    token = signing.dumps({'id': partner['_id'], 'email': partner['email'], 'nonce': nonce,
+                           'purpose': purpose, 'generation': partner['generation']}, salt='partner-links-v1')
+    return digest, base + '?' + urlencode({'token': token, 'purpose': purpose})
+
+
 def request_link(partner, purpose):
-    if purpose not in ('verify','reset'): raise ValueError('Invalid link purpose.')
-    base=str(settings.FRONTEND_BASE_URL).rstrip('/')
-    if not base.startswith('https://'): raise ValueError('Secure frontend URL is required for partner email.')
-    key=cipher()  # Fail before altering tokens if encryption is not configured.
-    nonce=secrets.token_urlsafe(32)
-    digest=hashlib.sha256(nonce.encode()).hexdigest()
-    now=datetime.utcnow()
-    token=signing.dumps({'id':partner['_id'],'email':partner['email'],'nonce':nonce,'purpose':purpose,'generation':partner['generation']},salt='partner-links-v1')
-    get_db().saas_partners.update_one({'_id':partner['_id'],'generation':partner['generation']},{'$set':{purpose+'_digest':digest,purpose+'_expires':now+timedelta(hours=1)}})
-    message=('Verify your email' if purpose=='verify' else 'Reset your password')+' using this link. It expires in one hour.\n'+base+'/partners?'+urlencode({'token':token,'purpose':purpose})
+    key = cipher()
+    link = issue_link(partner, purpose)
+    if not link:
+        raise ValueError('Partner account changed. Sign in again.')
+    digest, url = link
+    now = datetime.utcnow()
+    message = ('Verify your email' if purpose=='verify' else 'Reset your password') + ' using this link. It expires in one hour.\n' + url
     get_db().partner_mail.insert_one({'_id':digest,'partner_id':partner['_id'],'email':partner['email'],'purpose':purpose,'generation':partner['generation'],
         'payload':key.encrypt(json.dumps({'subject':'NexEase partner '+purpose,'message':message}).encode()).decode(),'status':'pending','created_at':now})
 
@@ -52,6 +76,16 @@ def queue_welcome(partner_id, email):
     }},upsert=True)
 
 
+def welcome_message(partner):
+    message = 'Your partner application has been received. Commissions are 20% on the first subscription payment and 10% on renewals, excluding GST, subject to review.'
+    link = issue_link(partner, 'verify', welcome=True) if not partner.get('email_verified') else None
+    if link:
+        message += '\n\nOpen this link and select Confirm to verify your email. The link expires in one hour.\n' + link[1]
+    elif not partner.get('email_verified'):
+        message += '\n\nUse your latest verification email, or sign in to request a fresh link.'
+    return {'subject': 'Welcome to NexEase partners', 'message': message + '\n\nPartner portal\n' + partner_url()}
+
+
 def deliver_one(send=None):
     db=get_db()
     if send is None and settings.EMAIL_MODE!='production':return False
@@ -61,7 +95,7 @@ def deliver_one(send=None):
         partner=db.saas_partners.find_one({'_id':row['partner_id'],'email':row['email'],'status':{'$in':['pending','approved']}})
         if not partner or (row['purpose']!='welcome' and (partner.get('generation')!=row['generation'] or partner.get(row['purpose']+'_digest')!=row['_id'] or partner.get(row['purpose']+'_expires',datetime.min)<=datetime.utcnow())):
             db.partner_mail.update_one({'_id':row['_id']},{'$set':{'status':'cancelled'},'$unset':{'payload':''}});return True
-        data=({'subject':'Welcome to NexEase partners','message':'Your partner application has been received. Sign in to the partner portal, verify your email and await owner approval. Commissions are 20% on the first subscription payment and 10% on renewals, excluding GST, subject to review.'} if row['purpose']=='welcome' else json.loads(cipher().decrypt(row['payload'].encode())))
+        data=(welcome_message(partner) if row['purpose']=='welcome' else json.loads(cipher().decrypt(row['payload'].encode())))
         if send:send(row['email'],data)
         else:
             count=EmailMessage(data['subject'],data['message'],from_email='NexEase <nexease.contact@gmail.com>',to=[row['email']],connection=get_connection(timeout=30)).send(fail_silently=False)
