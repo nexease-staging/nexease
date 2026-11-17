@@ -1,4 +1,5 @@
 import bootstrap
+from django.test import override_settings
 import os
 import unittest
 from contextlib import ExitStack
@@ -19,20 +20,21 @@ class WorkerReleaseTests(unittest.TestCase):
 
     def test_ambiguous_smtp_send_is_held_and_never_automatically_repeated(self):
         key=self.quotation()
-        with patch.dict(os.environ,EMAIL_MODE='production'),patch('django.core.mail.EmailMessage.send',side_effect=TimeoutError('acknowledgement lost')) as send:
+        with override_settings(EMAIL_MODE='production'),patch('django.core.mail.EmailMessage.send',side_effect=TimeoutError('acknowledgement lost')) as send:
             deliver_one();deliver_one()
             send.assert_called_once()
         self.assertEqual(get_db().nexease_quotations.find_one({'_id':key})['status'],'review_required')
 
-    def test_known_pre_send_failure_can_retry_without_sending(self):
+    def test_disabled_smtp_preserves_enquiry_and_retry_budget(self):
         key=self.quotation()
-        with patch.dict(os.environ,EMAIL_MODE='development'),patch('django.core.mail.EmailMessage.send') as send:
+        with override_settings(EMAIL_MODE='development'),patch('django.core.mail.EmailMessage.send') as send:
             deliver_one();send.assert_not_called()
-        self.assertEqual(get_db().nexease_quotations.find_one({'_id':key})['status'],'retry')
+        row=get_db().nexease_quotations.find_one({'_id':key})
+        self.assertEqual((row['status'],row['attempts']),('pending',0))
 
     def test_successful_send_is_not_repeated(self):
         key=self.quotation()
-        with patch.dict(os.environ,EMAIL_MODE='production'),patch('django.core.mail.EmailMessage.send',return_value=1) as send:
+        with override_settings(EMAIL_MODE='production'),patch('django.core.mail.EmailMessage.send',return_value=1) as send:
             deliver_one();deliver_one();send.assert_called_once()
         self.assertEqual(get_db().nexease_quotations.find_one({'_id':key})['status'],'sent')
 

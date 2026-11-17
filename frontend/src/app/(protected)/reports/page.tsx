@@ -7,7 +7,7 @@ import {apiRequest} from "@/lib/api/client";
 const groups:Record<string,Record<string,string>>={
   Transaction:{"Sale report":"sales/document","Purchase report":"purchases/document","Day book":"/journal-entries","General ledger":"/general-ledger","Profit & loss and balance sheet":"/financial-dashboard","Cashflow":"/cash-flow","Trial balance":"/trial-balance"},
   Party:{"Customer outstanding":"/accounts-receivable","Supplier outstanding":"/accounts-payable","Sales by party":"sales/party","Purchases by party":"purchases/party","Party report by sold items":"sales/party-item","Party report by purchased items":"purchases/party-item"},
-  GST:{"GSTR-1, GSTR-3B and GSTR-9 workpapers":"/taxation","Sales summary by HSN":"sales/hsn","SAC report":"sales/sac","Sales GST rate report":"sales/rate","Purchase GST rate report":"purchases/rate"},
+  GST:{"GSTR-1, GSTR-3B and GSTR-9 workpapers":"/taxation/workpapers","Sales summary by HSN":"sales/hsn","SAC report":"sales/sac","Sales GST rate report":"sales/rate","Purchase GST rate report":"purchases/rate"},
   "Items and stock":{"Low stock summary":"inventory/low","Stock summary by item category":"inventory/category","Stock summary":"/inventory","Stock movements":"/stock-movements","Item sales":"sales/item","Item purchases":"purchases/item","Sales by item category":"sales/category","Purchases by item category":"purchases/category"},
   "Business status":{"Bank statements":"/banking","Invoice discount report":"sales/discount","Item-wise discount":"sales/item-discount"},
   Expenses:{"Expense transactions":"expenses/document","Expense categories":"expenses/category","Expense descriptions":"expenses/item"},

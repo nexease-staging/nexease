@@ -72,7 +72,11 @@ def deliver_one(now=None, send_email=None):
     db = get_db()
     # Recover in-app claims safely: Notification's unique key makes replays harmless.
     db.subscription_alerts.update_many({'status': 'sending', 'channel': 'in_app', 'claimed_at': {'$lt': now-timedelta(minutes=5)}}, {'$set': {'status': 'pending'}})
-    row = db.subscription_alerts.find_one_and_update({'status': 'pending'},
+    from django.conf import settings
+    pending = {'status':'pending'}
+    if send_email is None and settings.EMAIL_MODE != 'production':
+        pending['channel'] = 'in_app'
+    row = db.subscription_alerts.find_one_and_update(pending,
         {'$set': {'status': 'sending', 'claimed_at': now}}, sort=[('created_at', 1)], return_document=ReturnDocument.AFTER)
     if not row:
         return False
@@ -95,8 +99,6 @@ def deliver_one(now=None, send_email=None):
         elif send_email:
             send_email(row, user)
         else:
-            if os.getenv('EMAIL_MODE') != 'production':
-                raise ValueError('Production email delivery is not configured')
             count = EmailMessage(row['title'], row['message'],
                 from_email='NexEase <nexease.contact@gmail.com>', to=[user.email],
                 connection=get_connection(timeout=30)).send(fail_silently=False)

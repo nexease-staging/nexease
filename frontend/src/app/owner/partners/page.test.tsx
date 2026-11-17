@@ -19,3 +19,13 @@ it('explains and blocks approval before email verification',async()=>{
  expect(within(screen.getByRole('dialog')).getByRole('button',{name:'Save decision'})).toBeDisabled();
  expect(within(screen.getByRole('dialog')).getByRole('status')).toHaveTextContent('email verification');
 });
+it('enables approval in the open dialog after the partner verifies',async()=>{
+ const partner={id:'p1',name:'Partner',email:'p@example.com',status:'pending',email_verified:false};
+ vi.mocked(apiRequest).mockResolvedValueOnce({data:{partners:[partner],total:1}} as never);
+ render(<Page/>);fireEvent.click(await screen.findByRole('button',{name:'Review application'}));
+ const dialog=within(screen.getByRole('dialog'));
+ expect(dialog.getByRole('button',{name:'Save decision'})).toBeDisabled();
+ vi.mocked(apiRequest).mockResolvedValueOnce({data:{partners:[{...partner,email_verified:true}]}} as never);
+ fireEvent.click(dialog.getByRole('button',{name:'Check verification status'}));
+ await waitFor(()=>expect(dialog.getByRole('button',{name:'Save decision'})).toBeEnabled());
+});

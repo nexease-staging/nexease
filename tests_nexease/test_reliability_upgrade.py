@@ -41,6 +41,17 @@ class ReliabilityTests(unittest.TestCase):
         self.assertEqual(get_db().subscription_alerts.count_documents({'status':'sent'}),8)
         self.assertEqual(len({row['_id'] for row in get_db().subscription_alerts.find()}),8)
 
+    def test_paused_email_keeps_renewal_pending_while_bell_is_delivered(self):
+        alerts.schedule(now=self.end, offsets=[0])
+        self.drain(self.end, None)
+        queue = get_db().subscription_alerts
+        self.assertEqual(queue.count_documents({'channel':'email', 'status':'pending'}), 1)
+        self.assertEqual(Notification.objects.count(), 1)
+        sender = Mock()
+        self.drain(self.end, sender)
+        sender.assert_called_once()
+        self.assertEqual(queue.count_documents({'status':'sent'}), 2)
+
     def test_ist_boundary_not_server_date(self):
         alerts.schedule(now=self.end-timedelta(seconds=1),offsets=[0])
         self.assertEqual(get_db().subscription_alerts.count_documents({}),0)

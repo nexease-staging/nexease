@@ -459,3 +459,6 @@ html[data-native="true"] body:before{content:"";position:fixed;top:0;left:0;righ
  html[data-native=true] .nx-app-shell{padding-top:0}
  html[data-native=true] .nx-master-drawer-overlay{padding-top:max(24px,env(safe-area-inset-top,0px))!important}
 }
+
+.nx-page-help { position:fixed; left:max(.5rem,env(safe-area-inset-left)); bottom:calc(5.5rem + env(safe-area-inset-bottom)); z-index:35; display:grid; place-items:center; width:44px; height:44px; border-radius:50%; background:#173b4c; color:white; box-shadow:0 2px 8px #132a3426; }
+@media(min-width:768px){.nx-page-help{left:auto;right:1rem;bottom:6rem}}
