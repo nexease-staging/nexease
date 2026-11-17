@@ -1,6 +1,7 @@
 "use client";
 import DiscountMode from "@/features/invoices/components/discount-mode";
 import {discountedPayload, previewDiscount} from "@/features/invoices/discount";
+import type {Quotation} from "@/features/invoices/quotation";
 import SearchSelect from "@/components/search-select";
 
 
@@ -253,6 +254,7 @@ const inputClassName = `
 `;
 
 interface SalesOrderDialogProps {
+  sourceQuote?:Quotation;
   open: boolean;
   salesOrderId: string | null;
   canCreateCustomer: boolean;
@@ -263,6 +265,7 @@ interface SalesOrderDialogProps {
 export default function SalesOrderDialog({
   open,
   salesOrderId,
+  sourceQuote,
   canCreateCustomer,
   canCreateProduct,
   onClose,
@@ -404,13 +407,20 @@ export default function SalesOrderDialog({
     resetUpdateMutation();
 
     if (!salesOrderId) {
-      reset(
-        emptyValues(),
-      );
+      const values = emptyValues();
+      if (sourceQuote) {
+        values.notes = sourceQuote.notes;
+        values.customer_id = sourceQuote.customer_details?.id || "";
+        values.items = sourceQuote.items.map(line=>({product_id:line.product_id || "",
+          quantity:line.quantity, unit_price:line.unit_price, tax_rate:line.tax_rate, discount:line.discount}));
+        queueMicrotask(()=>{setCustomerSearch(sourceQuote.customer);setSelectedCustomerLabel(sourceQuote.customer)});
+      }
+      reset(values);
     }
   }, [
     open,
     reset,
+    sourceQuote,
     resetCreateMutation,
     resetUpdateMutation,
     salesOrderId,
@@ -743,7 +753,7 @@ export default function SalesOrderDialog({
         });
       } else {
         await createMutation.mutateAsync(
-          input
+          {...input, quotation:sourceQuote?.number}
         );
       }
 
@@ -1185,15 +1195,13 @@ export default function SalesOrderDialog({
                               selectedProductLabels[
                                 field.id
                               ]
-                              ??
-                              ""
+                              ?? sourceQuote?.items[index]?.name ?? ""
                             }
                             searchValue={
                               productSearches[
                                 field.id
                               ]
-                              ??
-                              ""
+                              ?? sourceQuote?.items[index]?.name ?? ""
                             }
                             disabled={isPending}
                             canCreateProduct={
@@ -1252,7 +1260,7 @@ export default function SalesOrderDialog({
                                 },
                               );
 
-                              setValue(
+                              if (!sourceQuote) setValue(
                                 `items.${index}.unit_price`,
                                 product.selling_price,
                                 {

@@ -55,3 +55,16 @@ it('saves a percent discount as the calculated rupee line discount',async()=>{
  await waitFor(()=>expect(callbacks.onCreated).toHaveBeenCalled());
  expect(apiRequest).toHaveBeenCalledWith('/business/direct-invoices/',expect.objectContaining({body:expect.objectContaining({items:[expect.objectContaining({discount:'30.00'})]})}));
 });
+
+it('opens a reviewed quotation as a direct draft and submits the quotation link',async()=>{
+ const quote={number:"EST-42",date:"2026-11-17",valid_until:"",notes:"Deliver together",customer:"Quoted Buyer",
+   total:"224.20",items:[{name:"Quoted item",quantity:"2",unit_price:"100",tax_rate:"18",discount:"10",total:"224.20"}]};
+ render(<QueryClientProvider client={new QueryClient()}><InvoiceDialog open sourceQuote={quote} initialMode="direct" onClose={vi.fn()}/></QueryClientProvider>);
+ expect(screen.getByLabelText("Customer name *")).toHaveValue("Quoted Buyer");
+ expect(screen.getByLabelText("Notes")).toHaveValue("Deliver together");
+ expect(screen.getByLabelText("Estimated total")).toHaveTextContent("₹224.20");
+ expect(screen.queryByRole("button",{name:"Cash"})).toBeNull();
+ fireEvent.change(screen.getByLabelText("GST treatment"),{target:{value:"unregistered"}});
+ fireEvent.click(screen.getByRole("button",{name:"Save draft invoice"}));
+ await waitFor(()=>expect(apiRequest).toHaveBeenCalledWith("/business/direct-invoices/?quotation=EST-42",expect.objectContaining({method:"POST"})));
+});

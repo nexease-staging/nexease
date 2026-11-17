@@ -1,3 +1,4 @@
+from apps.business.quotation_actions import quotation_conversion
 from apps.core.services.invoice_creation_request import invoice_creation_request
 from apps.business.automation import write_lock
 import json
@@ -789,6 +790,7 @@ def customer_deactivate_api(
     limit=120,
     window_seconds=60,
 )
+@quotation_conversion("order")
 def sales_order_collection_api(
     request,
 ):

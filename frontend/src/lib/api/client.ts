@@ -170,13 +170,13 @@ export async function apiRequest<T>(
     options.headers,
   );
 
-  const kind=method==='POST'?numberKind(path,options.body):undefined;
+  const kind=method==='POST'?numberKind(path.split('?')[0],options.body):undefined;
   if(kind && typeof window!=='undefined' && document.documentElement.dataset.numberDialog==='ready' && !headers.has('X-NexEase-Numbering')){
     headers.set('X-NexEase-Numbering',JSON.stringify(await askNumber(kind,options.body)));
     options={...options,headers};
   }
   let creationReceipt: Awaited<ReturnType<typeof creationRetryKey>> | undefined;
-  if (method === "POST" && ["/business/direct-invoices/", "/invoices/"].includes(path)
+  if (method === "POST" && ["/business/direct-invoices/", "/invoices/"].includes(path.split("?")[0])
       && !headers.has("X-NexEase-Request-Key")) {
     creationReceipt = await creationRetryKey(path, options.body, headers.get("X-NexEase-Numbering"));
     headers.set("X-NexEase-Request-Key", creationReceipt.key);

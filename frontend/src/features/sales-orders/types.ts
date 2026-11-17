@@ -102,6 +102,7 @@ export interface SalesOrderLineInput {
 }
 
 export interface CreateSalesOrderInput {
+  quotation?:string;
   customer_id: string;
   warehouse_id: string;
   order_date: string;
