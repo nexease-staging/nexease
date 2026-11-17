@@ -1,3 +1,4 @@
+from apps.business.quotation_actions import quotation_conversion
 from apps.core.services.invoice_creation_request import invoice_creation_request, mark_invoice_write
 from .numbering import incoming
 from .automation import write_lock
@@ -27,6 +28,7 @@ def text(d,k,required=False,limit=200):
 
 @api_login_required
 @require_http_methods(['POST'])
+@quotation_conversion("invoice")
 @invoice_creation_request("direct")
 @write_lock
 def direct_invoice(request):

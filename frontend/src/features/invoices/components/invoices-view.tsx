@@ -51,7 +51,7 @@ export default function InvoicesView() {
   const [status, setStatus] = useState<InvoiceStatus | "">("");
   const [customerId, setCustomerId] = useState("");
   const [createMode, setCreateMode] = useState<CreateMode>(null);
-  const [detailId, setDetailId] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(() => typeof window==="undefined"?null:new URLSearchParams(window.location.search).get("view"));
   const [paying, setPaying] = useState<InvoiceSummary | null>(null);
 
   // Deep links from Quick Create / dashboard: /invoices?new=1 | ?new=direct | ?status=ISSUED

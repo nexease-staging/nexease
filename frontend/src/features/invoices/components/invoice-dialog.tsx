@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect -- Reset form state on the explicit open/close transition. */
 "use client";
 import {discountedPayload,previewDiscount} from "../discount";
+import type {Quotation} from "../quotation";
 import ItemCategory from "./item-category";
 import DiscountMode from "./discount-mode";
 import {useEffect,useState,useRef} from "react";
@@ -17,10 +18,10 @@ import MasterEntry from "@/components/master-entry";
 import {TaxSelection,invoiceDetailFields} from "@/features/business/invoice-settings";
 import GstLookup from "@/features/business/gst-lookup";
 import BarcodeScan from "@/features/business/barcode-scan";
-type Line={category_name?:string;item_type:string;hsn_code:string;sku:string;name:string;unit:string;quantity:string;unit_price:string;tax_rate:string;discount:string;discount_mode?:"amount"|"percent"};
+type Line={product_id?:string;category_name?:string;item_type:string;hsn_code:string;sku:string;name:string;unit:string;quantity:string;unit_price:string;tax_rate:string;discount:string;discount_mode?:"amount"|"percent"};
 const empty=():Line=>({item_type:"goods",hsn_code:"",sku:"",name:"",unit:"PCS",quantity:"1",unit_price:"0",tax_rate:"0",discount:"0"});
 const today=()=>{const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)};
-export default function InvoiceDialog({open,onClose,onCreated,initialMode="order",quotation=false}:{quotation?:boolean;open:boolean;onClose:()=>void;onCreated?:(id:string)=>void;initialMode?:"direct"|"order"}){
+export default function InvoiceDialog({open,onClose,onCreated,initialMode="order",quotation=false,sourceQuote}:{sourceQuote?:Quotation;quotation?:boolean;open:boolean;onClose:()=>void;onCreated?:(id:string)=>void;initialMode?:"direct"|"order"}){
  const [mode,setMode]=useState(initialMode),[supply,setSupply]=useState(""),[customer,setCustomer]=useState<Record<string,string>>({}),[details,setDetails]=useState<Record<string,string>>({}),[lines,setLines]=useState<Line[]>([empty()]),[message,setMessage]=useState(""),[busy,setBusy]=useState(false);
  const [cash,setCash]=useState(false);
  const [savedCash,setSavedCash]=useState("");
@@ -30,7 +31,7 @@ export default function InvoiceDialog({open,onClose,onCreated,initialMode="order
  const submitting=useRef(false);
  const qc=useQueryClient();const ref=useRef<HTMLDialogElement>(null);
  const orders=useSalesOrderList({page:1,page_size:100,status:"FULFILLED",sort:"-created_at"});
- useEffect(()=>{if(open){setMode(initialMode);setCash(false);setSavedCash("");setCustomer({});setLines([empty()]);setSupply("");setDetails({});setMessage("");ref.current?.showModal()}else ref.current?.close()},[open,initialMode]);
+ useEffect(()=>{if(open){setMode(initialMode);setCash(false);setSavedCash("");setCustomer(sourceQuote?.customer_details??(sourceQuote?{name:sourceQuote.customer}:{}));setLines(sourceQuote?.items.map(item=>({...empty(),...item}))??[empty()]);setSupply("");setDetails({});setMessage("");ref.current?.showModal()}else ref.current?.close()},[open,initialMode,sourceQuote]);
  async function submit(e:React.FormEvent<HTMLFormElement>){
   e.preventDefault();if(submitting.current)return;submitting.current=true;setBusy(true);setMessage("");const f=new FormData(e.currentTarget);
   try{
@@ -42,7 +43,7 @@ export default function InvoiceDialog({open,onClose,onCreated,initialMode="order
    if(savedCash){onClose();onCreated?.(savedCash);return;}
    let id="";
    if(mode==="order"){id=(await createInvoice({...common,sales_order_id:String(f.get("order"))})).id}
-   else{const r=await apiRequest<{id:string}>("/business/direct-invoices/",{method:"POST",body:{...common,invoice_number:String(f.get("number")||""),customer:cash && !customer.name?.trim()?{name:"Walk-in cash customer",code:"WALK-IN-CASH"}:customer,sale_mode:cash?"cash":"credit",items:lines.map(discountedPayload)}});id=r.data.id}
+   else{const r=await apiRequest<{id:string}>("/business/direct-invoices/"+(sourceQuote?"?quotation="+encodeURIComponent(sourceQuote.number):""),{method:"POST",body:{...common,invoice_number:String(f.get("number")||""),customer:cash && !customer.name?.trim()?{name:"Walk-in cash customer",code:"WALK-IN-CASH"}:customer,sale_mode:cash?"cash":"credit",items:lines.map(discountedPayload)}});id=r.data.id}
    if(cash){
      setSavedCash(id);
      try {
@@ -67,9 +68,10 @@ export default function InvoiceDialog({open,onClose,onCreated,initialMode="order
     <button type="button" disabled={busy} onClick={onClose} aria-label="Close invoice" className="nx-icon-btn"><X size={20}/></button>
    </header>
    <div className="nx-editor-body">
-    {!quotation && <div className="flex gap-2" aria-label="Payment terms">{["Credit","Cash"].map(label=><button key={label} type="button" disabled={busy||!!savedCash} aria-pressed={cash===(label==="Cash")} className={"nx-button "+(cash===(label==="Cash")?"":"nx-secondary")} onClick={()=>{setCash(label==="Cash");if(label==="Cash")setMode("direct")}}>{label}</button>)}</div>}
+    {sourceQuote && <p>From quotation {sourceQuote.number}. Review the customer and item matches before saving. Select existing master records to reuse them.</p>}
+    {!sourceQuote && !quotation && <div className="flex gap-2" aria-label="Payment terms">{["Credit","Cash"].map(label=><button key={label} type="button" disabled={busy||!!savedCash} aria-pressed={cash===(label==="Cash")} className={"nx-button "+(cash===(label==="Cash")?"":"nx-secondary")} onClick={()=>{setCash(label==="Cash");if(label==="Cash")setMode("direct")}}>{label}</button>)}</div>}
     {cash && <label>Cash receipt account<select name="cash_account" required className="nx-input"><option value="">Select account</option>{accounts.data?.bank_accounts.map(a=><option key={a.id} value={a.id}>{a.account_name}</option>)}</select></label>}
-    {!cash && !quotation && <div className="flex flex-wrap gap-2" role="group" aria-label="Invoice source">{(["direct","order"] as const).map(value=><button type="button" key={value} aria-pressed={mode===value} className={"nx-button "+(mode===value?"":"nx-secondary")} onClick={()=>setMode(value)}>{value==="direct"?"Direct invoice":"From sales order"}</button>)}</div>}
+    {!sourceQuote && !cash && !quotation && <div className="flex flex-wrap gap-2" role="group" aria-label="Invoice source">{(["direct","order"] as const).map(value=><button type="button" key={value} aria-pressed={mode===value} className={"nx-button "+(mode===value?"":"nx-secondary")} onClick={()=>setMode(value)}>{value==="direct"?"Direct invoice":"From sales order"}</button>)}</div>}
     <div className="nx-editor-columns">
      <section className="nx-panel space-y-4"><h3 className="nx-editor-section-title"><UserRound size={18}/>Customer information</h3>
       {mode==="order"?<label>Fulfilled sales order *<select name="order" required className="nx-input"><option value="">Choose an order</option>{orders.data?.sales_orders.map(o=><option value={o.id} key={o.id}>{o.so_number} · {o.customer.name}</option>)}</select>{orders.error&&<p role="alert">{orders.error.message}</p>}</label>:<>
@@ -94,9 +96,9 @@ export default function InvoiceDialog({open,onClose,onCreated,initialMode="order
      <div className="nx-invoice-lines"><table><thead><tr><th>Product / service</th><th>Quantity</th><th>Rate ₹</th><th>Discount ₹</th><th>GST %</th><th>Total ₹</th><th><span className="sr-only">Actions</span></th></tr></thead><tbody>
       {lines.map((line,i)=><tr key={i}>
        <td data-label={"Item "+(i+1)} className="nx-invoice-item-cell">
-        <BarcodeScan onSelect={r=>update(i,{sku:r.code,name:r.name,item_type:r.item_type||"goods",hsn_code:r.hsn_code||"",unit:r.unit||"PCS",unit_price:r.selling_price||"0"})} renderInput={(scan,inputRef,ready)=><MasterEntry kind="products" label={"name line "+(i+1)} placeholder="Search or add item" required value={line.name} inputRef={inputRef} scanMode={ready} onScan={scan}
+        <BarcodeScan onSelect={r=>update(i,{product_id:r.id,sku:r.code,name:r.name,item_type:r.item_type||"goods",hsn_code:r.hsn_code||"",unit:r.unit||"PCS",unit_price:r.selling_price||"0"})} renderInput={(scan,inputRef,ready)=><MasterEntry kind="products" label={"name line "+(i+1)} placeholder="Search or add item" required value={line.name} inputRef={inputRef} scanMode={ready} onScan={scan}
          onChange={name=>setLines(prev=>prev.map((l,j)=>i===j?(l.sku?{...empty(),quantity:l.quantity,name}:{...l,name}):l))}
-         onSelect={r=>update(i,{sku:r.code,name:r.name,item_type:r.item_type||"goods",hsn_code:r.hsn_code||"",unit:r.unit||"PCS",unit_price:r.selling_price||"0"})}/>}/>
+         onSelect={r=>update(i,{product_id:r.id,sku:r.code,name:r.name,item_type:r.item_type||"goods",hsn_code:r.hsn_code||"",unit:r.unit||"PCS",unit_price:r.selling_price||"0"})}/>}/>
         {!quotation && !line.sku && hasPermission(permissions,"products.create") && <ItemCategory value={line.category_name||""} onChange={category_name=>update(i,{category_name})}/>}
         <details className="mt-2"><summary className="text-xs cursor-pointer">Type, HSN/SAC, SKU & unit</summary><div className="mt-2 grid grid-cols-2 gap-2">
          <label className="text-xs">Type<select aria-label={"item_type line "+(i+1)} className="nx-input" value={line.item_type} onChange={e=>update(i,{item_type:e.target.value})}><option value="goods">Goods</option><option value="service">Service</option></select></label>
@@ -112,7 +114,7 @@ export default function InvoiceDialog({open,onClose,onCreated,initialMode="order
     </section>}
     <div className="nx-editor-columns">
      <section className="nx-panel"><h3 className="nx-editor-section-title">Terms & additional details</h3>
-      <label className="mt-4 block text-sm">Notes<textarea name="notes" className="nx-input" placeholder="Add a note for this invoice"/></label>
+      <label className="mt-4 block text-sm">Notes<textarea name="notes" defaultValue={sourceQuote?.notes} className="nx-input" placeholder="Add a note for this invoice"/></label>
       <details className="mt-4"><summary className="nx-editor-disclosure">PO, service period, delivery & additional details</summary><div className="mt-4 grid gap-4 sm:grid-cols-2">{invoiceDetailFields.filter(([key])=>key!=="place_of_supply").map(([key,label])=><label className="text-sm" key={key}>{label}<input className="nx-input" type={["po_date","service_from","service_to"].includes(key)?"date":"text"} value={details[key]||""} onChange={e=>setDetails({...details,[key]:e.target.value})}/></label>)}</div></details>
      </section>
      {mode==="direct"&&<section className="nx-panel nx-invoice-totals"><h3 className="nx-editor-section-title">Invoice summary</h3><dl><div><dt>Subtotal</dt><dd>{amount(totals.subtotal)}</dd></div><div><dt>Discount</dt><dd>− {amount(totals.discount)}</dd></div><div><dt>Taxable / supply value</dt><dd>{amount(totals.subtotal-totals.discount)}</dd></div><div><dt>Total GST</dt><dd>{amount(totals.tax)}</dd></div><div className="nx-invoice-grand-total"><dt>Estimated total</dt><dd><output aria-label="Estimated total">{amount(totals.subtotal-totals.discount+totals.tax)}</output></dd></div></dl><p className="mt-3 text-xs text-slate-500">The saved invoice is validated and calculated by NexEase.</p></section>}

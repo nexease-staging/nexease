@@ -216,7 +216,7 @@ export default function SalesOrdersPage() {
     detailSalesOrderId,
     setDetailSalesOrderId,
   ] = useState<string | null>(
-    null
+    () => typeof window==="undefined"?null:new URLSearchParams(window.location.search).get("view")
   );
 
   const [

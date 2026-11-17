@@ -109,12 +109,13 @@ export async function getSalesOrder(
 export async function createSalesOrder(
   input: CreateSalesOrderInput,
 ): Promise<SalesOrderDetail> {
+  const {quotation,...order} = input;
   const response =
     await apiRequest<SalesOrderData>(
-      "/sales-orders/",
+      "/sales-orders/"+(quotation?"?quotation="+encodeURIComponent(quotation):""),
       {
         method: "POST",
-        body: input,
+        body: order,
       },
     );
 

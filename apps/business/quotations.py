@@ -41,9 +41,10 @@ def price_quote(raw):
             raise ValueError("Discount exceeds item value.")
         gross = net + Decimal(money(net * tax / 100))
         total += gross
-        lines.append(dict(name=name.strip(), quantity=str(qty), unit_price=money(rate), discount=money(discount),
+        identity = {k: str(item[k])[:200] for k in ("product_id","sku","unit","item_type","hsn_code","category_name") if item.get(k)}
+        lines.append(dict(**identity,name=name.strip(), quantity=str(qty), unit_price=money(rate), discount=money(discount),
                           tax_rate=str(tax), total=money(gross)))
-    return dict(customer=party.strip(), date=when.isoformat(), valid_until=expiry, items=lines,
+    return dict(customer_details={k:str(customer[k])[:500] for k in ("id","name","code","gstin","address","email","phone","state") if customer.get(k)}, customer=party.strip(), date=when.isoformat(), valid_until=expiry, items=lines,
                 total=money(total), notes=str(raw.get("notes", ""))[:1000])
 
 
@@ -61,6 +62,13 @@ def quotations(request):
             return R.success(data={"number": quote.key}, request=request)
         page = max(1, int(request.GET.get("page", "1")))
         rows = list(records.order_by("-created_at", "-id").skip((page-1)*25).limit(26))
-        return R.success(data={"rows": [dict(number=x.key, **x.data) for x in rows[:25]], "more": len(rows)>25}, request=request)
+        page_rows = [dict(number=x.key, **x.data) for x in rows[:25]]
+        order_rows = {r["conversion"]["id"]: r for r in page_rows
+                      if r.get("conversion", {}).get("kind") == "order" and r["conversion"].get("id")}
+        if order_rows:
+            from apps.sales.models import Invoice
+            for invoice in Invoice.objects(organization=request.api_organization, sales_order__in=list(order_rows)).only("invoice_number", "sales_order").no_dereference():
+                order_rows[str(invoice.sales_order.id)]["linked_invoice"] = {"id":str(invoice.id), "number":invoice.invoice_number}
+        return R.success(data={"rows": page_rows, "more": len(rows)>25}, request=request)
     except (ValueError, TypeError) as exc:
         return R.validation_error(message=str(exc), request=request)
