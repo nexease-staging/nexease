@@ -8,7 +8,8 @@ from xml.sax.saxutils import escape
 
 from django.http import HttpResponse
 from django.views.decorators.http import require_GET
-from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table
+from reportlab.lib import colors
+from reportlab.platypus import TableStyle, Image, Paragraph, SimpleDocTemplate, Spacer, Table
 from apps.core.api.decorators import api_login_required
 from apps.core.services.api_response_service import APIResponseService as R
 from .models import BusinessRecord
@@ -49,7 +50,7 @@ def quotation_conversion(kind):
 @api_login_required
 @require_GET
 def quotation_pdf(request, number):
-    from .billing import settings
+    from .billing import settings, TEMPLATES
     from .print_documents import document_styles
     from .views import permitted
     if not permitted(request,"invoices.read"):
@@ -63,7 +64,11 @@ def quotation_pdf(request, number):
     def paragraph(value, style="Normal"):
         return Paragraph(escape(str(value)).replace("\n","<br/>"),styles[style])
     story = []
-    logo = settings(org).get("logo")
+    branding = settings(org)
+    template = next((row for row in TEMPLATES if row[0]==branding.get("template")), TEMPLATES[0])
+    accent = colors.HexColor(branding.get("accent_color") or template[2])
+    styles["Title"].textColor = accent
+    logo = branding.get("logo")
     if logo:
         image = Image(BytesIO(base64.b64decode(logo.split(",",1)[-1])))
         image._restrictSize(110,48)
@@ -83,8 +88,15 @@ def quotation_pdf(request, number):
         discount_total += discount
         tax_total += Decimal(item["total"]) - subtotal + discount
         rows.append([item[k] for k in ("name","quantity","unit_price","discount","tax_rate","total")])
-    story.extend([Spacer(1,12),Table([[paragraph(v) for v in row] for row in rows],
-        colWidths=[135,38,70,72,46,75],repeatRows=1),
+    table = Table([[paragraph(v) for v in row] for row in rows], colWidths=[135,38,70,72,46,75], repeatRows=1)
+    rules = [('VALIGN',(0,0),(-1,-1),'TOP'),('LINEBELOW',(0,0),(-1,0),2,accent),
+             ('BACKGROUND',(0,0),(-1,0),colors.HexColor('#eef3f6'))]
+    if template[3] in ('grid','compact','retail'):
+        rules.append(('GRID',(0,0),(-1,-1),0.3,colors.lightgrey))
+    elif template[3] in ('stripe','banner'):
+        rules.append(('ROWBACKGROUNDS',(0,1),(-1,-1),[colors.white,colors.HexColor('#f6f8fa')]))
+    table.setStyle(TableStyle(rules))
+    story.extend([Spacer(1,12),table,
         paragraph("Discount ₹"+money(discount_total)), paragraph("GST ₹"+money(tax_total)),
         paragraph("Quotation total ₹"+data["total"],"Heading2"),paragraph(data.get("notes",""))])
     output = BytesIO()

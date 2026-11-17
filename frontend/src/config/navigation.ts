@@ -53,7 +53,7 @@ export const navigationSections:
       {label:"Workforce dashboard",href:"/workforce",icon:Users,permission:"payroll.read"},
       ...[{label:"Employees",path:"employees",icon:Users,permission:"payroll.read"},{label:"Sites",path:"sites",icon:Building2,permission:"labour.read"},{label:"Assignments",path:"assignments",icon:ListChecks,permission:"labour.read"},{label:"Daily attendance",path:"attendance",icon:ClipboardList,permission:"labour.read"},{label:"Timesheets",path:"timesheets",icon:FileText,permission:"labour.read"},{label:"Leave & approvals",path:"leave",icon:ListChecks,permission:"payroll.read"},{label:"Advances",path:"advances",icon:Banknote,permission:"payroll.read"},{label:"Monthly pay inputs",path:"inputs",icon:ClipboardList,permission:"payroll.read"},{label:"Pay runs",path:"payruns",icon:Banknote,permission:"payroll.read"},{label:"Payslips",path:"payslips",icon:FileText,permission:"payroll.read"},{label:"Client billing",path:"billing",icon:ReceiptText,permission:"labour.read"},{label:"Accounts",path:"accounts",icon:BookOpen,permission:"payroll.read"},{label:"Reports",path:"reports",icon:ChartSpline,permission:"payroll.read"},{label:"Settings",path:"settings",icon:Settings,permission:"payroll.read"}].map(({path,...item})=>({...item,href:"/workforce/"+path}))
     ]},
-    {label:"Taxation",items:[{label:"GST & tax workpapers",href:"/taxation",icon:ReceiptText,permission:"taxation.read"}]},
+    {label:"Taxation",items:[{label:"GST review",href:"/taxation",icon:ReceiptText,permission:"taxation.read"},{label:"Tax workpapers",href:"/taxation/workpapers",icon:FileText,permission:"taxation.read"}]},
     {
       label: "Overview",
       items: [

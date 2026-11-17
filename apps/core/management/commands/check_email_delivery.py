@@ -37,6 +37,8 @@ class Command(BaseCommand):
             'owner_key_fingerprint':fingerprint('OWNER_ENCRYPTION_KEY'),
             'frontend_base_url':getattr(settings,'FRONTEND_BASE_URL',''),
         }
+        for name in ('partner_mail','subscription_alerts','nexease_quotations'):
+            report[name] = {r['_id']:r['count'] for r in db[name].aggregate([{'$group':{'_id':'$status','count':{'$sum':1}}}])}
         self.stdout.write(json.dumps(report,indent=2))
         if unreadable:self.stdout.write('ACTION: Mailbox credentials cannot be decrypted here. Restore the original MAILBOX_ENCRYPTION_KEY on backend and worker, or reconnect affected mailboxes. Do not generate another key.')
         if not recent:self.stdout.write('ACTION: Start or repair the Render background worker using this same database and encryption keys. Do not resend pending documents.')

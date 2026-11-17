@@ -39,11 +39,12 @@ def deliver_one():
     db=get_db().nexease_quotations;now=datetime.utcnow()
     # SMTP acknowledgement is not an exactly-once protocol. Ambiguous sends
     # remain visible for review rather than automatically duplicating emails.
+    if settings.EMAIL_MODE != "production":
+        return
     item=db.find_one_and_update({'status':{'$in':['pending','retry']},'attempts':{'$lt':3},'$or':[{'next_at':{'$exists':False}},{'next_at':{'$lte':now}}]}, {'$set':{'status':'sending','started_at':now},'$inc':{'attempts':1}},return_document=ReturnDocument.AFTER)
     if not item:return
     send_started=False
     try:
-        if os.getenv('EMAIL_MODE','development')!='production':raise ValueError('Production email is not enabled.')
         recipient=os.getenv('CONTACT_EMAIL','nexease.contact@gmail.com')
         validate_email(recipient)
         body='\n'.join(k.title()+': '+item[k] for k in ('name','email','phone','business','service','message'))+'\nReference: '+item['_id']

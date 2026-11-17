@@ -1,5 +1,4 @@
 """Encrypted partner email outbox. Ambiguous SMTP sends are held for review."""
-import os
 import json
 import secrets
 import hashlib
@@ -55,7 +54,7 @@ def queue_welcome(partner_id, email):
 
 def deliver_one(send=None):
     db=get_db()
-    if send is None and os.getenv('EMAIL_MODE')!='production':return False
+    if send is None and settings.EMAIL_MODE!='production':return False
     row=db.partner_mail.find_one_and_update({'status':'pending'},{'$set':{'status':'sending','claimed_at':datetime.utcnow()}},sort=[('created_at',1)],return_document=ReturnDocument.AFTER)
     if not row:return False
     try:
