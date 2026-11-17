@@ -142,6 +142,8 @@ def owner_partners(request):
         return R.success(data={'message':'Partner decision saved. Existing partner sessions were invalidated.'}, request=request)
     page = page_number(request)
     scope = {}
+    if request.GET.get('id'):
+        scope['_id'] = request.GET['id']
     status = request.GET.get('status','')
     if status in ('pending','approved','rejected','suspended'): scope['status'] = status
     rows = list(db.saas_partners.find(scope, {'password':0}).sort([('created_at',-1),('_id',1)]).skip((page-1)*25).limit(25))
