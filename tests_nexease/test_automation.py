@@ -69,14 +69,31 @@ class AutomationTests(unittest.TestCase):
   with patch('apps.authorization.services.AuthorizationService.has_permission',return_value=True):
    self.assertEqual(daily_work.__wrapped__(self.req(data)).status_code,200);self.assertEqual(daily_work.__wrapped__(self.req(data)).status_code,400)
   self.assertEqual(Record.objects(kind='timesheets').first().data['billing_rate'],'950')
+ def test_half_day_suggestion_and_approved_leave_on_daily_board(self):
+  work=self.work()
+  work.data['hours']='4'
+  work.save()
+  eid=str(self.emp.id)
+  self.record('leave_requests','L1',dict(employee_id=eid,start_date='2026-10-01',end_date='2026-10-01',days='0.5',leave_type='paid',status='approved'))
+  row=payrow(self.org,self.emp,'2026-10',{},'automatic',suggest=True)
+  self.assertEqual(Decimal(row['inputs']['paid_days']),1)
+  self.assertEqual(row['inputs']['hours'],'4.00')
+  site=self.record('sites','S1',{'name':'ABC'})
+  self.record('assignments','A1',dict(employee_id=eid,site_id=str(site.id),start_date='2026-10-01',end_date='2026-10-31',shift='Day',status='active'))
+  with patch('apps.authorization.services.AuthorizationService.has_permission',return_value=True):
+   for day,count in [('2026-10-01',0),('2026-10-02',1)]:
+    req=RequestFactory().get('/',{'date':day})
+    req.api_organization=self.org
+    req.api_user=self.user
+    self.assertEqual(len(json.loads(daily_work.__wrapped__(req).content)['data']['rows']),count)
  def test_multiple_shifts_count_one_day(self):
   self.work();self.record('timesheets','work2',{'employee_id':str(self.emp.id),'date':'2026-10-01','hours':'4','status':'approved'})
   row=payrow(self.org,self.emp,'2026-10',{},'automatic');self.assertEqual(row['inputs']['paid_days'],'1');self.assertEqual(row['inputs']['hours'],'12.00')
  def test_invoice_retries_are_idempotent(self):
   Customer(organization=self.org,code='C1',name='ABC').save();site=self.record('sites','S1',{'code':'S1','name':'ABC site','customer_code':'C1'})
-  self.record('timesheets','W1',{'site_id':str(site.id),'employee_id':str(self.emp.id),'date':'2026-10-01','status':'approved','billable_units':'1','billing_rate':'950','hours':'8'})
+  self.record('timesheets','W1',{'site_id':str(site.id),'employee_id':str(self.emp.id),'date':'2026-10-01','status':'approved','billable_units':'1','billing_rate':'950','hours':'8','client_ot_rate':'200','overtime_hours':'2'})
   data={'site_id':str(site.id),'month':'2026-10','invoice_date':'2026-10-31','tax_rate':'0'}
   with patch('apps.authorization.services.AuthorizationService.has_permission',return_value=True):a=labour_invoice.__wrapped__(self.req(data));b=labour_invoice.__wrapped__(self.req(data))
   self.assertEqual(a.status_code,200,a.content);self.assertEqual(b.status_code,200,b.content);self.assertEqual(Invoice.objects.count(),1);self.assertTrue(json.loads(b.content)['data']['existing'])
-  inv=Invoice.objects.first();self.assertEqual(inv.total_amount,Decimal('950.00'));self.assertFalse(inv.stock_review_required);self.assertEqual(inv.status,'DRAFT')
+  inv=Invoice.objects.first();self.assertEqual(inv.total_amount,Decimal('1350.00'));self.assertFalse(inv.stock_review_required);self.assertEqual(inv.status,'DRAFT')
 if __name__=='__main__':unittest.main(verbosity=2)

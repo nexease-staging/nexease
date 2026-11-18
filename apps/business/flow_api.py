@@ -8,7 +8,7 @@ from apps.core.api.decorators import api_login_required
 from apps.core.services.api_response_service import APIResponseService as R
 from .views import payload,permitted,validate,key_for,audit
 from .models import BusinessRecord as Record
-from .payroll import amount,money
+from .payroll import amount,money,billable_value
 from .automation import write_lock,advances,run_data,bounds
 from .numbering import REGISTRY,settings,allocate,choice,configure
 
@@ -40,14 +40,19 @@ def daily_work(request):
         p=payload(request) if request.method=='POST' else request.GET;when=date.fromisoformat(p.get('date','')).isoformat()
         prefs=Record.objects(organization=org,kind='workforce_preferences',key='default').first();default_hours=prefs.data.get('daily_hours','8') if prefs else '8'
         assignments=list(Record.objects(organization=org,kind='assignments',data__status='active',data__start_date__lte=when,data__end_date__gte=when))
+        absent = {leave.data['employee_id'] for leave in Record.objects(
+            organization=org, kind='leave_requests', data__status='approved',
+            data__start_date__lte=when, data__end_date__gte=when)}
         available={};rows=[]
         for a in assignments:
+            if a.data['employee_id'] in absent:continue
             e=Record.objects(id=a.data['employee_id'],organization=org,kind='employees').first();site=Record.objects(id=a.data['site_id'],organization=org,kind='sites').first()
             if not e or not site or not e.data.get('active') or e.data['joining_date']>when or (e.data.get('end_date') and e.data['end_date']<when):continue
             available[str(a.id)]=a
             existing=Record.objects(organization=org,kind='timesheets',key=a.data['employee_id']+':'+when+':'+a.data['shift'].casefold()).first()
             rows.append({'site_id':str(site.id),'yesterday':bool(Record.objects(organization=org,kind='timesheets',data__employee_id=str(e.id),data__site_id=str(site.id),data__date=(date.fromisoformat(when)-timedelta(days=1)).isoformat(),data__status='approved').first()),'assignment_id':str(a.id),'employee':e.data['name'],'site':site.data['name'],'shift':a.data['shift'],'hours':default_hours,'overtime_hours':'0','billable_units':'1','recorded':bool(existing)})
         for e in Record.objects(organization=org,kind='employees',data__active=True,data__employment_type='inhouse'):
+            if str(e.id) in absent:continue
             if e.data['joining_date']>when or (e.data.get('end_date') and e.data['end_date']<when):continue
             aid='internal:'+str(e.id)
             available[aid]=type('Internal',(),{'data':{'employee_id':str(e.id),'site_id':'','shift':'OFFICE','billing_rate':'0'}})()
@@ -62,7 +67,7 @@ def daily_work(request):
         for row in incoming:
             aid=row.get('assignment_id');a=available.get(aid)
             if not a or aid in seen:raise ValueError('Invalid or duplicate assignment.')
-            seen.add(aid);d={'employee_id':a.data['employee_id'],'site_id':a.data['site_id'],'date':when,'shift':a.data['shift'],'hours':row.get('hours',default_hours),'overtime_hours':row.get('overtime_hours','0'),'billable_units':row.get('billable_units','1'),'billing_rate':a.data.get('billing_rate','0'),'status':'approved','notes':'Daily attendance board'}
+            seen.add(aid);d={'employee_id':a.data['employee_id'],'site_id':a.data['site_id'],'date':when,'shift':a.data['shift'],'hours':row.get('hours',default_hours),'overtime_hours':row.get('overtime_hours','0'),'billable_units':row.get('billable_units','1'),'billing_rate':a.data.get('billing_rate','0'),'status':'approved','client_ot_rate':a.data.get('client_ot_rate','0'),'notes':'Daily attendance board'}
             d=validate('timesheets',d,org);key=key_for('timesheets',d)
             if Record.objects(organization=org,kind='timesheets',key=key).first():raise ValueError('Work already recorded. Reload the board.')
             eid=d['employee_id'];hours[eid]=hours.get(eid,Decimal(0))+amount(d['hours'])+amount(d['overtime_hours'])
@@ -87,7 +92,7 @@ def balances(request):
         for site in Record.objects(organization=org,kind='sites'):
             linked={tid for i in Invoice.objects(organization=org,workforce_billing_key__startswith=str(site.id)+':') for tid in i.workforce_timesheet_ids}
             work=list(Record.objects(organization=org,kind='timesheets',data__site_id=str(site.id),data__status='approved'))
-            total=sum((amount(w.data['billable_units'])*amount(w.data['billing_rate']) for w in work),Decimal(0));unbilled=sum((amount(w.data['billable_units'])*amount(w.data['billing_rate']) for w in work if str(w.id) not in linked),Decimal(0))
+            total=sum((billable_value(w.data) for w in work),Decimal(0));unbilled=sum((billable_value(w.data) for w in work if str(w.id) not in linked),Decimal(0))
             sites.append({'site_id':str(site.id),'site':site.data['name'],'customer_code':site.data.get('customer_code',''),'approved_work_value':money(total),'unbilled':money(unbilled)})
         data['sites']=sites;data['clients']=[]
         for c in Customer.objects(organization=org,code__in=list({s['customer_code'] for s in sites if s['customer_code']})):
@@ -111,7 +116,7 @@ def labour_invoice(request):
         customer=Customer.objects(organization=org,code=site.data.get('customer_code'),is_active=True).first()
         if not customer:raise ValueError('Link an active customer to this site.')
         work=[w for w in Record.objects(organization=org,kind='timesheets',data__site_id=str(site.id),data__status='approved') if first.isoformat()<=w.data['date']<=last.isoformat()]
-        subtotal=Decimal(money(sum((amount(w.data['billable_units'])*amount(w.data['billing_rate']) for w in work),Decimal(0))))
+        subtotal=Decimal(money(sum((billable_value(w.data) for w in work),Decimal(0))))
         if subtotal<=0:raise ValueError('No approved billable work in this month.')
         rate=amount(p.get('tax_rate'),'Tax rate','100');tax=Decimal(money(subtotal*rate/100));total=subtotal+tax
         when=datetime.fromisoformat(p.get('invoice_date',''));due=datetime.fromisoformat(p['due_date']) if p.get('due_date') else None
