@@ -56,11 +56,12 @@ def bulk_assign(request):
             e=Record.objects(organization=org,kind='employees',id=eid).first()
             if not e or not e.data.get('active') or e.data.get('employment_type')=='inhouse':raise ValueError('Select active site workers.')
             d={'employee_id':eid,'site_id':str(site.id),'start_date':p.get('start_date'),'end_date':p.get('end_date'),'shift':p.get('shift'),'role':row.get('role',''),'billing_rate':row.get('billing_rate') if row.get('billing_rate') not in (None,'') else site.data.get('billing_rate','0'),'status':'active'}
+            d['client_ot_rate']=row.get('client_ot_rate') if row.get('client_ot_rate') not in (None,'') else site.data.get('client_ot_rate','0')
             if d['start_date']<e.data['joining_date'] or (e.data.get('end_date') and d['end_date']>e.data['end_date']):raise ValueError('Assignment is outside employment dates for '+e.data['name'])
             old=Record.objects(organization=org,kind='assignments',data__employee_id=eid,data__site_id=str(site.id),data__start_date=d['start_date'],data__end_date=d['end_date'],data__shift=d['shift'],data__status='active').first()
             clean=validate('assignments',d,org,str(old.id) if old else None)
             if old:
-                if old.data!=clean:raise ValueError('An existing assignment differs. Edit it separately.')
+                if {'client_ot_rate':'0',**old.data}!=clean:raise ValueError('An existing assignment differs. Edit it separately.')
                 continue
             prepared.append(clean)
         count=0

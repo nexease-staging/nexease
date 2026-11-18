@@ -64,7 +64,7 @@ def populate_inputs(request):
         for e in Record.objects(organization=org,kind='employees'):
             if not (e.data.get('active') or e.data.get('end_date')) or e.data['joining_date']>last.isoformat() or (e.data.get('end_date') and e.data['end_date']<first.isoformat()):continue
             if request.method=='GET' and str(e.id)!=params.get('employee_id'):continue
-            row=payrow(org,e,month,policy,'automatic');clean=validate('attendance',row['inputs'],org);prepared.append((e,clean))
+            row=payrow(org,e,month,policy,'automatic',suggest=request.method=='GET');clean=validate('attendance',row['inputs'],org);prepared.append((e,clean))
         if request.method=='GET':
             if len(prepared)!=1:raise ValueError('Select an employee employed in this month.')
             return R.success(data={'inputs':prepared[0][1]},request=request)
