@@ -38,30 +38,55 @@ def advances(org,eid,through='9999-12-31'):
         result.append({'id':str(a.id),'reference':a.data['reference'],'outstanding':money(remaining)})
     return result
 
-def payrow(org,employee,month,policy,mode):
+def payrow(org,employee,month,policy,mode,*,suggest=False):
     first,last=bounds(month);eid=str(employee.id)
     inp=Record.objects(organization=org,kind='attendance',key=eid+':'+month).first()
     d=dict(inp.data if inp else {});source={'mode':mode}
     if mode=='manual':
         if not inp:raise ValueError('Missing monthly inputs: '+employee.data['name'])
     elif mode=='automatic':
-        if employee.data['basis']=='piece':raise ValueError('Piece-rate payroll needs manual monthly units: '+employee.data['name'])
-        if (employee.data.get('pf_member') or employee.data.get('esi_member')) and not inp:raise ValueError('Enter reviewed contribution wage bases in monthly inputs for '+employee.data['name'])
+        if not suggest and employee.data['basis']=='piece':raise ValueError('Piece-rate payroll needs manual monthly units: '+employee.data['name'])
+        if not suggest and (employee.data.get('pf_member') or employee.data.get('esi_member')) and not inp:raise ValueError('Enter reviewed contribution wage bases in monthly inputs for '+employee.data['name'])
         work=[w for w in Record.objects(organization=org,kind='timesheets',data__employee_id=eid,data__status='approved').order_by('id') if first.isoformat()<=w.data['date']<=last.isoformat()]
         days={w.data['date'] for w in work if amount(w.data['hours'])+amount(w.data.get('overtime_hours',0))>0}
         start=max(first,date.fromisoformat(employee.data['joining_date']));end=min(last,date.fromisoformat(employee.data['end_date'])) if employee.data.get('end_date') else last
         if any(not start.isoformat()<=day<=end.isoformat() for day in days):raise ValueError('Work outside employment dates: '+employee.data['name'])
         paid=set()
+        partial={}
+        prefs=Record.objects(organization=org,kind='workforce_preferences',key='default').first()
+        standard_hours=amount(prefs.data.get('daily_hours','8') if prefs else '8')
         for leave in Record.objects(organization=org,kind='leave_requests',data__employee_id=eid,data__status='approved',data__leave_type='paid'):
             lo=date.fromisoformat(leave.data['start_date']);hi=date.fromisoformat(leave.data['end_date'])
             if lo>end or hi<start:continue
-            if amount(leave.data['days'])!=(hi-lo).days+1:raise ValueError('Partial-day paid leave needs manual monthly inputs.')
+            duration=amount(leave.data['days'])
+            if duration!=(hi-lo).days+1:
+                if suggest and lo==hi and 0<duration<1:
+                    day=lo.isoformat()
+                    partial[day]=partial.get(day,Decimal(0))+duration
+                    continue
+                raise ValueError('Partial-day paid leave needs manual monthly inputs.')
             day=max(lo,start)
             while day<=min(hi,end):paid.add(day.isoformat());day+=timedelta(days=1)
         if days&paid:raise ValueError('Work overlaps paid leave: '+employee.data['name'])
-        d.update(employee_id=eid,month=month,period_days=str(last.day),paid_days=str(len(days|paid)),hours=money(sum((amount(w.data['hours']) for w in work),Decimal(0))),overtime_hours=money(sum((amount(w.data.get('overtime_hours',0)) for w in work),Decimal(0))),advance_recovery='0')
+        paid_days=Decimal(len(days|paid))
+        if suggest:
+            hours_by_day={}
+            for entry in work:
+                day=entry.data['date']
+                hours_by_day[day]=hours_by_day.get(day,Decimal(0))+amount(entry.data['hours'])
+            paid_days=Decimal(len(paid))
+            for day in set(hours_by_day)|set(partial):
+                fraction=min(Decimal(1),hours_by_day.get(day,Decimal(0))/standard_hours)
+                combined=fraction+partial.get(day,Decimal(0))
+                if combined>1 or day in paid:
+                    raise ValueError('Review overlapping work and leave on '+day)
+                paid_days+=combined
+            paid_days=paid_days.quantize(Decimal('.01'))
+        d.update(employee_id=eid,month=month,period_days=str(last.day),paid_days=str(paid_days),hours=money(sum((amount(w.data['hours']) for w in work),Decimal(0))),overtime_hours=money(sum((amount(w.data.get('overtime_hours',0)) for w in work),Decimal(0))),advance_recovery='0')
+        if suggest and (employee.data['basis']=='piece' or employee.data.get('pf_member') or employee.data.get('esi_member')):
+            d['advance_recovery']=inp.data.get('advance_recovery','0') if inp else '0'
+            return {'inputs':d}
         source.update(timesheet_ids=[str(w.id) for w in work],paid_leave_days=len(paid),worked_days=len(days))
-        prefs=Record.objects(organization=org,kind='workforce_preferences',key='default').first()
         recovery_percent=amount(prefs.data.get('advance_recovery_percent','100')) if prefs else Decimal(100)
         source['advance_recovery_percent']=str(recovery_percent)
         d['advance_recovery']=money(min(amount(calculate(employee.data,d,policy)['net'])*recovery_percent/100,sum((amount(a['outstanding']) for a in advances(org,eid,last.isoformat())),Decimal(0))))

@@ -9,6 +9,11 @@ def amount(value, label='Amount', maximum='1000000000'):
 
 def money(n): return str(n.quantize(Decimal('.01'), rounding=ROUND_HALF_UP))
 
+def billable_value(entry):
+    regular = amount(entry['billable_units']) * amount(entry['billing_rate'])
+    overtime = amount(entry.get('overtime_hours', 0)) * amount(entry.get('client_ot_rate', 0))
+    return regular + overtime
+
 def calculate(employee, attendance, policy):
     rate=amount(employee['rate'],'Pay rate')
     basis=employee['basis']

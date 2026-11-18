@@ -12,7 +12,7 @@ from apps.core.services.api_response_service import APIResponseService as R
 from apps.business.models import BusinessRecord as Record, BusinessAudit
 from apps.business.schema import SCHEMAS
 from apps.business.profiles import PROFILES
-from apps.business.payroll import amount, calculate, money
+from apps.business.payroll import amount, calculate, money, billable_value
 from .automation import guard_source,write_lock,run_data
 
 def permitted(request, code):return AuthorizationService.has_permission(request.api_user,code)
@@ -65,10 +65,15 @@ def validate(kind, data, org, record_id=None):
         if not clean['site_id']:
             employee=Record.objects(id=clean['employee_id'],organization=org,kind='employees').first()
             if not employee or employee.data.get('employment_type')!='inhouse':raise ValueError('Choose a client site for a site worker.')
-            clean['billable_units']='0';clean['billing_rate']='0'
+            clean['billable_units']='0';clean['billing_rate']='0';clean['client_ot_rate']='0'
         if amount(clean['hours'])+amount(clean['overtime_hours'])>24:raise ValueError('Daily hours exceed 24.')
         assignments=Record.objects(organization=org,kind='assignments',data__employee_id=clean['employee_id'],data__site_id=clean['site_id'])
         if clean['site_id'] and not any(x.data['status']!='cancelled' and x.data['start_date']<=clean['date']<=x.data['end_date'] and x.data['shift'].casefold()==clean['shift'].casefold() for x in assignments):raise ValueError('Create a matching worker/site/shift assignment for this date first.')
+        if clean['site_id'] and not record_id and data.get('client_ot_rate') in (None,''):
+            for assignment in assignments:
+                if assignment.data['status']!='cancelled' and assignment.data['start_date']<=clean['date']<=assignment.data['end_date'] and assignment.data['shift'].casefold()==clean['shift'].casefold():
+                    clean['client_ot_rate']=assignment.data.get('client_ot_rate','0')
+                    break
         other_hours=sum(amount(x.data['hours'])+amount(x.data['overtime_hours']) for x in Record.objects(organization=org,kind='timesheets',data__employee_id=clean['employee_id'],data__date=clean['date']) if str(x.id)!=str(record_id))
         if other_hours+amount(clean['hours'])+amount(clean['overtime_hours'])>24:raise ValueError('Combined site hours exceed 24 for this worker/date.')
     if kind in ('advances','expenses') and amount(clean['amount'])<=0:raise ValueError('Amount must be positive.')
@@ -180,9 +185,12 @@ def records(request,kind,record_id=None):
             c=Customer.objects(organization=org,code=raw['customer_code'],is_active=True).first()
             if not c:raise ValueError('Choose an active client.')
             raw={**raw,'address':raw.get('address') or c.billing_address,'phone':raw.get('phone') or c.phone}
-        if kind=='assignments' and isinstance(raw,dict) and raw.get('billing_rate') in (None,''):
+        if kind=='assignments' and isinstance(raw,dict) :
             site=Record.objects(id=raw.get('site_id'),organization=org,kind='sites').first()
-            if site:raw={**raw,'billing_rate':site.data.get('billing_rate','0')}
+            if site:
+                raw=dict(raw)
+                for field in ('billing_rate','client_ot_rate'):
+                    if raw.get(field) in (None,''):raw[field]=site.data.get(field,'0')
         if request.method=='POST' and kind in ('employees','sites') and isinstance(raw,dict):
             from .numbering import choice,allocate,settings
             nk='Employee' if kind=='employees' else 'Site';selection=choice.get()
@@ -259,13 +267,13 @@ def labour_export(request):
     try:
         start=date.fromisoformat(request.GET.get('from',''));end=date.fromisoformat(request.GET.get('to',''))
         if end<start:raise ValueError('Invalid date range.')
-        rows=[['Date','Worker','Site','Shift','Hours','Overtime hours','Billable units','Rate','Billable value']];totals={}
+        rows=[['Date','Worker','Site','Shift','Hours','Overtime hours','Billable units','Rate','Client OT rate per hour','Billable value']];totals={}
         for x in Record.objects(organization=request.api_organization,kind='timesheets',data__status='approved'):
             d=x.data
             if not start.isoformat()<=d['date']<=end.isoformat():continue
             employee=Record.objects(organization=request.api_organization,id=d['employee_id'],kind='employees').first();site=Record.objects(organization=request.api_organization,id=d['site_id'],kind='sites').first() if d.get('site_id') else None
-            value=amount(d['billable_units'])*amount(d['billing_rate']);key=d['site_id'];totals[key]=totals.get(key,Decimal(0))+value
-            rows.append([d['date'],employee.data['name'] if employee else d['employee_id'],site.data['name'] if site else key,d['shift'],float(amount(d['hours'])),float(amount(d['overtime_hours'])),float(amount(d['billable_units'])),float(amount(d['billing_rate'])),float(value)])
+            value=billable_value(d);key=d['site_id'];totals[key]=totals.get(key,Decimal(0))+value
+            rows.append([d['date'],employee.data['name'] if employee else d['employee_id'],site.data['name'] if site else key,d['shift'],float(amount(d['hours'])),float(amount(d['overtime_hours'])),float(amount(d['billable_units'])),float(amount(d['billing_rate'])),float(amount(d.get('client_ot_rate',0))),float(value)])
         summary=[['Site ID','Billable value before GST']]+[[k,float(v)] for k,v in totals.items()]
         return workbook_response({'Approved timesheets':rows,'Site billing summary':summary,'Read me':[['Labour billing workpaper'],['Only approved timesheets are included. This does not create a sales invoice or payroll attendance.'],['Reconcile approved timesheets, leave and advance records to monthly payroll inputs before approval.']]},'NexEase-Labour-Billing')
     except ValueError as e:return R.validation_error(message=str(e),request=request)
