@@ -71,7 +71,7 @@ export default function SalesDocuments({mode}:{mode:keyof typeof paths}) {
         <label>Place of supply (state code)<input required className={input} name="pos" pattern="[0-9]{2}" inputMode="numeric"/></label>
         <label>Linked sales invoice number (optional)<input className={input} name="invoice_number" defaultValue={invoiceLink} maxLength={50}/></label>
         <label>Delivery address (optional override)<input className={input} name="address" maxLength={500}/></label>
-        <label>Vehicle / transport reference<input className={input} name="transport" maxLength={100}/></label>
+        <label>Vehicle registration (if applicable)<input className={input} name="vehicle_number" maxLength={24}/></label><label>Transport reference<input className={input} name="transport" maxLength={100}/></label>
         <label>Notes<input className={input} name="notes" maxLength={500}/></label></div>
         {lines.map((line,i)=><div key={i} className="grid items-end gap-2 rounded border p-3 sm:grid-cols-5">
           <Picker kind="products" value={line.product_id} onSelect={x=>setLines(v=>v.map((l,j)=>i===j?{...l,product_id:x.id}:l))} label={`Product ${i+1}`}/>

@@ -41,7 +41,7 @@ def render_pdf(doc):
             [p(doc['seller_name']+'\n'+doc['seller_address']+'\nGSTIN: '+(doc['seller_gstin'] or 'Unregistered')),
              p(doc['customer_name']+'\n'+doc['address']+'\nGSTIN: '+(doc['customer_gstin'] or 'Unregistered'))]],colWidths=[250,250])
         parties.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'TOP')]))
-        story += [parties,p('Place of supply: '+doc['pos']),p('Transport reference: '+doc['transport']),
+        story += [parties,p('Place of supply: '+doc['pos']),p('Transport reference: '+doc['transport']),p('Vehicle registration: '+(doc.get('vehicle_number') or '—')),
                   p('Linked invoice: '+doc['invoice_number']),Spacer(1,12)]
         rows=[['Description','HSN','Qty / UOM','Taxable ₹','GST %','Tax ₹']]
         for line in doc['items']:
@@ -75,6 +75,9 @@ def make_challan(org,data):
     address=require_text(data.get('address') or customer.shipping_address or customer.billing_address,'delivery address',1,500)
     seller_address=require_text(org.address,'workspace address in Organization settings',1,500)
     transport=str(data.get('transport') or '').strip()[:100]
+    vehicle=str(data.get('vehicle_number') or '').strip().upper()
+    if len(vehicle)>24 or (vehicle and not re.fullmatch(r'[A-Z0-9 -]+',vehicle)):
+        raise ValueError('Check the vehicle registration number.')
     notes=str(data.get('notes') or '').strip()[:500]
     rows=data.get('items')
     if not isinstance(rows,list) or not 1<=len(rows)<=50:raise ValueError('Add between 1 and 50 goods lines.')
@@ -104,7 +107,7 @@ def make_challan(org,data):
         doc=dict(_id=uuid4().hex,organization_id=orgid,number=f'DC-{year}-{seq:06}',date=dispatch.isoformat(),
                  reason=reason,seller_name=reg.get('legal_name') or org.name,seller_address=seller_address,seller_gstin=gstin,
                  customer_id=str(customer.id),customer_name=customer.name,customer_gstin=customer.gstin or '',address=address,
-                 invoice_id=str(inv.id) if inv else '',invoice_number=inv.invoice_number if inv else '',pos=pos,transport=transport,
+                 invoice_id=str(inv.id) if inv else '',invoice_number=inv.invoice_number if inv else '',pos=pos,transport=transport,vehicle_number=vehicle,
                  notes=notes,items=items,status='issued',created_at=datetime.utcnow())
         db.nexease_delivery_challans.insert_one(doc)
     return doc
