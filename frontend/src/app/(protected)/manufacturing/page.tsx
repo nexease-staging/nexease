@@ -191,6 +191,7 @@ export default function Manufacturing() {
   const read = can("manufacturing.read");
   const list = useQuery({
     queryKey: ["production-list", page, filter],
+    refetchInterval: draft ? false : 1000,
     enabled: read,
     queryFn: async () =>
       (
@@ -284,7 +285,7 @@ export default function Manufacturing() {
   return (
     <section className="space-y-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Manufacturing</h1>
+        <h1 className="text-2xl font-bold">{draft ? (id ? "Edit production plan" : "New manufacturing order") : "Manufacturing"}</h1>
         {write && !draft && (
           <button
             className="nx-button"
@@ -292,8 +293,8 @@ export default function Manufacturing() {
               open("");
               edit(empty());
             }}
-          >
-            New order
+           aria-label="New manufacturing order">
+            ＋ New
           </button>
         )}
       </header>
@@ -322,8 +323,8 @@ export default function Manufacturing() {
             />
           </div>
           {draft.outputs.map((l, i) => (
-            <fieldset key={i} className="space-y-3 border-t py-3">
-              <legend>Finished product {i + 1}</legend>
+            <details open key={i} className="nx-card space-y-3 p-4">
+              <summary className="cursor-pointer font-semibold">Finished product {i + 1}{l.name ? " · " + l.name : ""}</summary>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Pick
                   products
@@ -419,7 +420,7 @@ export default function Manufacturing() {
                   Remove output
                 </button>
               )}
-            </fieldset>
+            </details>
           ))}
           <div className="flex flex-wrap gap-3">
             <button
@@ -681,7 +682,7 @@ export default function Manufacturing() {
             {list.data?.pending ?? "…"} · Completed{" "}
             {list.data?.completed ?? "…"}
           </div>
-          <div className="grid gap-2 sm:grid-cols-3">
+          <details><summary>Search and filter orders</summary><div className="grid gap-2 sm:grid-cols-3">
             {(["search", "from", "to"] as const).map((k) => (
               <Input
                 key={k}
@@ -737,8 +738,8 @@ export default function Manufacturing() {
               <option value="newest">Newest first</option>
               <option value="oldest">Oldest first</option>
             </select>
-          </div>
-          <label>
+          </div></details>
+          <details><summary>Production reports</summary><label>
             Report
             <select
               className="nx-input"
@@ -758,11 +759,11 @@ export default function Manufacturing() {
                   "?" +
                   new URLSearchParams({ ...filter, report, export: "csv" }),
                 "Manufacturing.csv",
-              ).catch((e) => notify(e.message))
+              ).catch((e) => {if(e.name!=="AbortError" && !/share canceled/i.test(e.message))notify(e.message)})
             }
           >
             Export filtered production report
-          </button>
+          </button></details>
           {list.isPending && <p>Loading orders…</p>}
           {list.error && <p role="alert">{list.error.message}</p>}
           {list.data?.count === 0 && <p>No matching manufacturing orders.</p>}
