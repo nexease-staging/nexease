@@ -68,6 +68,7 @@ export const navigationSections:
     {
       label: "Inventory",
       items: [
+        {label:"Manufacturing",href:"/manufacturing",icon:Boxes,permission:"manufacturing.read"},
         {
           label: "Products",
           href: "/products",

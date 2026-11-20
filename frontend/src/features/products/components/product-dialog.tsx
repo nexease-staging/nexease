@@ -1,4 +1,7 @@
 "use client";
+import {useCreateCategory} from "@/features/categories/hooks";
+import {useAuth} from "@/features/auth/auth-context";
+import {hasPermission} from "@/lib/authorization/permissions";
 import {useQuery} from "@tanstack/react-query";
 import {getConfig} from "@/features/business/workspace";
 import HSNSuggestions from "./hsn-suggestions";
@@ -7,7 +10,7 @@ import SearchSelect from "@/components/search-select";
 
 
 import {
-  useEffect,
+  useEffect, useState,
 } from "react";
 
 import {
@@ -206,6 +209,9 @@ export default function ProductDialog({
     enabled: open,
     staleTime: 0,
   });
+  const {authentication}=useAuth();
+  const createCategory=useCreateCategory();
+  const [categoryName,newCategory]=useState("");
   const categoryQuery =
     useProductCategories();
 
@@ -669,6 +675,10 @@ export default function ProductDialog({
                   )}
                 </SearchSelect>
 
+                {hasPermission(authentication?.role.permissions??[],"products.create")&&<details><summary>Add category</summary>
+                  <input className="nx-input" aria-label="New category name" maxLength={100} value={categoryName} onChange={e=>newCategory(e.target.value)}/>
+                  <button type="button" className="nx-button nx-secondary" disabled={!categoryName.trim()||createCategory.isPending} onClick={()=>createCategory.mutate({name:categoryName.trim()},{onSuccess:async c=>{await categoryQuery.refetch();setValue("category_id",c.id,{shouldDirty:true,shouldValidate:true});newCategory("")}})}>Save category</button>
+                  {createCategory.isError&&<p role="alert">{createCategory.error.message}</p>}</details>}
                 {errors.category_id ? (
                   <p className="text-sm text-red-600">
                     {errors.category_id.message}

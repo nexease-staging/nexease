@@ -874,7 +874,7 @@ class JournalEntry(Document):
     source_type = StringField(
         default="MANUAL",
         choices=(
-            "MANUAL",
+            "MANUAL", "MANUFACTURING",
             "PAYROLL", "SALARY_PAYMENT", "EMPLOYEE_ADVANCE", "DAILY_EXPENSE",
             "SALES_INVOICE",
             "CUSTOMER_PAYMENT",

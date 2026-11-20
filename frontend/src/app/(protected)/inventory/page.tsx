@@ -1,4 +1,6 @@
 "use client";
+import Link from "next/link";
+import UnitSettings from "@/features/products/components/unit-settings";
 import SearchSelect from "@/components/search-select";
 
 
@@ -222,6 +224,7 @@ export default function InventoryPage() {
 
   return (
     <section className="space-y-6">
+      {hasPermission(permissions,"products.read") && <div className="space-y-2"><Link className="nx-button nx-secondary" href="/settings/categories">Item categories</Link><UnitSettings canCreate={hasPermission(permissions,"products.create")}/></div>}
       <div
         className="
           flex flex-col gap-4
@@ -645,7 +648,7 @@ export default function InventoryPage() {
                           "
                         >
                           Unit:{" "}
-                          {inventory.product.unit}
+                          {inventory.product.unit}{inventory.product.category && " · "+inventory.product.category}
                         </p>
                       </td>
 

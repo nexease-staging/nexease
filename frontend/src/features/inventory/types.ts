@@ -12,6 +12,7 @@ export interface InventoryProductSummary {
   sku: string;
   name: string;
   unit: string;
+  category?: string;
   is_active?: boolean;
 }
 
