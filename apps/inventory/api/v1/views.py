@@ -132,6 +132,7 @@ def warehouse_collection_api(
                         "pincode",
                     ],
                     allowed_sort_fields={
+                        "id": "id",
                         "code":
                             "code",
                         "name":
@@ -791,6 +792,7 @@ def inventory_collection_api(
                     },
                     search_fields=[],
                     allowed_sort_fields={
+                        "id": "id",
                         "quantity":
                             "quantity",
                         "reserved_quantity":
@@ -1317,6 +1319,7 @@ def stock_movement_collection_api(
                     "notes",
                 ],
                 allowed_sort_fields={
+                    "id": "id",
                     "movement_type":
                         "movement_type",
                     "quantity":
@@ -1555,6 +1558,7 @@ def stock_transfer_collection_api(
                         "notes",
                     ],
                     allowed_sort_fields={
+                        "id": "id",
                         "transfer_number":
                             "transfer_number",
                         "quantity":

@@ -1,4 +1,7 @@
 "use client";
+import {useQuery} from "@tanstack/react-query";
+import {apiRequest} from "@/lib/api/client";
+import Link from "next/link";
 import SearchSelect from "@/components/search-select";
 
 
@@ -294,6 +297,13 @@ const canCreateProduct =
     useSalesOrderList(
       listParameters
     );
+
+  const salesIds=salesOrderQuery.data?.sales_orders.map(x=>x.id).join(",")??"";
+  const production=useQuery({
+    queryKey:["manufacturing-sales-status",salesIds],
+    enabled:!!salesIds&&hasPermission(permissions,"manufacturing.read"),
+    queryFn:async()=>(await apiRequest<{statuses:Record<string,string[]>}>("/business/manufacturing/?sales_ids="+salesIds)).data.statuses
+  });
 
   const customerQuery =
     useCustomerList({
@@ -838,6 +848,7 @@ const canCreateProduct =
                         <p className="font-semibold text-slate-900">
                           {salesOrder.so_number}
                         </p>
+                        {hasPermission(permissions,"manufacturing.read") && <Link href={"/manufacturing?sales_order="+salesOrder.id}>{production.data?.[salesOrder.id]?.join(" / ")||"Production status"}</Link>}
 
                         <p className="text-xs text-slate-500">
                           Delivery:

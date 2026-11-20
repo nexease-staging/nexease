@@ -147,6 +147,7 @@ class InventoryAPISerializer:
                     inventory.product.name,
                 "unit":
                     inventory.product.unit,
+                "category": getattr(getattr(inventory.product, "category", None), "name", ""),
                 "is_active":
                     bool(
                         inventory.product.is_active

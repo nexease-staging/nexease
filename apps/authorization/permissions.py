@@ -24,6 +24,7 @@ ACTION_LABELS = {
 
 
 PERMISSION_DEFINITIONS = [
+    ("inventory", "manufacturing", "Manufacturing", ("read", "manage")),
     ("finance", "expenses", "Daily expenses", ("read", "manage")),
     ("workforce", "payroll", "Payroll", ("read", "manage")),
     ("workforce", "labour", "Labour", ("read", "manage")),
