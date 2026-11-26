@@ -6,7 +6,7 @@ vi.mock('@/lib/api/client',()=>({apiRequest:vi.fn(),apiBinaryRequest:vi.fn()}));
 vi.mock('@/lib/browser/download',()=>({downloadBlob:vi.fn()}));
 vi.mock('./gst-lookup',()=>({default:()=>null}));
 vi.mock('@/components/search-select',()=>({default:()=>null}));
-vi.mock('@/components/nex-dialog',()=>({default:({children}:{children:React.ReactNode})=><div role="dialog">{children}</div>}));
+vi.mock('@/features/auth/auth-context',()=>({useAuth:()=>({authentication:{role:{permissions:['labour.manage']}}})}));
 vi.mock('@tanstack/react-query',()=>({
  useQueryClient:()=>({invalidateQueries:()=>Promise.resolve()}),
  useQuery:({queryKey}:{queryKey:string[]})=>queryKey[0]==='business-config'
@@ -17,7 +17,7 @@ it('submits a shared register only once while the first request is pending',asyn
  let finish!:(value:unknown)=>void;
  vi.mocked(apiRequest).mockImplementation(()=>new Promise(resolve=>{finish=resolve;}) as never);
  render(<BusinessWorkspace kinds={['sites']} title="Sites" description="Client sites"/>);
- fireEvent.click(screen.getByRole('button',{name:'Add record'}));
+ fireEvent.click(screen.getAllByRole('button',{name:'Add site'})[0]);
  fireEvent.change(screen.getByLabelText('Name *'),{target:{value:'Pune site'}});
  const save=screen.getByRole('button',{name:'Save record'});
  const form=save.closest('form')!;

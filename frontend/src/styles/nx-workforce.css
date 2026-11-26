@@ -1,0 +1,26 @@
+/* Workforce: register tabs, form switches, dashboard grid, approvals inbox, workflow steps. */
+.nxw-tabs{display:flex;flex-wrap:wrap;margin-bottom:12px}
+.nxw-switch{display:flex;align-items:center;gap:10px;min-height:44px;font-size:13px;font-weight:650;color:var(--nx-text)}
+.nxw-kpis[data-cols="5"]{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media(max-width:1100px){.nxw-kpis[data-cols="5"]{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.nxw-grid{display:grid;gap:14px;margin-top:14px}
+@media(min-width:1100px){.nxw-grid{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);align-items:start}}
+.nxw-panel-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px}
+.nxw-panel-head h2,.nxw-panel-title{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:750}
+.nxw-panel-head .nxf-segment b{margin-left:5px;padding:0 6px;border-radius:999px;background:var(--nx-surface-muted);font-size:11.5px}
+.nxw-bulk{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:8px 14px;border-top:1px solid var(--nx-border);font-size:13px;color:var(--nx-text-muted)}
+.nxw-empty{display:flex;align-items:center;gap:8px;padding:18px 14px;font-size:13.5px;color:var(--nx-text-muted)}
+.nxw-empty svg{color:var(--nx-success-fg)}
+.nxw-onleave{display:flex;align-items:center;gap:7px;padding:10px 14px;border-top:1px solid var(--nx-border);font-size:12.5px;color:var(--nx-text-muted)}
+.nxw-steps{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.nxw-steps a{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--nx-border);border-radius:12px}
+.nxw-steps a:hover{border-color:var(--nx-primary);background:color-mix(in srgb,var(--nx-primary) 5%,transparent)}
+.nxw-steps a>svg{margin-left:auto;color:var(--nx-text-muted)}
+.nxw-steps strong{display:block;font-size:14px}
+.nxw-steps span span{display:block;font-size:12px;color:var(--nx-text-muted)}
+.nxw-step-num{display:grid;place-items:center;flex:none;width:28px;height:28px;border-radius:999px;background:color-mix(in srgb,var(--nx-primary) 12%,transparent);color:var(--nx-primary);font-weight:800;font-size:13px}
+.nxw-link{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--nx-border);border-radius:12px;font-size:13px}
+.nxw-link:hover{border-color:var(--nx-primary)}
+.nxf-body details.nxf-section>summary{font-size:13px;font-weight:750;color:var(--nx-text)}
+.nxw-quick{display:none}
+@media(max-width:767px){.nxw-quick{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}.nxw-quick .nx-button{justify-content:center}}

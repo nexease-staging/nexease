@@ -81,3 +81,4 @@
  .nxr-table th{position:static}
  .nxr-kpi,.nxl-panel{break-inside:avoid;box-shadow:none}
 }
+@media(max-width:767px){.nxl-header{flex-wrap:wrap}.nxl-header .nxl-toolbar.nxr-keep{display:flex;flex-wrap:wrap}}

@@ -114,7 +114,7 @@ export default function ReportViewer({ id }: { id: string }) {
           <h1>{entry.title}</h1>
           <p className="nx-muted">{data ? (data.dated ? shortRange(data.period.from, data.period.to) : "Current stock, all warehouses") : entry.description}{business ? ` · ${business}` : ""}</p>
         </div>
-        <div className="nxl-toolbar nxr-noprint">
+        <div className="nxl-toolbar nxr-noprint nxr-keep">
           <ActionIcon icon={Star} label={starred ? "Remove from favourites" : "Add to favourites"} onClick={() => setStarred(favourites.toggle(id).includes(id))} />
           <ActionIcon icon={FileSpreadsheet} label="Export CSV" onClick={exportCsv} disabled={!data?.rows.length} />
           <ActionIcon icon={Printer} label="Print or save as PDF" onClick={() => window.print()} disabled={!data} />
