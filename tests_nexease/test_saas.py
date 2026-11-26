@@ -157,6 +157,19 @@ class SaaSTests(unittest.TestCase):
   self.assertEqual(r.status_code,200,r.content);p=AIProposal.objects.get();self.assertEqual(BusinessRecord.objects.count(),0)
   r=self.call(ai.confirm,{'confirm':True},proposal_id=str(p.id));self.assertEqual(r.status_code,200,r.content);p.reload();self.assertEqual(p.state,'saved',p.result)
   r=self.call(ai.confirm,{'confirm':True},proposal_id=str(p.id));self.assertEqual(BusinessRecord.objects(kind='expenses').count(),1)
+ def test_ai_quick_payment_resolves_party_and_skips_model(self):
+  c=Customer(organization=self.org,code='C9',name='Sharma Traders').save()
+  with patch('apps.saas.ai.call_model') as model:r=self.call(ai.prepare,{'message':'Received 5000 from sharma traders by UPI','request_key':'q'*20})
+  model.assert_not_called();self.assertEqual(r.status_code,200,r.content);a=json.loads(r.content)['data']['assist']
+  self.assertEqual((a['kind'],a['form']['type'],a['ready'],a['refs']),('payment_in','payment',True,{'party_id':str(c.id)}))
+  p=AIProposal.objects.get();r=self.call(ai.confirm,{'confirm':True},proposal_id=str(p.id));self.assertEqual(r.status_code,400);self.assertIn(b'Open the form',r.content)
+ def test_ai_review_returns_updated_questions(self):
+  p=self.proposal();p.data['fields']['payment_mode']='';p.save()
+  r=self.call(ai.review,{'data':p.data},proposal_id=str(p.id));a=json.loads(r.content)['data']['assist']
+  self.assertIn('payment_mode',[m['field'] for m in a['missing']])
+  d=dict(p.data);d['fields']=dict(d['fields'],payment_mode='UPI')
+  r=self.call(ai.review,{'data':d},proposal_id=str(p.id));a=json.loads(r.content)['data']['assist']
+  self.assertNotIn('payment_mode',[m['field'] for m in a['missing']]);self.assertTrue(a['ready'])
  def test_failed_ai_restores_customer_allowance(self):
   with patch('apps.saas.ai.call_model',side_effect=ValueError('fail')):r=self.call(ai.prepare,{'message':'test','request_key':'x'*20})
   self.assertEqual(r.status_code,400);u=get_db().saas_ai_usage.find_one();self.assertEqual(u['requests'],0);self.assertGreater(u['budget_units'],0)

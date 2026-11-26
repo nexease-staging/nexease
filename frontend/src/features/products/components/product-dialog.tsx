@@ -159,6 +159,8 @@ const emptyValues: ProductFormValues = {
 };
 
 interface ProductDialogProps {
+  /** Values to start a new product with (e.g. from NexEase AI). Pass a stable object. */
+  prefill?: Partial<ProductFormValues>;
   defaultType?: "goods"|"service";
   open: boolean;
   productId: string | null;
@@ -190,7 +192,7 @@ export default function ProductDialog({
   open,
   productId,
   onClose,
-  onCreated, defaultType="goods",
+  onCreated, defaultType="goods", prefill,
 }: ProductDialogProps) {
   const costConfig=useQuery({queryKey:["business-config"],queryFn:getConfig});
   const canReadCost=costConfig.data?.can_read_cost===true;
@@ -256,11 +258,11 @@ export default function ProductDialog({
 
     if (!productId) {
       reset(
-        {...emptyValues,item_type:defaultType},
+        {...emptyValues,item_type:defaultType,...prefill},
       );
     }
   }, [
-    open, defaultType,
+    open, defaultType, prefill,
     productId,
     reset,
     resetCreateMutation,

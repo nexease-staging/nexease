@@ -5,6 +5,8 @@ RECORD_KINDS={'employee':'employees','site':'sites','assignment':'assignments','
 EXTRA_PERMISSIONS={k:SCHEMAS[v]['permission']+'.manage' for k,v in RECORD_KINDS.items()}
 EXTRA_PERMISSIONS.update(category='products.create',product='products.create',purchase_order='purchase_orders.create')
 EXTRA_PERMISSIONS['stock_adjustment']='inventory.adjust'
+# Form-only kinds: the assistant opens the prefilled form; saving happens there.
+EXTRA_PERMISSIONS.update(customer='customers.create',supplier='suppliers.create',payment_in='invoices.record_payment',payment_out='bills.record_payment')
 EXTRA_FIELDS=sorted({k for kind in RECORD_KINDS.values() for k in SCHEMAS[kind]['fields']}|{'name','category_id','item_type','hsn_code','unit','sku','selling_price','cost_price','supply_type','place_of_supply','po_number','po_date','service_from','service_to','site_name','product_id','product_name','warehouse_id','warehouse_name','quantity_change'})
 
 def confirm_extended(request,proposal):

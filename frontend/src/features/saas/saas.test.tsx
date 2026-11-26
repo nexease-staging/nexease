@@ -5,9 +5,10 @@ import Pricing from './pricing';
 import Assistant from './assistant';
 import Owner from '@/app/owner/page';
 const {api}=vi.hoisted(()=>({api:vi.fn()}));
+vi.mock('next/navigation',()=>({useRouter:()=>({push:vi.fn()}),usePathname:()=>'/dashboard',useSearchParams:()=>new URLSearchParams()}));
 vi.mock('@/lib/api/client',()=>({apiRequest:api,apiBinaryRequest:vi.fn(),clearCSRFToken:vi.fn()}));
 const plans=[{code:'basic',name:'NexEase',price:749,limits:{users:2,invoices:100},features:[],published:false},{code:'plus',name:'NexEase Plus',price:999,limits:{users:5},features:['workforce'],published:false},{code:'pro',name:'NexEase Pro',price:1299,limits:{ai:300,scan_pages:100},features:['ai'],published:false}];
-beforeEach(()=>vi.clearAllMocks());
+beforeEach(()=>{vi.clearAllMocks();localStorage.clear();});
 describe('SaaS customer and owner screens',()=>{
  it('renders configured prices and does not claim checkout is enabled',async()=>{api.mockResolvedValue({data:{plans,payments_enabled:false,price_note:'Final price includes applicable tax.'}});render(<Pricing/>);expect(await screen.findByText('₹749')).toBeInTheDocument();expect(screen.getByText('₹999')).toBeInTheDocument();expect(screen.getByText('₹1,299')).toBeInTheDocument();expect(screen.getAllByText(/checkout is being prepared/)).toHaveLength(3);});
  it('does not offer entry creation to a basic member',async()=>{api.mockResolvedValue({data:{membership:{features:[],status:'active',end:'2099-01-01T00:00:00'}}});render(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><Assistant/></QueryClientProvider>);fireEvent.click(screen.getByLabelText('Open NexEase AI'));expect(await screen.findByText('Included with NexEase Pro')).toBeInTheDocument();expect(screen.queryByRole('button',{name:'Prepare entry'})).not.toBeInTheDocument();});
@@ -22,9 +23,9 @@ it('shows extracted category values for review and clears them for a new request
   return {data:{enabled:true,history:[],usage:{requests:0,pages:0},accounts:[],employees:[]}};
  });
  render(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><Assistant/></QueryClientProvider>);
- fireEvent.click(screen.getByLabelText('Open NexEase AI'));fireEvent.change(await screen.findByLabelText('AI instruction'),{target:{value:'Create category Safety Equipment, description Helmets and gloves'}});fireEvent.click(screen.getByRole('checkbox'));fireEvent.click(screen.getByText('Prepare entry'));
+ fireEvent.click(screen.getByLabelText('Open NexEase AI'));fireEvent.change(await screen.findByLabelText('AI instruction'),{target:{value:'Create category Safety Equipment, description Helmets and gloves'}});fireEvent.click(screen.getByRole('checkbox'));fireEvent.click(screen.getByLabelText('Prepare entry'));
  expect(await screen.findByDisplayValue('Safety Equipment')).toBeVisible();expect(screen.getByDisplayValue('Helmets and gloves')).toBeVisible();expect(api.mock.calls.some(([p])=>p.includes('/confirm/'))).toBe(false);
- fireEvent.click(screen.getByText('New request'));expect(screen.queryByDisplayValue('Safety Equipment')).not.toBeInTheDocument();
+ fireEvent.click(screen.getByLabelText('New request'));expect(screen.queryByDisplayValue('Safety Equipment')).not.toBeInTheDocument();
 });
 it('shows extracted invoice customer, PO and item amounts without retyping',async()=>{
  api.mockImplementation(async(path:string,options?:{method:string})=>{
@@ -33,6 +34,6 @@ it('shows extracted invoice customer, PO and item amounts without retyping',asyn
   return {data:{enabled:true,history:[],usage:{requests:0,pages:0},accounts:[],employees:[]}};
  });
  render(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><Assistant/></QueryClientProvider>);
- fireEvent.click(screen.getByLabelText('Open NexEase AI'));fireEvent.change(await screen.findByLabelText('AI instruction'),{target:{value:'Invoice Acme Supplies PO-24 for 3 Helmets at 500 with 18% GST'}});fireEvent.click(screen.getByRole('checkbox'));fireEvent.click(screen.getByText('Prepare entry'));
+ fireEvent.click(screen.getByLabelText('Open NexEase AI'));fireEvent.change(await screen.findByLabelText('AI instruction'),{target:{value:'Invoice Acme Supplies PO-24 for 3 Helmets at 500 with 18% GST'}});fireEvent.click(screen.getByRole('checkbox'));fireEvent.click(screen.getByLabelText('Prepare entry'));
  expect(await screen.findByDisplayValue('Acme Supplies')).toBeVisible();for(const value of ['PO-24','Helmet','3','500','18'])expect(screen.getByDisplayValue(value)).toBeVisible();
 });
