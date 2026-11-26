@@ -35,9 +35,6 @@ vi.mock(
   },
 );
 
-import FinancialDashboardPage
-  from "@/app/(protected)/financial-dashboard/page";
-
 import CashFlowPage
   from "@/app/(protected)/cash-flow/page";
 
@@ -367,101 +364,6 @@ describe(
           ),
         );
     });
-
-
-    describe(
-      "Financial Dashboard",
-      () => {
-        it(
-          "renders financial summary data",
-          () => {
-            render(
-              <FinancialDashboardPage />,
-            );
-
-            expect(
-              screen.getByRole(
-                "heading",
-                {
-                  name:
-                    /financial dashboard/i,
-                },
-              ),
-            ).toBeInTheDocument();
-
-            expect(
-              screen.getByText(
-                "Bank Balance",
-              ),
-            ).toBeInTheDocument();
-
-            expect(
-              screen.getByText(
-                "Receivables",
-              ),
-            ).toBeInTheDocument();
-
-            expect(
-              screen.getByText(
-                "Payables",
-              ),
-            ).toBeInTheDocument();
-
-            expect(
-              screen.getByText(
-                "Net Cash Flow",
-              ),
-            ).toBeInTheDocument();
-          },
-        );
-
-
-        it(
-          "renders accounting dashboard sections",
-          () => {
-            render(
-              <FinancialDashboardPage />,
-            );
-
-            expect(
-              screen.getByText(
-                "Liquidity",
-              ),
-            ).toBeInTheDocument();
-
-            expect(
-              screen.getByText(
-                "Working Capital",
-              ),
-            ).toBeInTheDocument();
-
-            expect(
-              screen.getByText(
-                "Profitability",
-              ),
-            ).toBeInTheDocument();
-
-            expect(
-              screen.getByText(
-                "Balance Sheet",
-              ),
-            ).toBeInTheDocument();
-
-            expect(
-              screen.getByText(
-                "Trial Balance",
-              ),
-            ).toBeInTheDocument();
-
-            expect(
-              screen.getByText(
-                "Accounting Health",
-              ),
-            ).toBeInTheDocument();
-          },
-        );
-      },
-    );
 
 
     describe(

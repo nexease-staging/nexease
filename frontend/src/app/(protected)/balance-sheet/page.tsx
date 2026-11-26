@@ -1,5 +1,5 @@
-import Statement from "@/features/accounting/components/statement";
+import StatementView from "@/features/finance/statement-view";
 
-export default function Page() {
-  return <Statement kind="balance_sheet"/>;
+export default function BalanceSheetPage() {
+  return <StatementView kind="balance-sheet" />;
 }

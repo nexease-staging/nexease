@@ -217,11 +217,23 @@ export const navigationSections:
         label: "Finance",
         items: [
           {
-            label: "Financial Dashboard",
+            label: "Finance overview",
             href: "/financial-dashboard",
             icon: ChartNoAxesCombined,
             permission:
               "accounting_reports.read",
+          },
+          {
+            label: "Profit & loss",
+            href: "/profit-and-loss",
+            icon: ChartSpline,
+            permission: "accounting_reports.read",
+          },
+          {
+            label: "Balance sheet",
+            href: "/balance-sheet",
+            icon: Scale,
+            permission: "accounting_reports.read",
           },
           {
             label: "Cash Flow",
