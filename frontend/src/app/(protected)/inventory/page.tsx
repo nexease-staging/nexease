@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, Archive, Boxes, CheckCircle2, Circle, FileSpreadsheet, History, IndianRupee, PackageX, Plus, ShoppingCart, SlidersHorizontal } from "lucide-react";
 import { CompactList, CompactRow, ListScreen, ListState, Pager, useDebounced, type ListAction } from "@/components/list/list-kit";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +31,8 @@ const views: Array<{ value: View; label: string }> = [
 ];
 const qty = (v: string | number, unit = "") => `${Number(v).toLocaleString("en-IN", { maximumFractionDigits: 2 })}${unit ? ` ${unit}` : ""}`;
 
-export default function InventoryPage() {
+function InventoryPageContent() {
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { authentication } = useAuth();
   const permissions = authentication?.role.permissions ?? [];
@@ -41,7 +42,7 @@ export default function InventoryPage() {
   const canOrder = hasPermission(permissions, "purchase_orders.create");
 
   const [view, setView] = useState<View>("all");
-  const [warehouseId, setWarehouseId] = useState(() => (typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("warehouse_id") ?? ""));
+  const [warehouseId, setWarehouseId] = useState(() => (searchParams.get("warehouse_id") ?? ""));
   const [deadDays, setDeadDays] = useState(90);
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
@@ -244,5 +245,14 @@ export default function InventoryPage() {
       <StockAdjustmentDialog open={Boolean(adjusting)} inventory={adjusting} onClose={() => setAdjusting(null)} />
       {reorderItems ? <ReorderSheet items={reorderItems} onClose={() => setReorderItems(null)} onCreated={() => setSelected(new Set())} /> : null}
     </>
+  );
+}
+
+// useSearchParams needs a Suspense boundary for the static export used by the mobile build.
+export default function InventoryPage() {
+  return (
+    <Suspense fallback={null}>
+      <InventoryPageContent />
+    </Suspense>
   );
 }

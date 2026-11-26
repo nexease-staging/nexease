@@ -10,7 +10,7 @@ import {confirmAction, notify} from '@/components/nex-feedback';
 import {challanStatus} from '@/features/sales/status';
 import {formatDate} from '@/lib/format';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
-import {useRouter} from 'next/navigation';
+import { useRouter, useSearchParams } from "next/navigation";
 import {apiBinaryRequest, apiRequest} from '@/lib/api/client';
 import {downloadBlob} from '@/lib/browser/download';
 
@@ -34,8 +34,9 @@ function Picker({kind,value,onSelect,label}:{kind:'customers'|'products';value:s
 }
 
 export default function SalesDocuments({mode}:{mode:keyof typeof paths}) {
+  const searchParams = useSearchParams();
   const irp=mode==='einvoice',path=paths[mode], qc=useQueryClient(), router=useRouter();
-  const [invoiceLink]=useState(()=>typeof window==='undefined'?'':new URLSearchParams(window.location.search).get('invoice')||'');
+  const [invoiceLink]=useState(()=>searchParams.get('invoice')||'');
   const [search,setSearch]=useState(irp?invoiceLink:''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
   const [form,setForm]=useState(false),[cancel,setCancel]=useState<Row>(),[reason,setReason]=useState('2'),[remarks,setRemarks]=useState('');
   const [challanReason,setChallanReason]=useState('job_work');
