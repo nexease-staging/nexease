@@ -12,6 +12,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CompactList, CompactRow, ListScreen, ListState, type ListAction } from "@/components/list/list-kit";
 import { FieldHint, FormActions, FormSection, FormSheet } from "@/components/form/form-sheet";
+import { AI_PREFILL_EVENT, takeRecordPrefill } from "@/features/ai/handoff";
 import { Badge } from "@/components/ui/badge";
 import SearchSelect from "@/components/search-select";
 import { useFormExitGuard } from "@/components/use-form-exit-guard";
@@ -103,6 +104,23 @@ export default function BusinessWorkspace({ kinds, title, description }: { kinds
     window.addEventListener("nexease:gst-prefill", prefill);
     return () => window.removeEventListener("nexease:gst-prefill", prefill);
   }, [kinds]);
+
+  // NexEase AI: open "New …" with the values the assistant collected.
+  const schemas = config.data?.schemas;
+  const kindList = kinds.join(",");
+  useEffect(() => {
+    if (!schemas) return;
+    const apply = () => {
+      const handoff = takeRecordPrefill(kindList.split(","));
+      const target = handoff ? schemas[handoff.kind] : undefined;
+      if (!handoff || !target) return;
+      const next = { ...blankDraft(target), ...Object.fromEntries(Object.entries(handoff.data).filter(([k, v]) => k in target.fields && v !== "" && (target.fields[k].type !== "select" || (target.fields[k].choices ?? []).includes(String(v))))) };
+      setKind(handoff.kind); setSuggesting(false); setEditing(null); setDraft(next); setInitialDraft(JSON.stringify(blankDraft(target))); setError(""); setOpen(true);
+    };
+    const timer = setTimeout(apply, 0);
+    window.addEventListener(AI_PREFILL_EVENT, apply);
+    return () => { clearTimeout(timer); window.removeEventListener(AI_PREFILL_EVENT, apply); };
+  }, [schemas, kindList]);
 
   function updateField(key: string, value: string) {
     const next = { ...draft, [key]: value };

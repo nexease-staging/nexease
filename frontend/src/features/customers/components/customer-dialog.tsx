@@ -176,6 +176,8 @@ const textareaClassName = `
 `;
 
 interface CustomerDialogProps {
+  /** Values to start a new record with (e.g. from NexEase AI). Pass a stable object. */
+  prefill?: Partial<CustomerFormValues>;
   open: boolean;
   customerId: string | null;
   onClose: () => void;
@@ -206,6 +208,7 @@ export default function CustomerDialog({
   open,
   customerId,
   onClose,
+  prefill,
   onCreated,
 }: CustomerDialogProps) {
   const isEditing =
@@ -257,10 +260,11 @@ export default function CustomerDialog({
 
     if (!customerId) {
       reset(
-        emptyValues,
+        { ...emptyValues, ...prefill },
       );
     }
   }, [
+    prefill,
     customerId,
     open,
     reset,

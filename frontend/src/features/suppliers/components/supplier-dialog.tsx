@@ -163,6 +163,8 @@ const textareaClassName = `
 `;
 
 interface SupplierDialogProps {
+  /** Values to start a new record with (e.g. from NexEase AI). Pass a stable object. */
+  prefill?: Partial<SupplierFormValues>;
   open: boolean;
   supplierId: string | null;
   onClose: () => void;
@@ -190,6 +192,7 @@ export default function SupplierDialog({
   open,
   supplierId,
   onClose,
+  prefill,
 }: SupplierDialogProps) {
   const isEditing =
     Boolean(supplierId);
@@ -240,10 +243,11 @@ export default function SupplierDialog({
 
     if (!supplierId) {
       reset(
-        emptyValues,
+        { ...emptyValues, ...prefill },
       );
     }
   }, [
+    prefill,
     supplierId,
     open,
     reset,

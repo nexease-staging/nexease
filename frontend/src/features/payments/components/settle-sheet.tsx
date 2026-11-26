@@ -21,16 +21,20 @@ const rupees = (value: number) => (value / 100).toFixed(2);
  * If saving stops half way, the form locks and offers "Finish recording": it resends the exact
  * same request, which the server replays safely, so nothing is paid twice.
  */
-export default function SettleSheet({ side, partyId: initialParty, onClose }: { side: Side; partyId?: string; onClose: () => void }) {
+export type SettlePrefill = { amount?: string; method?: string; date?: string; reference?: string; notes?: string };
+
+export default function SettleSheet({ side, partyId: initialParty, onClose, prefill }: { side: Side; partyId?: string; onClose: () => void; prefill?: SettlePrefill }) {
   const receivable = side === "receivable";
   const [partyId, setPartyId] = useState(initialParty ?? "");
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState(prefill?.amount ?? "");
   const [lines, setLines] = useState<Record<string, string>>({});
-  const [method, setMethod] = useState("UPI");
+  const [method, setMethod] = useState(prefill?.method || "UPI");
   const [accountId, setAccountId] = useState("");
-  const [date, setDate] = useState(today);
-  const [reference, setReference] = useState("");
-  const [notes, setNotes] = useState("");
+  const [date, setDate] = useState(prefill?.date || today());
+  const [reference, setReference] = useState(prefill?.reference ?? "");
+  const [notes, setNotes] = useState(prefill?.notes ?? "");
+  // A prefilled amount is split across open documents once they load.
+  const [pendingSplit, setPendingSplit] = useState(Boolean(prefill?.amount));
   const [error, setError] = useState("");
   const [locked, setLocked] = useState<SettleInput | null>(null);
   const requestKey = useRef(newRequestKey());
@@ -45,6 +49,10 @@ export default function SettleSheet({ side, partyId: initialParty, onClose }: { 
   }, [receivable, receiveAccounts.data, payAccounts.data]);
   const settle = useSettle();
   const documents = useMemo(() => party.data?.documents ?? [], [party.data]);
+  if (pendingSplit && documents.length) {
+    setPendingSplit(false);
+    setLines(autoAllocate(documents, Number(amount) || 0));
+  }
 
   // Cash goes to a cash account, everything else to a bank account, unless the user picks one.
   const fallback = accounts.find((a) => (a.account_type === "CASH") === (method === "CASH")) ?? accounts[0];
@@ -52,6 +60,7 @@ export default function SettleSheet({ side, partyId: initialParty, onClose }: { 
 
   function pickParty(id: string) {
     setPartyId(id);
+    setPendingSplit(false);
     setAmount("");
     setLines({});
     setError("");

@@ -50,7 +50,20 @@ const cents = (line: Line) => {
 };
 const money = (c: number) => formatMoney(String(c / 100));
 
+/** Values the assistant (or another screen) fills in before the form opens. */
+export type InvoicePrefill = {
+  customer?: Record<string, string>;
+  items?: Partial<Line>[];
+  date?: string;
+  due_date?: string;
+  number?: string;
+  notes?: string;
+  supply?: string;
+  details?: Record<string, string>;
+};
+
 export default function InvoiceDialog(props: {
+  prefill?: InvoicePrefill;
   sourceQuote?: Quotation;
   quotation?: boolean;
   open: boolean;
@@ -69,7 +82,9 @@ function InvoiceForm({
   initialMode = "order",
   quotation = false,
   sourceQuote,
+  prefill,
 }: {
+  prefill?: InvoicePrefill;
   sourceQuote?: Quotation;
   quotation?: boolean;
   onClose: () => void;
@@ -77,10 +92,10 @@ function InvoiceForm({
   initialMode?: "direct" | "order";
 }) {
   const [mode, setMode] = useState<"direct" | "order">(initialMode);
-  const [supply, setSupply] = useState("");
-  const [customer, setCustomer] = useState<Record<string, string>>(() => sourceQuote?.customer_details ?? (sourceQuote ? { name: sourceQuote.customer } : {}));
-  const [details, setDetails] = useState<Record<string, string>>({});
-  const [lines, setLines] = useState<Line[]>(() => sourceQuote?.items.map((item) => ({ ...empty(), ...item })) ?? [empty()]);
+  const [supply, setSupply] = useState(prefill?.supply ?? "");
+  const [customer, setCustomer] = useState<Record<string, string>>(() => prefill?.customer ?? sourceQuote?.customer_details ?? (sourceQuote ? { name: sourceQuote.customer } : {}));
+  const [details, setDetails] = useState<Record<string, string>>(() => prefill?.details ?? {});
+  const [lines, setLines] = useState<Line[]>(() => (prefill?.items?.length ? prefill.items.map((item) => ({ ...empty(), ...item })) : null) ?? sourceQuote?.items.map((item) => ({ ...empty(), ...item })) ?? [empty()]);
   const [message, setMessage] = useState("");
   const [notice, setNotice] = useState("");
   const [problem, setProblem] = useState<SaleProblem | null>(null);
@@ -267,9 +282,9 @@ function InvoiceForm({
 
           <FormSection title={quotation ? "Quotation" : "Invoice"} icon={FileText}>
             <div className="nxf-grid">
-              <label>{quotation ? "Quotation date" : "Invoice date"} *<input name="date" type="date" required defaultValue={today()} /></label>
-              <label>{quotation ? "Valid until" : "Due date"}<input name="due" type="date" aria-invalid={problem?.field === "due" || undefined} /></label>
-              {mode === "direct" && !quotation ? <label className="nxf-span">Invoice number<input name="number" placeholder="Automatic" /></label> : null}
+              <label>{quotation ? "Quotation date" : "Invoice date"} *<input name="date" type="date" required defaultValue={prefill?.date || today()} /></label>
+              <label>{quotation ? "Valid until" : "Due date"}<input name="due" type="date" defaultValue={prefill?.due_date} aria-invalid={problem?.field === "due" || undefined} /></label>
+              {mode === "direct" && !quotation ? <label className="nxf-span">Invoice number<input name="number" placeholder="Automatic" defaultValue={prefill?.number} /></label> : null}
               {!quotation ? <TaxSelection value={supply} onChange={changeSupply} /> : null}
               {!quotation ? (
                 <label>Place of supply {supply && supply !== "unregistered" ? "*" : ""}
@@ -368,7 +383,7 @@ function InvoiceForm({
         ) : null}
 
         <FormSection title="Notes & more" icon={StickyNote}>
-          <label>Notes<textarea name="notes" defaultValue={sourceQuote?.notes} placeholder={quotation ? "Quotation terms or notes" : "A note printed on this invoice"} /></label>
+          <label>Notes<textarea name="notes" defaultValue={prefill?.notes ?? sourceQuote?.notes} placeholder={quotation ? "Quotation terms or notes" : "A note printed on this invoice"} /></label>
           <details>
             <summary>PO, service period, delivery &amp; terms</summary>
             <div className="nxf-grid mt-3">
