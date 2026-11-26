@@ -52,6 +52,56 @@ class APISearchService:
 
         return value.strip()
 
+    # Upper bound on referenced records matched per search field
+    # (e.g. customers named like the term) before filtering by id.
+    REFERENCE_MATCH_LIMIT = 1000
+
+    @staticmethod
+    def _field_query(
+        queryset,
+        field_name,
+        safe_pattern,
+    ):
+        """
+        Build the regex query for one search field.
+
+        MongoDB cannot join, so a path through a ReferenceField
+        (``customer__name``) is resolved in two steps: find matching
+        referenced documents, scoped to the same organization when
+        both sides have one, then match the parent on their ids.
+        Embedded paths and plain fields are queried directly.
+        """
+        from mongoengine.fields import (
+            LazyReferenceField,
+            ReferenceField,
+        )
+
+        head, _, rest = field_name.partition("__")
+        field = getattr(queryset, "_document", None)
+        field = field._fields.get(head) if field else None
+
+        if (
+            not rest
+            or not isinstance(
+                field,
+                (ReferenceField, LazyReferenceField),
+            )
+        ):
+            return Q(**{f"{field_name}__iregex": safe_pattern})
+
+        target = field.document_type
+        scope = {f"{rest}__iregex": safe_pattern}
+        organization = getattr(queryset, "_query", {}).get("organization")
+        if organization is not None and "organization" in target._fields:
+            scope["organization"] = organization
+
+        ids = list(
+            target.objects(**scope)
+            .scalar("id")
+            .limit(APISearchService.REFERENCE_MATCH_LIMIT)
+        )
+        return Q(**{f"{head}__in": ids})
+
     @staticmethod
     def apply(
         queryset,
@@ -238,14 +288,13 @@ class APISearchService:
 
         for field_name in search_fields:
 
-            field_query = Q(
-                **{
-                    (
-                        f"{field_name}"
-                        "__iregex"
-                    ):
-                        safe_pattern,
-                }
+            field_query = (
+                APISearchService
+                ._field_query(
+                    queryset,
+                    field_name,
+                    safe_pattern,
+                )
             )
 
             if search_query is None:
