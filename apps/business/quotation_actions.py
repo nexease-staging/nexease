@@ -1,15 +1,10 @@
 """Link reviewed drafts to a tenant's quotation through the normal creation endpoints."""
-import base64
 import json
-from decimal import Decimal
 from functools import wraps
 from io import BytesIO
-from xml.sax.saxutils import escape
 
 from django.http import HttpResponse
 from django.views.decorators.http import require_GET
-from reportlab.lib import colors
-from reportlab.platypus import TableStyle, Image, Paragraph, SimpleDocTemplate, Spacer, Table
 from apps.core.api.decorators import api_login_required
 from apps.core.services.api_response_service import APIResponseService as R
 from .models import BusinessRecord
@@ -50,8 +45,6 @@ def quotation_conversion(kind):
 @api_login_required
 @require_GET
 def quotation_pdf(request, number):
-    from .billing import settings, TEMPLATES
-    from .print_documents import document_styles
     from .views import permitted
     if not permitted(request,"invoices.read"):
         return R.forbidden(message="Sales read permission required.",request=request)
@@ -59,48 +52,8 @@ def quotation_pdf(request, number):
     record = BusinessRecord.objects(organization=org,kind="quotation",key=number).first()
     if not record:
         return R.not_found(message="Quotation not found.",request=request)
-    data = record.data
-    styles = document_styles()
-    def paragraph(value, style="Normal"):
-        return Paragraph(escape(str(value)).replace("\n","<br/>"),styles[style])
-    story = []
-    branding = settings(org)
-    template = next((row for row in TEMPLATES if row[0]==branding.get("template")), TEMPLATES[0])
-    accent = colors.HexColor(branding.get("accent_color") or template[2])
-    styles["Title"].textColor = accent
-    logo = branding.get("logo")
-    if logo:
-        image = Image(BytesIO(base64.b64decode(logo.split(",",1)[-1])))
-        image._restrictSize(110,48)
-        image.hAlign = "LEFT"
-        story.append(image)
-    story.extend([paragraph(org.name,"Title"),paragraph("Quotation "+record.key,"Heading2"),
-        paragraph("Prepared for "+data["customer"]),paragraph("Date "+data["date"])])
-    if data.get("valid_until"):
-        story.append(paragraph("Valid until "+data["valid_until"]))
-    rows = [["Item","Qty","Rate ₹","Discount ₹","GST %","Total ₹"]]
-    tax_total = Decimal(0)
-    discount_total = Decimal(0)
-    from .payroll import money
-    for item in data["items"]:
-        subtotal = Decimal(money(Decimal(item["quantity"]) * Decimal(item["unit_price"])))
-        discount = Decimal(item["discount"])
-        discount_total += discount
-        tax_total += Decimal(item["total"]) - subtotal + discount
-        rows.append([item[k] for k in ("name","quantity","unit_price","discount","tax_rate","total")])
-    table = Table([[paragraph(v) for v in row] for row in rows], colWidths=[135,38,70,72,46,75], repeatRows=1)
-    rules = [('VALIGN',(0,0),(-1,-1),'TOP'),('LINEBELOW',(0,0),(-1,0),2,accent),
-             ('BACKGROUND',(0,0),(-1,0),colors.HexColor('#eef3f6'))]
-    if template[3] in ('grid','compact','retail'):
-        rules.append(('GRID',(0,0),(-1,-1),0.3,colors.lightgrey))
-    elif template[3] in ('stripe','banner'):
-        rules.append(('ROWBACKGROUNDS',(0,1),(-1,-1),[colors.white,colors.HexColor('#f6f8fa')]))
-    table.setStyle(TableStyle(rules))
-    story.extend([Spacer(1,12),table,
-        paragraph("Discount ₹"+money(discount_total)), paragraph("GST ₹"+money(tax_total)),
-        paragraph("Quotation total ₹"+data["total"],"Heading2"),paragraph(data.get("notes",""))])
-    output = BytesIO()
-    SimpleDocTemplate(output,title="Quotation "+number).build(story)
+    from .doc_templates import from_quotation, render_for
+    output = BytesIO(render_for(org, from_quotation(org, record)))
     response = HttpResponse(output.getvalue(),content_type="application/pdf")
     response["Content-Disposition"] = f'attachment; filename="{record.key}.pdf"'
     response["Cache-Control"] = "private, no-store"

@@ -2,18 +2,13 @@
 import re
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
-from io import BytesIO
 from uuid import uuid4
-from xml.sax.saxutils import escape
 
 from django.http import HttpResponse
 from django.views.decorators.http import require_http_methods
 from mongoengine.connection import get_db
 from mongoengine.errors import ValidationError
 from pymongo import ReturnDocument
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4
-from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from apps.core.api.decorators import api_login_required
 from apps.core.services.api_response_service import APIResponseService as R
@@ -21,42 +16,17 @@ from apps.products.models import Product
 from apps.sales.models import Customer, Invoice
 from apps.saas.entitlements import org_lock
 from .einvoice import GSTIN, money, registration, require_text
-from .print_documents import document_styles
 from .views import audit, payload, permitted
 
 REASONS={'job_work':'Job work','non_supply':'Movement other than supply','liquid_gas':'Liquid gas — quantity not known at dispatch','notified':'Other notified movement'}
 
 
-def render_pdf(doc):
-    buf=BytesIO();styles=document_styles()
-    def p(value,style='Normal'):
-        return Paragraph(escape(str(value or '—')).replace('\n','<br/>'),styles[style])
-    story=[]
-    for label in ('Original for consignee','Duplicate for transporter','Triplicate for consignor'):
-        if story:story.append(PageBreak())
-        story += [p('Delivery challan','Title'),p(label,'Heading3')]
-        if doc['status']=='cancelled':story += [p('CANCELLED','Heading2')]
-        story += [p(doc['number']+' · '+doc['date']),p('Reason: '+REASONS[doc['reason']]),Spacer(1,10)]
-        parties=Table([[p('Consignor','Heading4'),p('Consignee','Heading4')],
-            [p(doc['seller_name']+'\n'+doc['seller_address']+'\nGSTIN: '+(doc['seller_gstin'] or 'Unregistered')),
-             p(doc['customer_name']+'\n'+doc['address']+'\nGSTIN: '+(doc['customer_gstin'] or 'Unregistered'))]],colWidths=[250,250])
-        parties.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'TOP')]))
-        story += [parties,p('Place of supply: '+doc['pos']),p('Transport reference: '+doc['transport']),p('Vehicle registration: '+(doc.get('vehicle_number') or '—')),
-                  p('Linked invoice: '+doc['invoice_number']),Spacer(1,12)]
-        rows=[['Description','HSN','Qty / UOM','Taxable ₹','GST %','Tax ₹']]
-        for line in doc['items']:
-            tax=sum(Decimal(line[k]) for k in ('cgst','sgst','igst'))
-            rows.append([line['name'],line['hsn'],('Provisional' if Decimal(line['qty'])==0 else line['qty']+' '+line['unit']),line['value'],line['rate'],str(tax)])
-        table=Table([[p(c) for c in row] for row in rows],colWidths=[166,56,76,72,55,75],repeatRows=1)
-        table.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'TOP'),('GRID',(0,0),(-1,-1),.25,colors.lightgrey),('BACKGROUND',(0,0),(-1,0),colors.whitesmoke)]))
-        story += [table,Spacer(1,10)]
-        for key,label in (('value','Taxable value'),('cgst','CGST'),('sgst','SGST / UTGST'),('igst','IGST')):
-            story += [p(label+': INR '+str(sum(Decimal(line[key]) for line in doc['items'])))]
-        story += [p('Notes: '+doc['notes']),Spacer(1,20),p('Authorised signature: ______________________')]
-    SimpleDocTemplate(buf,pagesize=A4,title=doc['number'],leftMargin=40,rightMargin=40).build(story)
-    return buf.getvalue()
-
-
+def render_pdf(doc,org=None):
+    """Three copies (consignee, transporter, consignor) in the business's chosen template."""
+    from apps.organizations.models import Organization
+    from .doc_templates import from_challan, render_for
+    org=org or Organization.objects(id=doc.get('organization_id')).first()
+    return render_for(org,from_challan(org,doc))
 def make_challan(org,data):
     customer=Customer.objects(id=data.get('customer_id'),organization=org,is_active=True).first()
     if not customer:raise ValueError('Choose an active customer.')
@@ -129,7 +99,7 @@ def challans(request,doc_id=None):
             if doc_id:
                 doc=coll.find_one({'_id':doc_id,'organization_id':orgid})
                 if not doc:return R.not_found(message='Delivery challan not found.',request=request)
-                response=HttpResponse(render_pdf(doc),content_type='application/pdf')
+                response=HttpResponse(render_pdf(doc,org),content_type='application/pdf')
                 response['Content-Disposition']=f'attachment; filename="{doc["number"]}.pdf"'
                 return response
             q={'organization_id':orgid}

@@ -1206,6 +1206,11 @@ class CreditNotePDF:
         Generate Credit Note PDF bytes.
         """
 
+        # Every sales document uses the business's chosen print template (Settings → Invoice formats).
+        if credit_note is not None:
+            from apps.business.doc_templates import from_credit_note, render_for
+            return render_for(credit_note.organization, from_credit_note(credit_note))
+
         if not credit_note:
 
             raise ValueError(
