@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 import Page from "./page";
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("@/features/auth/auth-context", () => ({
   useAuth: () => ({
     authentication: {
@@ -52,8 +53,10 @@ vi.mock("@/features/products/components/reorder-level", () => ({
 }));
 it("shows negative product stock and exposes the reorder control in the table", () => {
   render(<Page />);
-  expect(screen.getByText("-5")).toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Reorder" }));
+  // Negative stock stays visible (with an out-of-stock badge) rather than being clamped to zero.
+  expect(screen.getAllByText(/-5 PCS/).length).toBeGreaterThan(0);
+  expect(screen.getByText("Out of stock")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Reorder level for Quick item" }));
   expect(
     screen.getByRole("dialog", { name: "Reorder alert" }),
   ).toBeInTheDocument();

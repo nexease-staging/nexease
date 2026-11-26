@@ -1,4 +1,5 @@
 "use client";
+import { FormSheet } from "@/components/form/form-sheet";
 import {useCreateCategory} from "@/features/categories/hooks";
 import {useAuth} from "@/features/auth/auth-context";
 import {hasPermission} from "@/lib/authorization/permissions";
@@ -18,7 +19,6 @@ import {
 } from "@hookform/resolvers/zod";
 
 import {
-  X,
 } from "lucide-react";
 
 import {
@@ -448,78 +448,8 @@ export default function ProductDialog({
       : null;
 
   return (
-    <div
-      role="presentation"
-      className="
-        nx-master-drawer-overlay fixed inset-0 z-50
-        flex items-center justify-center
-        bg-slate-950/50 p-4
-      "
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="product-dialog-title"
-        className="nx-master-drawer 
-          max-h-[90vh] w-full
-          max-w-3xl overflow-y-auto
-          rounded-2xl bg-white
-          text-slate-900 shadow-2xl
-        "
-      >
-        <div
-          className="
-            flex items-start
-            justify-between border-b
-            border-slate-200 p-5
-          "
-        >
-          <div>
-            <h2
-              id="product-dialog-title"
-              className="
-                text-xl font-bold
-                text-slate-900
-              "
-            >
-              {
-                isEditing
-                  ? "Edit product"
-                  : "Create product"
-              }
-            </h2>
-
-            <p
-              className="
-                mt-1 text-sm text-slate-600
-              "
-            >
-              {
-                isEditing
-                  ? "Update product catalog details."
-                  : "Add a product to your catalog."
-              }
-            </p>
-          </div>
-
-          <button
-            type="button"
-            aria-label="Close"
-            disabled={isPending}
-            onClick={onClose}
-            className="
-              rounded-lg p-2
-              text-slate-500
-              hover:bg-slate-100
-              hover:text-slate-900
-              disabled:opacity-50
-            "
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        {isEditing
+    <FormSheet title={isEditing ? "Edit item" : "New item"} subtitle="Name, prices, tax and stock details." titleId="product-dialog-title" onClose={onClose} busy={isPending} size="xl">
+      {isEditing
         && productQuery.isPending ? (
           <div
             className="
@@ -903,26 +833,12 @@ export default function ProductDialog({
               </div>
             ) : null}
 
-            <div
-              className="
-                flex flex-col-reverse gap-3
-                border-t border-slate-200
-                pt-5 sm:flex-row
-                sm:justify-end
-              "
-            >
+            <div className="nxf-actions"><span /><div className="nxf-buttons">
               <button
                 type="button"
                 disabled={isPending}
                 onClick={onClose}
-                className="
-                  rounded-lg border
-                  border-slate-300 bg-white
-                  px-4 py-2 text-sm
-                  font-semibold text-slate-700
-                  hover:bg-slate-50
-                  disabled:opacity-50
-                "
+                className="nx-button nx-secondary nxf-secondary-sm"
               >
                 Cancel
               </button>
@@ -930,14 +846,7 @@ export default function ProductDialog({
               <button
                 type="submit"
                 disabled={isPending}
-                className="
-                  rounded-lg bg-blue-600
-                  px-4 py-2 text-sm
-                  font-semibold text-white
-                  hover:bg-blue-700
-                  disabled:cursor-not-allowed
-                  disabled:opacity-50
-                "
+                className="nx-button"
               >
                 {
                   isPending
@@ -947,10 +856,10 @@ export default function ProductDialog({
                       : "Create product"
                 }
               </button>
-            </div>
-          </form>
+            </div></div>
+</form>
         )}
-      </div>
-    </div>
+      
+    </FormSheet>
   );
 }

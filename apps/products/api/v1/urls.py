@@ -12,6 +12,8 @@ app_name = "products_api_v1"
 
 urlpatterns = [
     path("units/", views.product_units, name="product_units"),
+    # Android app requests units here; must precede products/<product_id>/.
+    path("products/units/", views.product_units, name="product_units_alias"),
     path(
         "products/",
         views.product_collection_api,

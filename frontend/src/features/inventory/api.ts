@@ -87,6 +87,8 @@ export async function listInventory(
             parameters.product_id,
           warehouse_id:
             parameters.warehouse_id,
+          search:
+            parameters.search,
           sort:
             parameters.sort,
         })

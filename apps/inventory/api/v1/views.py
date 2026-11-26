@@ -790,7 +790,13 @@ def inventory_collection_api(
                                 "object_id",
                         },
                     },
-                    search_fields=[],
+                    search_fields=[
+                        "product__name",
+                        "product__sku",
+                        "product__barcode",
+                        "warehouse__name",
+                        "warehouse__code",
+                    ],
                     allowed_sort_fields={
                         "id": "id",
                         "quantity":
@@ -1317,6 +1323,8 @@ def stock_movement_collection_api(
                     "reference_type",
                     "reference_id",
                     "notes",
+                    "product__name",
+                    "product__sku",
                 ],
                 allowed_sort_fields={
                     "id": "id",
@@ -1556,6 +1564,8 @@ def stock_transfer_collection_api(
                     search_fields=[
                         "transfer_number",
                         "notes",
+                        "product__name",
+                        "product__sku",
                     ],
                     allowed_sort_fields={
                         "id": "id",

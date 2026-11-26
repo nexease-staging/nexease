@@ -1,4 +1,5 @@
 "use client";
+import { FormSheet } from "@/components/form/form-sheet";
 
 import {
   useEffect,
@@ -6,7 +7,6 @@ import {
 
 import {
   LoaderCircle,
-  X,
 } from "lucide-react";
 
 import {
@@ -305,94 +305,8 @@ export default function WarehouseFormDialog({
   }
 
   return (
-    <div
-      className="
-        fixed inset-0 z-50
-        flex items-center
-        justify-center bg-slate-950/50
-        p-4
-      "
-      role="presentation"
-      onMouseDown={(event) => {
-        if (
-          event.target
-          ===
-          event.currentTarget
-          &&
-          !isPending
-        ) {
-          onClose();
-        }
-      }}
-    >
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={
-          "warehouse-dialog-title"
-        }
-        className="
-          max-h-[90vh] w-full
-          max-w-2xl overflow-y-auto
-          rounded-2xl bg-white
-          shadow-2xl
-        "
-      >
-        <header
-          className="
-            flex items-center
-            justify-between border-b
-            border-slate-200 px-6 py-4
-          "
-        >
-          <div>
-            <h2
-              id="warehouse-dialog-title"
-              className="
-                text-lg font-bold
-                text-slate-900
-              "
-            >
-              {isEditing
-                ? "Edit warehouse"
-                : "Create warehouse"}
-            </h2>
-
-            <p
-              className="
-                mt-1 text-sm
-                text-slate-500
-              "
-            >
-              {isEditing
-                ? (
-                  "Update this storage "
-                  +
-                  "location."
-                )
-                : (
-                  "Add a storage location "
-                  +
-                  "to your organization."
-                )}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            aria-label="Close dialog"
-            disabled={isPending}
-            onClick={onClose}
-            className="
-              rounded-lg p-2
-              text-slate-500
-              hover:bg-slate-100
-              disabled:opacity-50
-            "
-          >
-            <X size={20} />
-          </button>
-        </header>
+    <FormSheet title={isEditing ? "Edit warehouse" : "New warehouse"} subtitle={"Where you keep stock: a godown, shop or site store."} onClose={onClose} busy={isPending} size="md" closeLabel="Close dialog">
+      
 
         <form
           onSubmit={(event) => {
@@ -599,25 +513,12 @@ export default function WarehouseFormDialog({
             )}
           </div>
 
-          <footer
-            className="
-              flex justify-end gap-3
-              border-t border-slate-200
-              pt-5
-            "
-          >
+          <footer className="nxf-actions"><span /><div className="nxf-buttons">
             <button
               type="button"
               disabled={isPending}
               onClick={onClose}
-              className="
-                rounded-lg border
-                border-slate-300 bg-white
-                px-4 py-2 text-sm
-                font-semibold text-slate-700
-                hover:bg-slate-50
-                disabled:opacity-50
-              "
+              className="nx-button nx-secondary nxf-secondary-sm"
             >
               Cancel
             </button>
@@ -625,16 +526,7 @@ export default function WarehouseFormDialog({
             <button
               type="submit"
               disabled={isPending}
-              className="
-                inline-flex items-center
-                gap-2 rounded-lg
-                bg-blue-600 px-4 py-2
-                text-sm font-semibold
-                text-white
-                hover:bg-blue-700
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-              "
+              className="nx-button"
             >
               {isPending ? (
                 <LoaderCircle
@@ -647,9 +539,8 @@ export default function WarehouseFormDialog({
                 ? "Save changes"
                 : "Create warehouse"}
             </button>
-          </footer>
+          </div></footer>
         </form>
-      </section>
-    </div>
+      </FormSheet>
   );
 }

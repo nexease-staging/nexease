@@ -78,3 +78,8 @@
   .nx-modal-sheet:not(:has(.nx-feedback)){width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;border-radius:0;border:0}
   .nx-modal-sheet:not(:has(.nx-feedback))>.nxf-header{padding-top:calc(10px + env(safe-area-inset-top,0px))}
 }
+
+/* Reorder sheet lines: item, qty, rate, GST, remove. */
+.nxf-reorder-line{display:grid;grid-template-columns:minmax(0,2fr) repeat(3,minmax(84px,1fr)) 40px;gap:8px;align-items:end;padding:10px;border:1px solid var(--nx-border);border-radius:10px;background:var(--nx-surface)}
+.nxf-reorder-line>:first-child{align-self:center}
+@media(max-width:767px){.nxf-reorder-line{grid-template-columns:repeat(3,minmax(0,1fr)) 40px}.nxf-reorder-line>:first-child{grid-column:1/-1}}

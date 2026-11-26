@@ -1,865 +1,248 @@
 "use client";
-import Link from "next/link";
-import UnitSettings from "@/features/products/components/unit-settings";
+
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { AlertTriangle, Archive, Boxes, CheckCircle2, Circle, FileSpreadsheet, History, IndianRupee, PackageX, Plus, ShoppingCart, SlidersHorizontal } from "lucide-react";
+import { CompactList, CompactRow, ListScreen, ListState, Pager, useDebounced, type ListAction } from "@/components/list/list-kit";
+import { Badge } from "@/components/ui/badge";
+import EmptyState from "@/components/ui/empty-state";
+import FilterSheet from "@/components/ui/filter-sheet";
+import StatCard from "@/components/ui/stat-card";
 import SearchSelect from "@/components/search-select";
-
-
-import {
-  useMemo,
-  useState,
-} from "react";
-
-import {
-  Boxes,
-  Plus,
-  RefreshCw,
-} from "lucide-react";
-
-import {
-  useAuth,
-} from "@/features/auth/auth-context";
-
+import { notify } from "@/components/nex-feedback";
+import { useAuth } from "@/features/auth/auth-context";
 import OpeningInventoryDialog from "@/features/inventory/components/opening-inventory-dialog";
+import ReorderSheet from "@/features/inventory/components/reorder-sheet";
 import StockAdjustmentDialog from "@/features/inventory/components/stock-adjustment-dialog";
-import {
-  useInventoryList,
-} from "@/features/inventory/hooks";
+import { useInventoryList } from "@/features/inventory/hooks";
+import { useInventoryInsights, type LowStockItem } from "@/features/inventory/insights";
+import type { InventorySummary } from "@/features/inventory/types";
+import { useWarehouseList } from "@/features/warehouses/hooks";
+import { hasPermission } from "@/lib/authorization/permissions";
+import { downloadCsv } from "@/lib/export-csv";
+import { formatCompactMoney, formatDate, formatMoney } from "@/lib/format";
 
-import type {
-  InventorySummary,
-} from "@/features/inventory/types";
-
-import {
-  useWarehouseList,
-} from "@/features/warehouses/hooks";
-
-import {
-  hasPermission,
-} from "@/lib/authorization/permissions";
-
-function formatQuantity(
-  value: string,
-): string {
-  const quantity = Number(
-    value
-  );
-
-  if (!Number.isFinite(quantity)) {
-    return value;
-  }
-
-  return new Intl.NumberFormat(
-    "en-IN",
-    {
-      maximumFractionDigits: 2,
-      minimumFractionDigits: 0,
-    },
-  ).format(
-    quantity
-  );
-}
-
+type View = "all" | "low" | "dead" | "warehouse";
+const views: Array<{ value: View; label: string }> = [
+  { value: "all", label: "All stock" },
+  { value: "low", label: "Low stock" },
+  { value: "dead", label: "Dead stock" },
+  { value: "warehouse", label: "By warehouse" },
+];
+const qty = (v: string | number, unit = "") => `${Number(v).toLocaleString("en-IN", { maximumFractionDigits: 2 })}${unit ? ` ${unit}` : ""}`;
 
 export default function InventoryPage() {
-  const {
-    authentication,
-  } = useAuth();
+  const router = useRouter();
+  const { authentication } = useAuth();
+  const permissions = authentication?.role.permissions ?? [];
+  const canRead = hasPermission(permissions, "inventory.read");
+  const canCreate = hasPermission(permissions, "inventory.create");
+  const canAdjust = hasPermission(permissions, "inventory.adjust");
+  const canOrder = hasPermission(permissions, "purchase_orders.create");
 
-  const [
-    warehouseId,
-    setWarehouseId,
-  ] = useState("");
+  const [view, setView] = useState<View>("all");
+  const [warehouseId, setWarehouseId] = useState(() => (typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("warehouse_id") ?? ""));
+  const [deadDays, setDeadDays] = useState(90);
+  const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
+  const search = useDebounced(searchInput.trim());
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [openingOpen, setOpeningOpen] = useState(false);
+  const [adjusting, setAdjusting] = useState<InventorySummary | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [reorderItems, setReorderItems] = useState<LowStockItem[] | null>(null);
 
-  const [
-    page,
-    setPage,
-  ] = useState(1);
+  const stock = useInventoryList({ page, page_size: 25, warehouse_id: warehouseId || undefined, search: search || undefined, sort: "-updated_at" });
+  const insights = useInventoryInsights(warehouseId, deadDays, canRead);
+  const warehouses = useWarehouseList({ page: 1, page_size: 100, is_active: true, sort: "name" }).data?.warehouses ?? [];
+  const lowIds = useMemo(() => new Set((insights.data?.low_stock ?? []).map((i) => i.product_id)), [insights.data]);
 
-  const [
-    openingDialogOpen,
-    setOpeningDialogOpen,
-  ] = useState(false);
-
-  const [
-    adjustmentInventory,
-    setAdjustmentInventory,
-  ] = useState<InventorySummary | null>(
-    null,
-  );
-
-  const permissions =
-    authentication
-      ?.role
-      .permissions
-    ??
-    [];
-
-  const canRead = hasPermission(
-    permissions,
-    "inventory.read",
-  );
-
-  const canCreate = hasPermission(
-    permissions,
-    "inventory.create",
-  );
-
-  const canAdjust = hasPermission(
-    permissions,
-    "inventory.adjust",
-  );
-
-  const listParameters = useMemo(
-    () => ({
-      page,
-      page_size: 20,
-      warehouse_id:
-        warehouseId
-        ||
-        undefined,
-      sort: "-updated_at",
-    }),
-    [
-      page,
-      warehouseId,
-    ],
-  );
-
-  const inventoryQuery =
-    useInventoryList(
-      listParameters,
-    );
-
-  const warehouseQuery =
-    useWarehouseList({
-      page: 1,
-      page_size: 100,
-      is_active: true,
-      sort: "name",
-    });
-
-  if (!authentication) {
-    return null;
-  }
-
+  if (!authentication) return null;
   if (!canRead) {
-    return (
-      <section
-        className="
-          rounded-2xl border
-          border-amber-200 bg-amber-50
-          p-6
-        "
-      >
-        <h1
-          className="
-            text-lg font-semibold
-            text-amber-900
-          "
-        >
-          Inventory access restricted
-        </h1>
-
-        <p
-          className="
-            mt-2 text-sm text-amber-800
-          "
-        >
-          Your role does not include the
-          inventory.read permission.
-        </p>
-      </section>
-    );
+    return <div className="nx-card"><EmptyState icon={Boxes} title="Stock unavailable" description="Your role does not include the inventory.read permission." /></div>;
   }
 
-  const inventoryItems =
-    inventoryQuery.data
-      ?.inventory
-    ??
-    [];
+  const rows = stock.data?.inventory ?? [];
+  const low = insights.data?.low_stock ?? [];
+  const dead = insights.data?.dead_stock ?? [];
+  const byWarehouse = insights.data?.by_warehouse ?? [];
+  const s = insights.data?.summary;
+  const toggle = (id: string) => setSelected((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  const selectedItems = low.filter((i) => selected.has(i.product_id));
+  const history = (productId: string) => router.push(`/stock-movements?product_id=${productId}`);
 
-  const pagination =
-    inventoryQuery.data
-      ?.pagination;
+  function exportCsv() {
+    const done = (p: Promise<void>) => p.catch((e: unknown) => notify(e instanceof Error ? e.message : "Export failed.", "error"));
+    if (view === "low") return done(downloadCsv("NexEase-low-stock", low, [
+      { header: "SKU", value: (i) => i.sku }, { header: "Item", value: (i) => i.name }, { header: "Unit", value: (i) => i.unit },
+      { header: "Available", value: (i) => i.available }, { header: "Reorder level", value: (i) => i.reorder_level }, { header: "Suggested order", value: (i) => i.suggested_quantity },
+      { header: "Last supplier", value: (i) => i.supplier?.name }, { header: "Last rate", value: (i) => i.supplier?.last_rate },
+    ]));
+    if (view === "dead") return done(downloadCsv(`NexEase-dead-stock-${deadDays}d`, dead, [
+      { header: "SKU", value: (i) => i.sku }, { header: "Item", value: (i) => i.name }, { header: "On hand", value: (i) => i.on_hand }, { header: "Unit", value: (i) => i.unit },
+      { header: "Cost price", value: (i) => i.cost_price }, { header: "Value", value: (i) => i.value }, { header: "Last movement", value: (i) => i.last_movement?.slice(0, 10) ?? "Never" },
+    ]));
+    if (view === "warehouse") return done(downloadCsv("NexEase-stock-value-by-warehouse", byWarehouse, [
+      { header: "Warehouse", value: (w) => w.name }, { header: "Code", value: (w) => w.code }, { header: "Units", value: (w) => w.units }, { header: "Value", value: (w) => w.value },
+    ]));
+    return done(downloadCsv(`NexEase-stock-page-${page}`, rows, [
+      { header: "SKU", value: (r) => r.product.sku }, { header: "Item", value: (r) => r.product.name }, { header: "Warehouse", value: (r) => r.warehouse.name },
+      { header: "On hand", value: (r) => r.quantity }, { header: "Reserved", value: (r) => r.reserved_quantity }, { header: "Available", value: (r) => r.available_quantity }, { header: "Unit", value: (r) => r.product.unit },
+    ]));
+  }
 
-  const warehouses =
-    warehouseQuery.data
-      ?.warehouses
-    ??
-    [];
+  const cards = (
+    <div className="nx-kpi-strip" data-cols="4">
+      <button type="button" className="text-left" onClick={() => setView("warehouse")} aria-label="Show stock value by warehouse">
+        <StatCard label="Stock value" icon={IndianRupee} tone="info" loading={insights.isLoading} value={formatCompactMoney(s?.stock_value)} title={formatMoney(s?.stock_value)} hint={s?.unvalued_products ? `${s.unvalued_products} item${s.unvalued_products === 1 ? " has" : "s have"} no cost price` : "At cost price"} />
+      </button>
+      <button type="button" className="text-left" onClick={() => setView("low")} aria-label="Show low stock">
+        <StatCard label="Low stock" icon={AlertTriangle} tone={s?.low_stock ? "warning" : "success"} loading={insights.isLoading} value={String(s?.low_stock ?? 0)} hint="At or below reorder level" />
+      </button>
+      <div><StatCard label="Out of stock" icon={PackageX} tone={s?.out_of_stock ? "danger" : "success"} loading={insights.isLoading} value={String(s?.out_of_stock ?? 0)} hint={`of ${s?.products ?? 0} goods`} /></div>
+      <button type="button" className="text-left" onClick={() => setView("dead")} aria-label="Show dead stock">
+        <StatCard label="Dead stock" icon={Archive} tone={s?.dead_stock ? "violet" : "success"} loading={insights.isLoading} value={formatCompactMoney(s?.dead_stock_value)} title={formatMoney(s?.dead_stock_value)} hint={`${s?.dead_stock ?? 0} item${s?.dead_stock === 1 ? "" : "s"} idle ${deadDays}+ days`} />
+      </button>
+    </div>
+  );
 
-  const visibleTotals =
-    inventoryItems.reduce(
-      (
-        totals,
-        inventory,
-      ) => ({
-        physical:
-          totals.physical
-          +
-          Number(
-            inventory.quantity
-          ),
-        reserved:
-          totals.reserved
-          +
-          Number(
-            inventory
-              .reserved_quantity
-          ),
-        available:
-          totals.available
-          +
-          Number(
-            inventory
-              .available_quantity
-          ),
-      }),
-      {
-        physical: 0,
-        reserved: 0,
-        available: 0,
-      },
+  const selectionBar = view === "low" && low.length && canOrder ? (
+    <div className="nxl-panel flex flex-wrap items-center justify-between gap-2 p-3 text-sm">
+      <span>{selected.size ? `${selected.size} selected` : "Tap items to select them for reordering."}</span>
+      <span className="flex gap-2">
+        <button type="button" className="nx-button nx-secondary nx-btn-sm" onClick={() => setSelected(selected.size === low.length ? new Set() : new Set(low.map((i) => i.product_id)))}>{selected.size === low.length ? "Clear" : "Select all"}</button>
+        <button type="button" className="nx-button nx-btn-sm" disabled={!selected.size} onClick={() => setReorderItems(selectedItems)}><ShoppingCart size={15} />Create draft PO</button>
+      </span>
+    </div>
+  ) : null;
+
+  const insightError = insights.error;
+  let body;
+  if (view === "low") {
+    body = (
+      <ListState loading={insights.isPending} error={insightError} onRetry={() => void insights.refetch()} isEmpty={!low.length} emptyIcon={CheckCircle2}
+        emptyTitle="Nothing is running low" emptyDescription="Set reorder levels on products to get low-stock alerts and reorder suggestions here.">
+        <CompactList label="Low stock" columns={[{ label: "Item" }, { label: "Reorder level" }, { label: "Last supplier" }, { label: "Available" }]}>
+          {low.map((i) => {
+            const isSelected = selected.has(i.product_id);
+            const Mark = isSelected ? CheckCircle2 : Circle;
+            return (
+              <CompactRow
+                key={i.product_id}
+                openLabel={`${isSelected ? "Unselect" : "Select"} ${i.name}`}
+                onOpen={canOrder ? () => toggle(i.product_id) : undefined}
+                title={<span className="inline-flex items-center gap-2">{canOrder ? <Mark size={16} aria-hidden="true" style={{ color: isSelected ? "var(--nx-primary)" : "var(--nx-text-muted)" }} /> : null}{i.name}</span>}
+                subtitle={`${i.sku} · order ${qty(i.suggested_quantity, i.unit)}${i.supplier ? ` from ${i.supplier.name}` : ""}`}
+                meta={[qty(i.reorder_level, i.unit), i.supplier ? `${i.supplier.name} · ₹${i.supplier.last_rate}` : "—"]}
+                amount={qty(i.available, i.unit)}
+                amountTone={Number(i.available) <= 0 ? "danger" : undefined}
+                badge={Number(i.available) <= 0 ? <Badge tone="danger">Out</Badge> : <Badge tone="warning">Low</Badge>}
+                actions={[
+                  ...(canOrder ? [{ icon: ShoppingCart, label: `Reorder ${i.name}`, onClick: () => setReorderItems([i]) }] : []),
+                  { icon: History, label: `Stock history ${i.name}`, onClick: () => history(i.product_id) },
+                ]}
+              />
+            );
+          })}
+        </CompactList>
+      </ListState>
     );
+  } else if (view === "dead") {
+    body = (
+      <ListState loading={insights.isPending} error={insightError} onRetry={() => void insights.refetch()} isEmpty={!dead.length} emptyIcon={CheckCircle2}
+        emptyTitle="No dead stock" emptyDescription={`Every item with stock has moved in the last ${deadDays} days.`}>
+        <CompactList label="Dead stock" columns={[{ label: "Item" }, { label: "On hand" }, { label: "Last moved" }, { label: "Value" }]}>
+          {dead.map((i) => (
+            <CompactRow
+              key={i.product_id}
+              openLabel={`Stock history ${i.name}`}
+              onOpen={() => history(i.product_id)}
+              title={i.name}
+              subtitle={`${i.sku} · ${qty(i.on_hand, i.unit)} · ${i.last_movement ? `last moved ${formatDate(i.last_movement)}` : "never moved"}`}
+              meta={[qty(i.on_hand, i.unit), i.last_movement ? formatDate(i.last_movement) : "Never"]}
+              amount={formatMoney(i.value)}
+              amountHint={Number(i.cost_price) ? `@ ₹${i.cost_price}` : "No cost price"}
+            />
+          ))}
+        </CompactList>
+      </ListState>
+    );
+  } else if (view === "warehouse") {
+    body = (
+      <ListState loading={insights.isPending} error={insightError} onRetry={() => void insights.refetch()} isEmpty={!byWarehouse.length} emptyIcon={Boxes} emptyTitle="No stock yet" emptyDescription="Add opening stock to see value by warehouse.">
+        <CompactList label="Stock value by warehouse" columns={[{ label: "Warehouse" }, { label: "Units" }, { label: "Value" }]}>
+          {byWarehouse.map((w) => (
+            <CompactRow key={w.id} openLabel={`Show stock in ${w.name}`} onOpen={() => { setWarehouseId(w.id); setView("all"); setPage(1); }} title={w.name} subtitle={w.code} meta={[qty(w.units)]} amount={formatMoney(w.value)} />
+          ))}
+        </CompactList>
+      </ListState>
+    );
+  } else {
+    body = (
+      <ListState loading={stock.isPending} error={stock.error} onRetry={() => void stock.refetch()} isEmpty={!rows.length} emptyIcon={Boxes}
+        emptyTitle={search || warehouseId ? "No stock matches" : "No stock recorded yet"} emptyDescription={search || warehouseId ? "Try a different item or warehouse." : "Add opening stock for your items to start tracking."}
+        emptyAction={canCreate && !search && !warehouseId ? <button type="button" className="nx-button" onClick={() => setOpeningOpen(true)}><Plus size={16} />Opening stock</button> : null}>
+        <CompactList label="Stock" columns={[{ label: "Item / warehouse" }, { label: "On hand" }, { label: "Reserved" }, { label: "Available" }]}>
+          {rows.map((r) => {
+            const available = Number(r.available_quantity);
+            const actions: ListAction[] = [
+              ...(canAdjust ? [{ icon: SlidersHorizontal, label: `Adjust ${r.product.name} in ${r.warehouse.name}`, onClick: () => setAdjusting(r) }] : []),
+              { icon: History, label: `Stock history ${r.product.name}`, onClick: () => history(r.product.id) },
+            ];
+            return (
+              <CompactRow
+                key={r.id}
+                title={r.product.name}
+                subtitle={`${r.product.sku} · ${r.warehouse.name}`}
+                meta={[qty(r.quantity, r.product.unit), qty(r.reserved_quantity)]}
+                amount={qty(r.available_quantity, r.product.unit)}
+                amountTone={available <= 0 ? "danger" : undefined}
+                badge={available <= 0 ? <Badge tone="danger">Out</Badge> : lowIds.has(r.product.id) ? <Badge tone="warning">Low</Badge> : undefined}
+                actions={actions}
+              />
+            );
+          })}
+        </CompactList>
+      </ListState>
+    );
+  }
 
   return (
-    <section className="space-y-6">
-      {hasPermission(permissions,"products.read") && <div className="space-y-2"><Link className="nx-button nx-secondary" href="/settings/categories">Item categories</Link><UnitSettings canCreate={hasPermission(permissions,"products.create")}/></div>}
-      <div
-        className="
-          flex flex-col gap-4
-          sm:flex-row sm:items-center
-          sm:justify-between
-        "
+    <>
+      <ListScreen
+        title="Stock"
+        primary={canCreate ? { label: "Opening stock", icon: Plus, onClick: () => setOpeningOpen(true) } : null}
+        actions={[{ icon: FileSpreadsheet, label: "Export this view to CSV", onClick: () => void exportCsv() }]}
+        onRefresh={() => { void stock.refetch(); void insights.refetch(); }}
+        refreshing={stock.isFetching || insights.isFetching}
+        search={view === "all" ? { value: searchInput, onChange: (v) => { setSearchInput(v); setPage(1); }, placeholder: "Search item, SKU, barcode or warehouse" } : undefined}
+        onOpenFilters={() => setFiltersOpen(true)}
+        filtersActive={Boolean(warehouseId) || deadDays !== 90}
+        chips={{ options: views, value: view, label: "Stock view", onChange: (v) => { setView(v); setSelected(new Set()); } }}
+        above={<>{cards}{selectionBar}</>}
+        footer={view === "all" ? <Pager pagination={stock.data?.pagination} noun="stock rows" onPage={setPage} /> : null}
       >
-        <div>
-          <div
-            className="
-              flex items-center gap-2
-            "
-          >
-            <Boxes
-              size={25}
-              className="text-blue-600"
-            />
+        {body}
+      </ListScreen>
 
-            <h1
-              className="
-                text-2xl font-bold
-                text-slate-900
-              "
-            >
-              Inventory
-            </h1>
-          </div>
-
-          <p
-            className="
-              mt-1 text-sm text-slate-600
-            "
-          >
-            Physical, reserved, and
-            available stock by warehouse.
-          </p>
-        </div>
-
-        <div
-          className="
-            flex flex-col gap-2
-            sm:flex-row
-          "
-        >
-          <button title="Refresh"
-            type="button"
-            disabled={
-              inventoryQuery.isFetching
-            }
-            onClick={() => {
-              void inventoryQuery.refetch();
-            }}
-            className="
-              inline-flex items-center
-              justify-center gap-2
-              rounded-lg border
-              border-slate-300 bg-white
-              px-4 py-2 text-sm
-              font-semibold text-slate-700
-              hover:bg-slate-50
-              disabled:cursor-not-allowed
-              disabled:opacity-50
-            "
-          >
-            <RefreshCw
-              size={16}
-              className={
-                inventoryQuery.isFetching
-                  ? "animate-spin"
-                  : undefined
-              }
-            />
-
-            <span className="sr-only">Refresh</span>
-          </button>
-
-          {canCreate ? (
-            <button title="Opening inventory"
-              type="button"
-              onClick={() => {
-                setOpeningDialogOpen(
-                  true
-                );
-              }}
-              className="
-                inline-flex items-center
-                justify-center gap-2
-                rounded-lg bg-blue-600
-                px-4 py-2 text-sm
-                font-semibold text-white
-                hover:bg-blue-700
-              "
-            >
-              <Plus size={17} /><span className="sr-only">Opening inventory</span></button>
-          ) : null}
-        </div>
-      </div>
-
-      <div
-        className="
-          grid gap-4 sm:grid-cols-3
-        "
-      >
-        {[
-          {
-            label:
-              "Visible physical stock",
-            value:
-              visibleTotals.physical,
-            color:
-              "text-blue-700",
-            background:
-              "bg-blue-50",
-          },
-          {
-            label:
-              "Visible reserved stock",
-            value:
-              visibleTotals.reserved,
-            color:
-              "text-amber-700",
-            background:
-              "bg-amber-50",
-          },
-          {
-            label:
-              "Visible available stock",
-            value:
-              visibleTotals.available,
-            color:
-              "text-emerald-700",
-            background:
-              "bg-emerald-50",
-          },
-        ].map(
-          (item) => (
-            <article
-              key={item.label}
-              className={`
-                rounded-2xl border
-                border-slate-200 p-5
-                ${item.background}
-              `}
-            >
-              <p
-                className="
-                  text-sm font-medium
-                  text-slate-600
-                "
-              >
-                {item.label}
-              </p>
-
-              <p
-                className={`
-                  mt-2 text-2xl
-                  font-bold
-                  ${item.color}
-                `}
-              >
-                {
-                  formatQuantity(
-                    String(
-                      item.value
-                    ),
-                  )
-                }
-              </p>
-            </article>
-          ),
-        )}
-      </div>
-
-      <div
-        className="
-          rounded-2xl border
-          border-slate-200 bg-white
-          p-4 shadow-sm
-        "
-      >
-        <label
-          className="
-            block max-w-sm space-y-1.5
-          "
-        >
-          <span
-            className="
-              text-sm font-semibold
-              text-slate-700
-            "
-          >
-            Warehouse
-          </span>
-
-          <SearchSelect
-            value={warehouseId}
-            disabled={
-              warehouseQuery.isPending
-            }
-            onChange={(event) => {
-              setWarehouseId(
-                event.target.value,
-              );
-
-              setPage(1);
-            }}
-            className="
-              h-10 w-full rounded-lg
-              border border-slate-300
-              bg-white px-3 text-sm
-              text-slate-900 outline-none
-              focus:border-blue-500
-              focus:ring-2
-              focus:ring-blue-100
-              disabled:opacity-50
-            "
-          >
-            <option value="">
-              All warehouses
-            </option>
-
-            {warehouses.map(
-              (warehouse) => (
-                <option
-                  key={warehouse.id}
-                  value={warehouse.id}
-                >
-                  {warehouse.code}
-                  {" — "}
-                  {warehouse.name}
-                </option>
-              ),
-            )}
+      <FilterSheet open={filtersOpen} onClose={() => setFiltersOpen(false)}>
+        <label className="block">Warehouse
+          <SearchSelect className="nx-input" value={warehouseId} onChange={(e) => { setWarehouseId(e.target.value); setPage(1); }}>
+            <option value="">All warehouses</option>
+            {warehouses.map((w) => <option key={w.id} value={w.id}>{w.code} — {w.name}</option>)}
           </SearchSelect>
         </label>
-      </div>
+        <label className="block">Dead stock means no movement for
+          <select className="nx-input" value={deadDays} onChange={(e) => setDeadDays(Number(e.target.value))}>
+            {[30, 60, 90, 180, 365].map((d) => <option key={d} value={d}>{d} days</option>)}
+          </select>
+        </label>
+        <button type="button" className="nx-button nx-secondary" onClick={() => { setWarehouseId(""); setDeadDays(90); setSearchInput(""); setPage(1); }}>Clear filters</button>
+      </FilterSheet>
 
-      <div
-        className="
-          overflow-hidden rounded-2xl
-          border border-slate-200
-          bg-white shadow-sm
-        "
-      >
-        {inventoryQuery.isPending ? (
-          <div
-            className="
-              flex min-h-72 items-center
-              justify-center text-sm
-              text-slate-500
-            "
-          >
-            Loading inventory…
-          </div>
-        ) : inventoryQuery.isError ? (
-          <div
-            className="
-              flex min-h-72 flex-col
-              items-center justify-center
-              gap-3 p-6 text-center
-            "
-          >
-            <p
-              className="
-                text-sm font-medium
-                text-red-700
-              "
-            >
-              {
-                inventoryQuery
-                  .error
-                  .message
-              }
-            </p>
-
-            <button
-              type="button"
-              onClick={() => {
-                void inventoryQuery.refetch();
-              }}
-              className="
-                rounded-lg bg-slate-900
-                px-4 py-2 text-sm
-                font-semibold text-white
-                hover:bg-slate-700
-              "
-            >
-              Try again
-            </button>
-          </div>
-        ) : inventoryItems.length === 0 ? (
-          <div
-            className="
-              flex min-h-72 flex-col
-              items-center justify-center
-              p-6 text-center
-            "
-          >
-            <Boxes
-              size={36}
-              className="text-slate-300"
-            />
-
-            <h2
-              className="
-                mt-3 font-semibold
-                text-slate-900
-              "
-            >
-              No inventory balances found
-            </h2>
-
-            <p
-              className="
-                mt-1 max-w-md text-sm
-                text-slate-500
-              "
-            >
-              Select another warehouse or
-              create opening inventory for a
-              product and warehouse.
-            </p>
-            {canCreate ? (
-              <button title="Create opening inventory"
-                type="button"
-                onClick={() => {
-                  setOpeningDialogOpen(
-                    true
-                  );
-                }}
-                className="
-                  mt-4 inline-flex
-                  items-center gap-2
-                  rounded-lg bg-blue-600
-                  px-4 py-2 text-sm
-                  font-semibold text-white
-                  hover:bg-blue-700
-                "
-              >
-                <Plus size={16} /><span className="sr-only">Create opening inventory</span></button>
-            ) : null}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table role="table"
- className="nx-mobile-records
-                min-w-full divide-y
-                divide-slate-200
-              "
-            >
-              <thead className="bg-slate-50">
-                <tr>
-                  {[
-                    "SKU",
-                    "Product",
-                    "Warehouse",
-                    "Physical",
-                    "Reserved",
-                    "Available",
-                    ...(canAdjust
-                      ? ["Actions"]
-                      : []),
-                  ].map(
-                    (heading) => (
-                      <th
-                        key={heading}
-                        scope="col"
-                        className="
-                          whitespace-nowrap
-                          px-4 py-3 text-left
-                          text-xs font-semibold
-                          uppercase tracking-wide
-                          text-slate-500
-                        "
-                      >
-                        {heading}
-                      </th>
-                    ),
-                  )}
-                </tr>
-              </thead>
-
-              <tbody
-                className="
-                  divide-y divide-slate-100
-                "
-              >
-                {inventoryItems.map(
-                  (inventory) => (
-                    <tr
-                      key={inventory.id}
-                      className="
-                        hover:bg-slate-50
-                      "
-                    >
-                      <td data-label="SKU"
-                        className="
-                          whitespace-nowrap
-                          px-4 py-4 text-sm
-                          font-semibold
-                          text-slate-900
-                        "
-                      >
-                        {inventory.product.sku}
-                      </td>
-
-                      <td data-label="Product"
-                        className="
-                          px-4 py-4 text-sm
-                          text-slate-700
-                        "
-                      >
-                        <p className="font-medium">
-                          {inventory.product.name}
-                        </p>
-
-                        <p
-                          className="
-                            mt-0.5 text-xs
-                            text-slate-500
-                          "
-                        >
-                          Unit:{" "}
-                          {inventory.product.unit}{inventory.product.category && " · "+inventory.product.category}
-                        </p>
-                      </td>
-
-                      <td data-label="Warehouse"
-                        className="
-                          px-4 py-4 text-sm
-                          text-slate-600
-                        "
-                      >
-                        <p>
-                          {inventory.warehouse.name}
-                        </p>
-
-                        <p
-                          className="
-                            mt-0.5 text-xs
-                            text-slate-500
-                          "
-                        >
-                          {inventory.warehouse.code}
-                        </p>
-                      </td>
-
-                      <td data-label="Physical"
-                        className="
-                          whitespace-nowrap
-                          px-4 py-4 text-sm
-                          font-semibold
-                          text-blue-700
-                        "
-                      >
-                        {
-                          formatQuantity(
-                            inventory.quantity,
-                          )
-                        }
-                      </td>
-
-                      <td data-label="Reserved"
-                        className="
-                          whitespace-nowrap
-                          px-4 py-4 text-sm
-                          font-semibold
-                          text-amber-700
-                        "
-                      >
-                        {
-                          formatQuantity(
-                            inventory
-                              .reserved_quantity,
-                          )
-                        }
-                      </td>
-
-                      <td data-label="Available"
-                        className="
-                          whitespace-nowrap
-                          px-4 py-4 text-sm
-                          font-semibold
-                          text-emerald-700
-                        "
-                      >
-                        {
-                          formatQuantity(
-                            inventory
-                              .available_quantity,
-                          )
-                        }
-                      </td>
-                      {canAdjust ? (
-                        <td data-label="Actions"
-                          className="
-                            whitespace-nowrap
-                            px-4 py-4
-                          "
-                        >
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setAdjustmentInventory(
-                                inventory,
-                              );
-                            }}
-                            className="
-                              rounded-lg border
-                              border-blue-200
-                              bg-blue-50
-                              px-3 py-1.5
-                              text-sm font-semibold
-                              text-blue-700
-                              hover:border-blue-300
-                              hover:bg-blue-100
-                            "
-                          >
-                            Adjust
-                          </button>
-                        </td>
-                      ) : null}
-                    </tr>
-                  ),
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {pagination ? (
-          <div
-            className="
-              flex flex-col gap-3
-              border-t border-slate-200
-              px-4 py-3
-              sm:flex-row sm:items-center
-              sm:justify-between
-            "
-          >
-            <p
-              className="
-                text-sm text-slate-600
-              "
-            >
-              Page {pagination.page} of{" "}
-              {pagination.total_pages || 1}
-              {" · "}
-              {pagination.total_items} balances
-            </p>
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled={
-                  !pagination.has_previous
-                  ||
-                  inventoryQuery.isFetching
-                }
-                onClick={() => {
-                  setPage(
-                    (current) =>
-                      Math.max(
-                        1,
-                        current - 1,
-                      ),
-                  );
-                }}
-                className="
-                  rounded-lg border
-                  border-slate-300 bg-white
-                  px-3 py-1.5 text-sm
-                  font-semibold text-slate-700
-                  hover:bg-slate-50
-                  disabled:cursor-not-allowed
-                  disabled:opacity-40
-                "
-              >
-                Previous
-              </button>
-
-              <button
-                type="button"
-                disabled={
-                  !pagination.has_next
-                  ||
-                  inventoryQuery.isFetching
-                }
-                onClick={() => {
-                  setPage(
-                    (current) =>
-                      current + 1,
-                  );
-                }}
-                className="
-                  rounded-lg border
-                  border-slate-300 bg-white
-                  px-3 py-1.5 text-sm
-                  font-semibold text-slate-700
-                  hover:bg-slate-50
-                  disabled:cursor-not-allowed
-                  disabled:opacity-40
-                "
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        ) : null}
-      </div>
-      <OpeningInventoryDialog
-        open={
-          openingDialogOpen
-        }
-        onClose={() => {
-          setOpeningDialogOpen(
-            false
-          );
-        }}
-      />
-      <StockAdjustmentDialog
-        open={
-          Boolean(
-            adjustmentInventory,
-          )
-        }
-        inventory={
-          adjustmentInventory
-        }
-        onClose={() => {
-          setAdjustmentInventory(
-            null,
-          );
-        }}
-      />
-    </section>
+      <OpeningInventoryDialog open={openingOpen} onClose={() => setOpeningOpen(false)} />
+      <StockAdjustmentDialog open={Boolean(adjusting)} inventory={adjusting} onClose={() => setAdjusting(null)} />
+      {reorderItems ? <ReorderSheet items={reorderItems} onClose={() => setReorderItems(null)} onCreated={() => setSelected(new Set())} /> : null}
+    </>
   );
 }
