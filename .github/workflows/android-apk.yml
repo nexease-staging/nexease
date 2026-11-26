@@ -1,0 +1,83 @@
+name: Android APK
+# Run from GitHub → Actions → "Android APK" → Run workflow. The APK appears under the run's Artifacts.
+on:
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: Backend API address baked into the app
+        required: true
+        default: https://nexease-backend-singapore.onrender.com/api/v1
+      build_type:
+        description: debug installs directly; release needs the signing secrets
+        required: true
+        default: debug
+        type: choice
+        options: [debug, release]
+permissions:
+  contents: read
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      NEXT_PUBLIC_API_BASE_URL: ${{ inputs.api_url }}
+      # Continues the existing app's version 7 so a new build can update an installed one.
+      VERSION_CODE: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - run: npm ci
+      - name: Build the web app for mobile
+        run: npm run mobile:build
+      - name: Copy it into the Android project
+        run: npx cap sync android
+      - name: Build debug APK
+        if: inputs.build_type == 'debug'
+        working-directory: frontend/android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug -PnexeaseVersionCode=$((100 + VERSION_CODE))
+      - name: Build signed release APK
+        if: inputs.build_type == 'release'
+        working-directory: frontend/android
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Add the ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS and ANDROID_KEY_PASSWORD secrets first, or run a debug build."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease -PnexeaseVersionCode=$((100 + VERSION_CODE)) \
+            -Pandroid.injected.signing.store.file="$RUNNER_TEMP/release.keystore" \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
+          rm -f "$RUNNER_TEMP/release.keystore"
+      - name: Name the APK
+        run: |
+          mkdir -p ../apk
+          src=$(ls android/app/build/outputs/apk/${{ inputs.build_type }}/*.apk | head -1)
+          cp "$src" "../apk/NexEase-${{ inputs.build_type }}-$((100 + VERSION_CODE)).apk"
+          ls -la ../apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NexEase-${{ inputs.build_type }}-apk
+          path: apk/*.apk
+          retention-days: 30
