@@ -1,899 +1,108 @@
 "use client";
+
+import { useState } from "react";
+import { Building2, Globe2, Phone, RotateCcw, Save } from "lucide-react";
+import { FieldHint, FormSection } from "@/components/form/form-sheet";
+import EmptyState from "@/components/ui/empty-state";
 import ScopeSettings from "@/features/business/scope-settings";
+import { useAuth } from "@/features/auth/auth-context";
+import { useOrganization, useUpdateOrganization } from "@/features/organizations/hooks";
+import type { OrganizationDetail, UpdateOrganizationInput } from "@/features/organizations/types";
+import { hasPermission } from "@/lib/authorization/permissions";
 
-import {
-  useState,
-} from "react";
+type Form = Required<UpdateOrganizationInput>;
+const fromOrganization = (o: OrganizationDetail): Form => ({ name: o.name, email: o.email, phone: o.phone ?? "", address: o.address ?? "", country: o.country, currency: o.currency, timezone: o.timezone });
+const normal = (f: Form): Form => ({ name: f.name.trim(), email: f.email.trim(), phone: f.phone.trim(), address: f.address.trim(), country: f.country.trim(), currency: f.currency.trim().toUpperCase(), timezone: f.timezone.trim() });
+const TIMEZONES = ["Asia/Kolkata", "Asia/Dubai", "Asia/Singapore", "Europe/London", "America/New_York", "UTC"];
 
-import {
-  Building2,
-  RefreshCw,
-  Save,
-} from "lucide-react";
+/** Business profile: the name, contact details and region printed on invoices, payslips and emails. */
+export default function OrganizationPage() {
+  const { authentication, refreshAuthentication } = useAuth();
+  const canUpdate = hasPermission(authentication?.role.permissions ?? [], "organizations.update");
+  const organization = useOrganization(Boolean(authentication));
+  const update = useUpdateOrganization();
+  const [override, setOverride] = useState<Form | null>(null);
+  const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
 
-import {
-  useAuth,
-} from "@/features/auth/auth-context";
+  if (!authentication) return null;
+  if (!canUpdate) return <div className="nx-card"><EmptyState icon={Building2} title="Business profile unavailable" description="Your role does not include the organizations.update permission." /></div>;
+  if (organization.isPending) return <div className="nx-skeleton h-64" aria-busy="true" aria-label="Loading business profile" />;
+  if (organization.error || !organization.data) return <p role="alert" className="nxl-error">{organization.error?.message ?? "Could not load the business profile."}</p>;
 
-import {
-  useOrganization,
-  useUpdateOrganization,
-} from "@/features/organizations/hooks";
+  const saved = fromOrganization(organization.data);
+  const form = override ?? saved;
+  const changed = JSON.stringify(normal(form)) !== JSON.stringify(normal(saved));
+  const set = (key: keyof Form, value: string) => { setOverride({ ...form, [key]: value }); setMessage(null); };
+  const missing = (["name", "email"] as const).filter((k) => !form[k].trim());
 
-import type {
-  OrganizationDetail,
-  UpdateOrganizationInput,
-} from "@/features/organizations/types";
-
-import {
-  hasPermission,
-} from "@/lib/authorization/permissions";
-
-
-interface OrganizationFormState {
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  country: string;
-  currency: string;
-  timezone: string;
-}
-
-
-const EMPTY_FORM: OrganizationFormState = {
-  name: "",
-  email: "",
-  phone: "",
-  address: "",
-  country: "",
-  currency: "",
-  timezone: "",
-};
-
-function buildOrganizationForm(
-  organization: OrganizationDetail,
-): OrganizationFormState {
-  return {
-    name:
-      organization.name,
-    email:
-      organization.email,
-    phone:
-      organization.phone ?? "",
-    address:
-      organization.address ?? "",
-    country:
-      organization.country,
-    currency:
-      organization.currency,
-    timezone:
-      organization.timezone,
-  };
-}
-
-export default function OrganizationSettingsPage() {
-  const {
-    authentication,
-    refreshAuthentication,
-  } = useAuth();
-
-  const permissions =
-    authentication
-      ?.role
-      .permissions
-    ??
-    [];
-
-  const canUpdate = hasPermission(
-    permissions,
-    "organizations.update",
-  );
-
-  const organizationQuery =
-    useOrganization(
-      Boolean(authentication),
-    );
-
-  const updateMutation =
-    useUpdateOrganization();
-
-const [
-  formOverride,
-  setFormOverride,
-] = useState<OrganizationFormState | null>(
-  null,
-);
-
-  const [
-    successMessage,
-    setSuccessMessage,
-  ] = useState<string | null>(
-    null,
-  );
-
-  const [
-    actionError,
-    setActionError,
-  ] = useState<string | null>(
-    null,
-  );
-
-  const organization =
-    organizationQuery.data;
-
-  const form =
-    formOverride
-    ??
-    (
-      organization
-        ? buildOrganizationForm(
-            organization,
-          )
-        : EMPTY_FORM
-    );
-
-  if (!authentication) {
-    return null;
-  }
-
-
-  if (!canUpdate) {
-    return (
-      <section
-        className="
-          rounded-2xl border
-          border-amber-200 bg-amber-50
-          p-6
-        "
-      >
-
-        <h1
-          className="
-            text-lg font-semibold
-            text-amber-900
-          "
-        >
-          Organization access restricted
-        </h1>
-
-        <p
-          className="
-            mt-2 text-sm text-amber-800
-          "
-        >
-          Your role does not include the
-          organizations.update permission.
-        </p>
-      </section>
-    );
-  }
-
-  function updateField(
-    field: keyof OrganizationFormState,
-    value: string,
-  ): void {
-    setFormOverride(
-      (current) => ({
-        ...(
-          current
-          ??
-          (
-            organization
-              ? buildOrganizationForm(
-                  organization,
-                )
-              : EMPTY_FORM
-          )
-        ),
-        [field]: value,
-      }),
-    );
-
-    setSuccessMessage(
-      null,
-    );
-
-    setActionError(
-      null,
-    );
-  }
-
-  function resetForm(): void {
-    setFormOverride(
-      null,
-    );
-
-    setSuccessMessage(
-      null,
-    );
-
-    setActionError(
-      null,
-    );
-  }
-
-  async function saveOrganization():
-  Promise<void> {
-    if (!organization) {
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    if (missing.length) {
+      setMessage({ tone: "error", text: "Business name and email are required." });
       return;
     }
-
-    setSuccessMessage(
-      null,
-    );
-
-    setActionError(
-      null,
-    );
-
-    const input: UpdateOrganizationInput = {
-      name:
-        form.name.trim(),
-      email:
-        form.email.trim(),
-      phone:
-        form.phone.trim(),
-      address:
-        form.address.trim(),
-      country:
-        form.country.trim(),
-      currency:
-        form.currency
-          .trim()
-          .toUpperCase(),
-      timezone:
-        form.timezone.trim(),
-    };
-
+    setMessage(null);
     try {
-      const updatedOrganization =
-        await updateMutation.mutateAsync(
-          input,
-        );
-
-      setFormOverride(
-        buildOrganizationForm(
-          updatedOrganization,
-        ),
-      );
-
+      const updated = await update.mutateAsync(normal(form));
+      setOverride(fromOrganization(updated));
       await refreshAuthentication();
-
-      setSuccessMessage(
-        "Organization settings saved successfully.",
-      );
-
+      setMessage({ tone: "ok", text: "Business profile saved." });
     } catch (error) {
-      setActionError(
-        error instanceof Error
-          ? error.message
-          : "Unable to update organization.",
-      );
+      setMessage({ tone: "error", text: error instanceof Error ? error.message : "Could not save the business profile." });
     }
   }
 
-
-  if (organizationQuery.isPending) {
-    return (
-      <section
-        className="
-          flex min-h-72 items-center
-          justify-center
-        "
-      >
-        <div
-          className="
-            flex items-center gap-2
-            text-sm text-slate-500
-          "
-        >
-          <RefreshCw
-            size={17}
-            className="animate-spin"
-          />
-
-          Loading organization...
-        </div>
-      </section>
-    );
-  }
-
-
-  if (organizationQuery.isError) {
-    return (
-      <section
-        className="
-          rounded-2xl border
-          border-red-200 bg-red-50
-          p-6
-        "
-      >
-        <h1
-          className="
-            text-lg font-semibold
-            text-red-900
-          "
-        >
-          Unable to load organization
-        </h1>
-
-        <p
-          className="
-            mt-2 text-sm text-red-700
-          "
-        >
-          {organizationQuery.error.message}
-        </p>
-
-        <button
-          type="button"
-          onClick={() => {
-            void organizationQuery.refetch();
-          }}
-          className="
-            mt-4 inline-flex items-center
-            gap-2 rounded-lg bg-slate-900
-            px-4 py-2 text-sm
-            font-semibold text-white
-          "
-        >
-          <RefreshCw size={16} />
-
-          Try again
-        </button>
-      </section>
-    );
-  }
-
-
-  if (!organization) {
-    return (
-      <section
-        className="
-          rounded-2xl border
-          border-slate-200 bg-white
-          p-6 shadow-sm
-        "
-      >
-        <h1
-          className="
-            text-lg font-semibold
-            text-slate-900
-          "
-        >
-          Organization unavailable
-        </h1>
-
-        <p
-          className="
-            mt-2 text-sm text-slate-600
-          "
-        >
-          No organization information was returned.
-        </p>
-      </section>
-    );
-  }
-
-
-  const normalizedForm = {
-    name:
-      form.name.trim(),
-    email:
-      form.email.trim(),
-    phone:
-      form.phone.trim(),
-    address:
-      form.address.trim(),
-    country:
-      form.country.trim(),
-    currency:
-      form.currency
-        .trim()
-        .toUpperCase(),
-    timezone:
-      form.timezone.trim(),
-  };
-
-  const hasChanges =
-    normalizedForm.name
-      !== organization.name
-    ||
-    normalizedForm.email
-      !== organization.email
-    ||
-    normalizedForm.phone
-      !== (organization.phone ?? "")
-    ||
-    normalizedForm.address
-      !== (organization.address ?? "")
-    ||
-    normalizedForm.country
-      !== organization.country
-    ||
-    normalizedForm.currency
-      !== organization.currency
-    ||
-    normalizedForm.timezone
-      !== organization.timezone;
-
+  const field = (key: keyof Form, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
+    <label className="block">
+      {label}
+      <input className="nx-input" aria-label={label} value={form[key]} onChange={(e) => set(key, e.target.value)} {...props} />
+    </label>
+  );
 
   return (
-    <section className="space-y-6">
-<ScopeSettings />
-      <div
-        className="
-          flex flex-col gap-4
-          sm:flex-row sm:items-center
-          sm:justify-between
-        "
-      >
-        <div>
-          <div
-            className="
-              flex items-center gap-2
-            "
-          >
-            <Building2
-              size={25}
-              className="text-blue-600"
-            />
-
-            <h1
-              className="
-                text-2xl font-bold
-                text-slate-900
-              "
-            >
-              Organization
-            </h1>
+    <div className="nxl-screen">
+      <header className="nxl-header">
+        <div className="min-w-0">
+          <h1>Business profile</h1>
+          <p className="nx-muted">Printed on invoices, payslips and emails. Keep it the same as your GST registration.</p>
+        </div>
+      </header>
+      <form onSubmit={save} className="nxf-body nxs-org flex flex-col gap-3.5 !overflow-visible !p-0">
+        <FormSection title="Business" icon={Building2}>
+          <div className="nxf-grid">
+            {field("name", "Business name *", { required: true, maxLength: 200, autoComplete: "organization" })}
+            {field("email", "Business email *", { type: "email", required: true, autoComplete: "email" })}
           </div>
-
-          <p
-            className="
-              mt-1 text-sm text-slate-600
-            "
-          >
-            Manage your company profile and
-            organization defaults.
-          </p>
-        </div>
-
-        <div
-          className="
-            flex flex-col gap-2
-            sm:flex-row
-          "
-        >
-          <button
-            type="button"
-            disabled={
-              !hasChanges
-              ||
-              updateMutation.isPending
-            }
-            onClick={
-              resetForm
-            }
-            className="
-              inline-flex items-center
-              justify-center rounded-lg
-              border border-slate-300
-              bg-white px-4 py-2
-              text-sm font-semibold
-              text-slate-700
-              hover:bg-slate-50
-              disabled:cursor-not-allowed
-              disabled:opacity-40
-            "
-          >
-            Reset
-          </button>
-
-          <button
-            type="button"
-            disabled={
-              !hasChanges
-              ||
-              updateMutation.isPending
-            }
-            onClick={() => {
-              void saveOrganization();
-            }}
-            className="
-              inline-flex items-center
-              justify-center gap-2
-              rounded-lg bg-blue-600
-              px-4 py-2 text-sm
-              font-semibold text-white
-              hover:bg-blue-700
-              disabled:cursor-not-allowed
-              disabled:opacity-50
-            "
-          >
-            {updateMutation.isPending ? (
-              <RefreshCw
-                size={16}
-                className="animate-spin"
-              />
-            ) : (
-              <Save size={16} />
-            )}
-
-            {updateMutation.isPending
-              ? "Saving..."
-              : "Save changes"}
-          </button>
-        </div>
-      </div>
-
-      {successMessage ? (
-        <div
-          className="
-            rounded-xl border
-            border-emerald-200 bg-emerald-50
-            px-4 py-3 text-sm
-            text-emerald-700
-          "
-        >
-          {successMessage}
-        </div>
-      ) : null}
-
-      {actionError ? (
-        <div
-          className="
-            rounded-xl border
-            border-red-200 bg-red-50
-            px-4 py-3 text-sm
-            text-red-700
-          "
-        >
-          {actionError}
-        </div>
-      ) : null}
-
-      <div
-        className="
-          rounded-2xl border
-          border-slate-200 bg-white
-          shadow-sm
-        "
-      >
-        <div
-          className="
-            border-b border-slate-200
-            px-6 py-5
-          "
-        >
-          <h2
-            className="
-              text-lg font-semibold
-              text-slate-900
-            "
-          >
-            Company information
-          </h2>
-
-          <p
-            className="
-              mt-1 text-sm text-slate-500
-            "
-          >
-            Basic information used across
-            your IMS organization.
-          </p>
-        </div>
-
-        <div
-          className="
-            grid gap-5 p-6
-            md:grid-cols-2
-          "
-        >
-          <label className="space-y-1.5">
-            <span
-              className="
-                text-sm font-semibold
-                text-slate-700
-              "
-            >
-              Organization name
-            </span>
-
-            <input
-              type="text"
-              value={form.name}
-              onChange={(event) => {
-                updateField(
-                  "name",
-                  event.target.value,
-                );
-              }}
-              className="
-                h-10 w-full rounded-lg
-                border border-slate-300
-                bg-white px-3 text-sm
-                text-slate-900 outline-none
-                focus:border-blue-500
-                focus:ring-2
-                focus:ring-blue-100
-              "
-            />
-          </label>
-
-          <label className="space-y-1.5">
-            <span
-              className="
-                text-sm font-semibold
-                text-slate-700
-              "
-            >
-              Email
-            </span>
-
-            <input
-              type="email"
-              value={form.email}
-              onChange={(event) => {
-                updateField(
-                  "email",
-                  event.target.value,
-                );
-              }}
-              className="
-                h-10 w-full rounded-lg
-                border border-slate-300
-                bg-white px-3 text-sm
-                text-slate-900 outline-none
-                focus:border-blue-500
-                focus:ring-2
-                focus:ring-blue-100
-              "
-            />
-          </label>
-
-          <label className="space-y-1.5">
-            <span
-              className="
-                text-sm font-semibold
-                text-slate-700
-              "
-            >
-              Phone
-            </span>
-
-            <input
-              type="tel"
-              value={form.phone}
-              onChange={(event) => {
-                updateField(
-                  "phone",
-                  event.target.value,
-                );
-              }}
-              className="
-                h-10 w-full rounded-lg
-                border border-slate-300
-                bg-white px-3 text-sm
-                text-slate-900 outline-none
-                focus:border-blue-500
-                focus:ring-2
-                focus:ring-blue-100
-              "
-            />
-          </label>
-
-          <label className="space-y-1.5">
-            <span
-              className="
-                text-sm font-semibold
-                text-slate-700
-              "
-            >
-              Country
-            </span>
-
-            <input
-              type="text"
-              value={form.country}
-              onChange={(event) => {
-                updateField(
-                  "country",
-                  event.target.value,
-                );
-              }}
-              className="
-                h-10 w-full rounded-lg
-                border border-slate-300
-                bg-white px-3 text-sm
-                text-slate-900 outline-none
-                focus:border-blue-500
-                focus:ring-2
-                focus:ring-blue-100
-              "
-            />
-          </label>
-
-          <label className="space-y-1.5">
-            <span
-              className="
-                text-sm font-semibold
-                text-slate-700
-              "
-            >
-              Currency
-            </span>
-
-            <input
-              type="text"
-              value={form.currency}
-              maxLength={10}
-              placeholder="INR"
-              onChange={(event) => {
-                updateField(
-                  "currency",
-                  event.target.value
-                    .toUpperCase(),
-                );
-              }}
-              className="
-                h-10 w-full rounded-lg
-                border border-slate-300
-                bg-white px-3 text-sm
-                uppercase text-slate-900
-                outline-none
-                focus:border-blue-500
-                focus:ring-2
-                focus:ring-blue-100
-              "
-            />
-          </label>
-
-          <label className="space-y-1.5">
-            <span
-              className="
-                text-sm font-semibold
-                text-slate-700
-              "
-            >
-              Timezone
-            </span>
-
-            <input
-              type="text"
-              value={form.timezone}
-              placeholder="Asia/Kolkata"
-              onChange={(event) => {
-                updateField(
-                  "timezone",
-                  event.target.value,
-                );
-              }}
-              className="
-                h-10 w-full rounded-lg
-                border border-slate-300
-                bg-white px-3 text-sm
-                text-slate-900 outline-none
-                focus:border-blue-500
-                focus:ring-2
-                focus:ring-blue-100
-              "
-            />
-          </label>
-
-          <label
-            className="
-              space-y-1.5 md:col-span-2
-            "
-          >
-            <span
-              className="
-                text-sm font-semibold
-                text-slate-700
-              "
-            >
+        </FormSection>
+        <FormSection title="Contact" icon={Phone}>
+          <div className="nxf-grid">
+            {field("phone", "Phone", { type: "tel", inputMode: "tel", autoComplete: "tel" })}
+            <label className="block md:col-span-2">
               Address
-            </span>
-
-            <textarea
-              value={form.address}
-              rows={4}
-              onChange={(event) => {
-                updateField(
-                  "address",
-                  event.target.value,
-                );
-              }}
-              className="
-                w-full resize-y rounded-lg
-                border border-slate-300
-                bg-white px-3 py-2
-                text-sm text-slate-900
-                outline-none
-                focus:border-blue-500
-                focus:ring-2
-                focus:ring-blue-100
-              "
-            />
-          </label>
+              <textarea className="nx-input" aria-label="Address" rows={3} value={form.address} onChange={(e) => set("address", e.target.value)} />
+              <FieldHint>Street, city, state and PIN code, as on your GST certificate.</FieldHint>
+            </label>
+          </div>
+        </FormSection>
+        <FormSection title="Region" icon={Globe2}>
+          <div className="nxf-grid">
+            {field("country", "Country", { autoComplete: "country-name" })}
+            {field("currency", "Currency", { maxLength: 3, placeholder: "INR" })}
+            <label className="block">
+              Time zone
+              <input className="nx-input" aria-label="Time zone" list="nx-timezones" value={form.timezone} onChange={(e) => set("timezone", e.target.value)} />
+              <datalist id="nx-timezones">{TIMEZONES.map((t) => <option key={t} value={t} />)}</datalist>
+              <FieldHint>Dates and day-end totals follow this time zone.</FieldHint>
+            </label>
+          </div>
+        </FormSection>
+        {message ? <p role={message.tone === "error" ? "alert" : "status"} className={message.tone === "error" ? "nxf-error" : "nxs-ok"}>{message.text}</p> : null}
+        <div className="nxs-org-actions">
+          <button type="button" className="nx-button nx-secondary" disabled={!changed || update.isPending} onClick={() => { setOverride(null); setMessage(null); }}><RotateCcw size={16} aria-hidden="true" />Undo changes</button>
+          <button type="submit" className="nx-button" disabled={!changed || update.isPending}><Save size={16} aria-hidden="true" />{update.isPending ? "Saving…" : "Save profile"}</button>
         </div>
-      </div>
-
-      <div
-        className="
-          rounded-2xl border
-          border-slate-200 bg-white
-          p-6 shadow-sm
-        "
-      >
-        <h2
-          className="
-            text-lg font-semibold
-            text-slate-900
-          "
-        >
-          Organization status
-        </h2>
-
-        <div
-          className="
-            mt-4 flex flex-wrap
-            items-center gap-3
-          "
-        >
-          <span
-            className={`
-              inline-flex rounded-full
-              border px-2.5 py-1
-              text-xs font-semibold
-              ${
-                organization.is_active
-                  ? (
-                      "border-emerald-200 "
-                      +
-                      "bg-emerald-50 "
-                      +
-                      "text-emerald-700"
-                    )
-                  : (
-                      "border-slate-200 "
-                      +
-                      "bg-slate-100 "
-                      +
-                      "text-slate-600"
-                    )
-              }
-            `}
-          >
-            {organization.is_active
-              ? "Active"
-              : "Inactive"}
-          </span>
-
-          <span
-            className="
-              text-sm text-slate-500
-            "
-          >
-            Organization ID: {organization.id}
-          </span>
-        </div>
-
-        {organization.updated_at ? (
-          <p
-            className="
-              mt-3 text-xs text-slate-500
-            "
-          >
-            Last updated:{" "}
-            {new Date(
-              organization.updated_at,
-            ).toLocaleString()}
-          </p>
-        ) : null}
-      </div>
-    </section>
+      </form>
+      <div className="mt-4"><ScopeSettings /></div>
+    </div>
   );
 }
