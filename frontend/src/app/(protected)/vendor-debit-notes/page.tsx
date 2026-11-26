@@ -1,1078 +1,141 @@
 "use client";
+
+import { useState } from "react";
+import { FileSpreadsheet, Plus, ReceiptText } from "lucide-react";
+import { CompactList, CompactRow, ListScreen, ListState, Pager, StatusBadge, useDebounced } from "@/components/list/list-kit";
+import EmptyState from "@/components/ui/empty-state";
+import FilterSheet from "@/components/ui/filter-sheet";
 import SearchSelect from "@/components/search-select";
-
-
-import {
-  useDeferredValue,
-  useState,
-} from "react";
-
-import {
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  FilePlus2,
-  RotateCcw,
-  Search,
-} from "lucide-react";
-
-import {
-  useAuth,
-} from "@/features/auth/auth-context";
-
-import {
-  useSupplierList,
-} from "@/features/suppliers/hooks";
-
+import { notify } from "@/components/nex-feedback";
+import { useAuth } from "@/features/auth/auth-context";
+import { useSupplierList } from "@/features/suppliers/hooks";
+import { useDocumentRowActions } from "@/features/documents/components/document-row-actions";
+import { debitNoteStatus } from "@/features/purchase/status";
+import { statusChips } from "@/features/sales/status";
 import VendorDebitNoteDetailDialog from "@/features/vendor-debit-notes/components/vendor-debit-note-detail-dialog";
 import VendorDebitNoteDialog from "@/features/vendor-debit-notes/components/vendor-debit-note-dialog";
+import { useVendorDebitNoteList } from "@/features/vendor-debit-notes/hooks";
+import type { VendorDebitNoteStatus } from "@/features/vendor-debit-notes/types";
+import { hasPermission } from "@/lib/authorization/permissions";
+import { downloadCsv } from "@/lib/export-csv";
+import { formatDate, formatMoney } from "@/lib/format";
 
-import {
-  useVendorDebitNoteList,
-} from "@/features/vendor-debit-notes/hooks";
-
-import type {
-  VendorDebitNoteStatus,
-} from "@/features/vendor-debit-notes/types";
-
-import {
-  APIRequestError,
-} from "@/lib/api/client";
-
-const PAGE_SIZE = 25;
-
-const statuses:
-  Array<{
-    value: VendorDebitNoteStatus;
-    label: string;
-  }> = [
-    {
-      value: "DRAFT",
-      label: "Draft",
-    },
-    {
-      value: "ISSUED",
-      label: "Issued",
-    },
-    {
-      value: "CANCELLED",
-      label: "Cancelled",
-    },
-  ];
-
-const statusStyles:
-  Record<
-    VendorDebitNoteStatus,
-    string
-  > = {
-    DRAFT:
-      "bg-amber-100 text-amber-700",
-    ISSUED:
-      "bg-emerald-100 text-emerald-700",
-    CANCELLED:
-      "bg-red-100 text-red-700",
-  };
-
-function formatAmount(
-  value: string,
-): string {
-  const amount = Number(value);
-
-  if (
-    Number.isNaN(amount)
-  ) {
-    return value;
-  }
-
-  return new Intl.NumberFormat(
-    "en-IN",
-    {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 2,
-    },
-  ).format(amount);
-}
-
-function formatDate(
-  value: string | null,
-): string {
-  if (!value) {
-    return "—";
-  }
-
-  const date = new Date(value);
-
-  if (
-    Number.isNaN(
-      date.getTime(),
-    )
-  ) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat(
-    "en-IN",
-    {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    },
-  ).format(date);
-}
-
-function getErrorMessage(
-  error: unknown,
-): string {
-  if (
-    error
-    instanceof
-    APIRequestError
-  ) {
-    return error.message;
-  }
-
-  if (
-    error
-    instanceof
-    Error
-  ) {
-    return error.message;
-  }
-
-  return (
-    "Unable to load vendor debit notes."
-  );
-}
+const tabs = statusChips(debitNoteStatus);
+const sorts = [
+  ["-debit_note_date", "Newest first"],
+  ["debit_note_date", "Oldest first"],
+  ["-total_amount", "Highest amount"],
+  ["-remaining_credit", "Highest remaining credit"],
+  ["debit_note_number", "Debit note number"],
+] as const;
 
 export default function VendorDebitNotesPage() {
-  const {
-    authentication,
-  } = useAuth();
+  const { authentication } = useAuth();
+  const permissions = authentication?.role.permissions ?? [];
+  const canRead = hasPermission(permissions, "vendor_debit_notes.read");
+  const canCreate = hasPermission(permissions, "vendor_debit_notes.create");
 
-  const [
-    page,
-    setPage,
-  ] = useState(1);
+  const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
+  const search = useDebounced(searchInput.trim());
+  const [supplierId, setSupplierId] = useState("");
+  const [status, setStatus] = useState<VendorDebitNoteStatus | "">("");
+  const [sort, setSort] = useState<string>("-debit_note_date");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const docs = useDocumentRowActions();
 
-  const [
-    search,
-    setSearch,
-  ] = useState("");
+  const suppliers = useSupplierList({ page: 1, page_size: 100, is_active: true, sort: "name" }).data?.suppliers ?? [];
+  const query = useVendorDebitNoteList({ page, page_size: 25, supplier_id: supplierId || undefined, status: status || undefined, search: search || undefined, sort });
+  const notes = query.data?.vendor_debit_notes ?? [];
 
-  const [
-    supplierId,
-    setSupplierId,
-  ] = useState("");
-
-  const [
-    status,
-    setStatus,
-  ] = useState<
-    VendorDebitNoteStatus | ""
-  >("");
-
-  const [
-    sort,
-    setSort,
-  ] = useState(
-    "-debit_note_date",
-  );
-
-  const [
-    createOpen,
-    setCreateOpen,
-  ] = useState(false);
-
-  const [
-    detailOpen,
-    setDetailOpen,
-  ] = useState(false);
-
-  const [
-    selectedDebitNoteId,
-    setSelectedDebitNoteId,
-  ] = useState("");
-
-  const deferredSearch =
-    useDeferredValue(
-      search.trim(),
-    );
-
-  const permissions =
-    authentication
-      ?.role
-      .permissions
-      ??
-      [];
-
-  const canCreate =
-    permissions.includes(
-      "vendor_debit_notes.create",
-    );
-
-  const canIssue =
-    permissions.includes(
-      "vendor_debit_notes.issue",
-    );
-
-  const canCancel =
-    permissions.includes(
-      "vendor_debit_notes.cancel",
-    );
-
-  const supplierQuery =
-    useSupplierList({
-      page: 1,
-      page_size: 100,
-      is_active: true,
-      sort: "name",
-    });
-
-  const debitNoteQuery =
-    useVendorDebitNoteList({
-      page,
-      page_size: PAGE_SIZE,
-      supplier_id:
-        supplierId
-        ||
-        undefined,
-      status:
-        status
-        ||
-        undefined,
-      search:
-        deferredSearch
-        ||
-        undefined,
-      sort,
-    });
-
-  const debitNotes =
-    debitNoteQuery
-      .data
-      ?.vendor_debit_notes
-      ??
-      [];
-
-  const pagination =
-    debitNoteQuery
-      .data
-      ?.pagination;
-
-  function openDetail(
-    debitNoteId: string,
-  ): void {
-    setSelectedDebitNoteId(
-      debitNoteId,
-    );
-
-    setCreateOpen(false);
-    setDetailOpen(true);
+  if (!authentication) return null;
+  if (!canRead) {
+    return <div className="nx-card"><EmptyState icon={ReceiptText} title="Debit notes unavailable" description="You do not have permission to view supplier debit notes." /></div>;
   }
+  const filtered = Boolean(search || status || supplierId);
 
-  function handleCreated(
-    debitNoteId: string,
-  ): void {
-    setCreateOpen(false);
-
-    setSelectedDebitNoteId(
-      debitNoteId,
-    );
-
-    setDetailOpen(true);
+  function exportCsv() {
+    void downloadCsv(`NexEase-debit-notes-page-${page}`, notes, [
+      { header: "Debit note", value: (r) => r.debit_note_number },
+      { header: "Supplier", value: (r) => r.supplier.name },
+      { header: "Bill", value: (r) => r.vendor_bill?.bill_number },
+      { header: "Purchase return", value: (r) => r.purchase_return?.return_number },
+      { header: "Date", value: (r) => r.debit_note_date?.slice(0, 10) },
+      { header: "Status", value: (r) => debitNoteStatus[r.status]?.label ?? r.status },
+      { header: "Total", value: (r) => r.total_amount },
+      { header: "Applied", value: (r) => r.applied_amount },
+      { header: "Remaining", value: (r) => r.remaining_credit },
+    ]).catch((e: unknown) => notify(e instanceof Error ? e.message : "Export failed.", "error"));
   }
 
   return (
     <>
-      <div className="space-y-6">
-        <header
-          className="
-            flex flex-col gap-4
-            sm:flex-row
-            sm:items-start
-            sm:justify-between
-          "
+      <ListScreen
+        title="Debit notes"
+        primary={canCreate ? { label: "New debit note", icon: Plus, onClick: () => setCreateOpen(true) } : null}
+        actions={[{ icon: FileSpreadsheet, label: "Export this page to CSV", onClick: exportCsv, disabled: !notes.length }]}
+        onRefresh={() => void query.refetch()}
+        refreshing={query.isFetching}
+        search={{ value: searchInput, onChange: (v) => { setSearchInput(v); setPage(1); }, placeholder: "Search debit note no. or notes" }}
+        onOpenFilters={() => setFiltersOpen(true)}
+        filtersActive={Boolean(supplierId) || sort !== "-debit_note_date"}
+        chips={{ options: tabs, value: status, label: "Filter by status", onChange: (v) => { setStatus(v); setPage(1); } }}
+        footer={<Pager pagination={query.data?.pagination} noun="debit notes" onPage={setPage} />}
+      >
+        <ListState
+          loading={query.isPending}
+          error={query.error}
+          onRetry={() => void query.refetch()}
+          isEmpty={!notes.length}
+          emptyIcon={ReceiptText}
+          emptyTitle={filtered ? "No debit notes match these filters" : "No debit notes yet"}
+          emptyDescription={filtered ? "Try a different search or clear the filters." : "Create one from a confirmed purchase return to reduce what you owe the supplier."}
         >
-          <div>
-            <p
-              className="
-                text-sm font-semibold
-                text-blue-600
-              "
-            >
-              Purchasing
-            </p>
-
-            <h1
-              className="
-                mt-1 text-2xl
-                font-bold tracking-tight
-                text-slate-950
-                sm:text-3xl
-              "
-            >
-              Vendor debit notes
-            </h1>
-
-            <p
-              className="
-                mt-2 max-w-2xl
-                text-sm text-slate-600
-              "
-            >
-              Convert confirmed purchase returns into supplier credits and payable reductions.
-            </p>
-          </div>
-
-          {canCreate
-            ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setCreateOpen(true);
-                  setDetailOpen(false);
-                }}
-                className="
-                  inline-flex items-center
-                  justify-center gap-2
-                  rounded-lg bg-blue-600
-                  px-4 py-2.5
-                  text-sm font-semibold
-                  text-white shadow-sm
-                  hover:bg-blue-700
-                "
-              >
-                <FilePlus2 size={18} />
-                New debit note
-              </button>
-            )
-            : null}
-        </header>
-
-        <section
-          className="
-            rounded-xl border
-            border-slate-200
-            bg-white p-4 shadow-sm
-          "
-        >
-          <div
-            className="nx-list-filters
-              grid gap-3
-              md:grid-cols-2
-              xl:grid-cols-4
-            "
-          >
-            <label className="relative block">
-              <span className="sr-only">
-                Search debit notes
-              </span>
-
-              <Search
-                size={17}
-                className="
-                  pointer-events-none
-                  absolute left-3 top-3
-                  text-slate-400
-                "
+          <CompactList label="Debit notes" columns={[{ label: "Supplier / debit note" }, { label: "Bill" }, { label: "Applied", align: "end" }, { label: "Remaining" }]}>
+            {notes.map((r) => (
+              <CompactRow
+                key={r.id}
+                openLabel={`View debit note ${r.debit_note_number}`}
+                onOpen={() => setDetailId(r.id)}
+                title={r.supplier.name}
+                subtitle={`${r.debit_note_number} · ${formatDate(r.debit_note_date)}`}
+                meta={[r.vendor_bill?.bill_number ?? "—", <span key="applied" className="block text-right tabular-nums">{formatMoney(r.applied_amount)}</span>]}
+                amount={formatMoney(r.remaining_credit)}
+                amountHint={`of ${formatMoney(r.total_amount)}`}
+                badge={<StatusBadge status={r.status} map={debitNoteStatus} />}
+                actions={r.status === "DRAFT" ? [] : docs.actionsFor({ documentType: "VENDOR_DEBIT_NOTE", documentId: r.id, documentNumber: r.debit_note_number, recipient: r.supplier.email })}
               />
+            ))}
+          </CompactList>
+        </ListState>
+      </ListScreen>
 
-              <input
-                type="search"
-                value={search}
-                placeholder="Search debit note number or notes"
-                onChange={(event) => {
-                  setSearch(
-                    event.currentTarget
-                      .value,
-                  );
-                  setPage(1);
-                }}
-                className="
-                  h-11 w-full rounded-lg
-                  border border-slate-300
-                  bg-white pl-10 pr-3
-                  text-sm text-slate-950
-                  outline-none
-                  focus:border-blue-500
-                  focus:ring-2
-                  focus:ring-blue-100
-                "
-              />
-            </label>
+      <FilterSheet open={filtersOpen} onClose={() => setFiltersOpen(false)}>
+        <label className="block">Supplier
+          <SearchSelect className="nx-input" value={supplierId} onChange={(e) => { setSupplierId(e.target.value); setPage(1); }}>
+            <option value="">All suppliers</option>
+            {suppliers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </SearchSelect>
+        </label>
+        <label className="block">Sort by
+          <select className="nx-input" value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }}>
+            {sorts.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+        </label>
+        <button type="button" className="nx-button nx-secondary" onClick={() => { setSupplierId(""); setSort("-debit_note_date"); setSearchInput(""); setStatus(""); setPage(1); }}>Clear filters</button>
+      </FilterSheet>
 
-            <SearchSelect
-              value={supplierId}
-              onChange={(event) => {
-                setSupplierId(
-                  event.currentTarget
-                    .value,
-                );
-                setPage(1);
-              }}
-              className="
-                h-11 rounded-lg border
-                border-slate-300 bg-white
-                px-3 text-sm text-slate-950
-                outline-none
-                focus:border-blue-500
-                focus:ring-2
-                focus:ring-blue-100
-              "
-            >
-              <option value="">
-                All suppliers
-              </option>
-
-              {(
-                supplierQuery
-                  .data
-                  ?.suppliers
-                ??
-                []
-              ).map(
-                (supplier) => (
-                  <option
-                    key={supplier.id}
-                    value={supplier.id}
-                  >
-                    {supplier.name}
-                  </option>
-                ),
-              )}
-            </SearchSelect>
-
-            <SearchSelect
-              value={status}
-              onChange={(event) => {
-                const nextStatus = (event.currentTarget.value as VendorDebitNoteStatus | "");
-
-                setStatus(nextStatus);
-                setPage(1);
-              }}
-              className="
-                h-11 rounded-lg border
-                border-slate-300 bg-white
-                px-3 text-sm text-slate-950
-                outline-none
-                focus:border-blue-500
-                focus:ring-2
-                focus:ring-blue-100
-              "
-            >
-              <option value="">
-                All statuses
-              </option>
-
-              {statuses.map(
-                (item) => (
-                  <option
-                    key={item.value}
-                    value={item.value}
-                  >
-                    {item.label}
-                  </option>
-                ),
-              )}
-            </SearchSelect>
-
-            <SearchSelect
-              value={sort}
-              onChange={(event) => {
-                setSort(
-                  event.currentTarget
-                    .value,
-                );
-                setPage(1);
-              }}
-              className="
-                h-11 rounded-lg border
-                border-slate-300 bg-white
-                px-3 text-sm text-slate-950
-                outline-none
-                focus:border-blue-500
-                focus:ring-2
-                focus:ring-blue-100
-              "
-            >
-              <option value="-debit_note_date">
-                Newest debit note
-              </option>
-
-              <option value="debit_note_date">
-                Oldest debit note
-              </option>
-
-              <option value="-total_amount">
-                Highest credit
-              </option>
-
-              <option value="-remaining_credit">
-                Highest remaining credit
-              </option>
-
-              <option value="debit_note_number">
-                Debit note number
-              </option>
-            </SearchSelect>
-          </div>
-        </section>
-
-        {debitNoteQuery.error
-          ? (
-            <div
-              className="
-                rounded-xl border
-                border-red-200 bg-red-50
-                px-4 py-3 text-sm
-                text-red-700
-              "
-            >
-              {getErrorMessage(
-                debitNoteQuery.error,
-              )}
-            </div>
-          )
-          : null}
-
-        <section
-          className="
-            overflow-hidden rounded-xl
-            border border-slate-200
-            bg-white shadow-sm
-          "
-        >
-          <div
-            className="
-              flex items-center
-              justify-between gap-4
-              border-b border-slate-200
-              px-4 py-4 sm:px-5
-            "
-          >
-            <div>
-              <h2
-                className="
-                  font-bold text-slate-950
-                "
-              >
-                Debit note history
-              </h2>
-
-              <p
-                className="
-                  mt-1 text-xs
-                  text-slate-500
-                "
-              >
-                {pagination
-                  ? (
-                    `${pagination.total_items} vendor debit notes`
-                  )
-                  : "Loading vendor debit notes"}
-              </p>
-            </div>
-
-            {debitNoteQuery.isFetching
-              ? (
-                <RotateCcw
-                  size={18}
-                  className="
-                    animate-spin
-                    text-blue-600
-                  "
-                />
-              )
-              : null}
-          </div>
-
-          {debitNoteQuery.isLoading
-            ? (
-              <div
-                className="
-                  p-10 text-center
-                  text-sm text-slate-500
-                "
-              >
-                Loading vendor debit notes…
-              </div>
-            )
-            : null}
-
-          {!debitNoteQuery.isLoading
-            &&
-            !debitNotes.length
-            ? (
-              <div
-                className="
-                  p-10 text-center
-                "
-              >
-                <FilePlus2
-                  size={30}
-                  className="
-                    mx-auto text-slate-300
-                  "
-                />
-
-                <p
-                  className="
-                    mt-3 font-semibold
-                    text-slate-800
-                  "
-                >
-                  No vendor debit notes found
-                </p>
-
-                <p
-                  className="
-                    mt-1 text-sm
-                    text-slate-500
-                  "
-                >
-                  Create one from a confirmed purchase return.
-                </p>
-              </div>
-            )
-            : null}
-
-          {debitNotes.length
-            ? (
-              <>
-                <div
-                  className="
-                    divide-y divide-slate-200
-                    lg:hidden
-                  "
-                >
-                  {debitNotes.map(
-                    (debitNote) => (
-                      <button
-                        type="button"
-                        key={debitNote.id}
-                        onClick={() => {
-                          openDetail(
-                            debitNote.id,
-                          );
-                        }}
-                        className="
-                          block w-full p-4
-                          text-left
-                          hover:bg-slate-50
-                        "
-                      >
-                        <div
-                          className="
-                            flex items-start
-                            justify-between gap-3
-                          "
-                        >
-                          <div>
-                            <p
-                              className="
-                                font-semibold
-                                text-slate-950
-                              "
-                            >
-                              {
-                                debitNote
-                                  .debit_note_number
-                              }
-                            </p>
-
-                            <p
-                              className="
-                                mt-1 text-sm
-                                text-slate-600
-                              "
-                            >
-                              {
-                                debitNote
-                                  .supplier.name
-                              }
-                            </p>
-                          </div>
-
-                          <span
-                            className={`
-                              rounded-full
-                              px-2.5 py-1
-                              text-xs font-bold
-                              ${
-                                statusStyles[
-                                  debitNote.status
-                                ]
-                              }
-                            `}
-                          >
-                            {debitNote.status}
-                          </span>
-                        </div>
-
-                        <div
-                          className="
-                            mt-3 grid
-                            grid-cols-2 gap-3
-                            text-xs
-                          "
-                        >
-                          <div>
-                            <p
-                              className="
-                                text-slate-500
-                              "
-                            >
-                              Total credit
-                            </p>
-
-                            <p
-                              className="
-                                mt-1 font-semibold
-                                text-slate-800
-                              "
-                            >
-                              {formatAmount(
-                                debitNote
-                                  .total_amount,
-                              )}
-                            </p>
-                          </div>
-
-                          <div>
-                            <p
-                              className="
-                                text-slate-500
-                              "
-                            >
-                              Remaining
-                            </p>
-
-                            <p
-                              className="
-                                mt-1 font-semibold
-                                text-blue-700
-                              "
-                            >
-                              {formatAmount(
-                                debitNote
-                                  .remaining_credit,
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                      </button>
-                    ),
-                  )}
-                </div>
-
-                <div
-                  className="
-                    hidden overflow-x-auto
-                    lg:block
-                  "
-                >
-                  <table role="table"
- className="nx-mobile-records nx-financial-records
-                      min-w-full divide-y
-                      divide-slate-200
-                    "
-                  >
-                    <thead className="bg-slate-50">
-                      <tr>
-                        {[
-                          "Debit note",
-                          "Supplier",
-                          "Purchase return",
-                          "Date",
-                          "Total",
-                          "Applied",
-                          "Remaining",
-                          "Status",
-                          "",
-                        ].map(
-                          (heading) => (
-                            <th
-                              key={heading}
-                              className="
-                                px-4 py-3 text-left
-                                text-xs font-bold
-                                uppercase tracking-wide
-                                text-slate-500
-                              "
-                            >
-                              {heading}
-                            </th>
-                          ),
-                        )}
-                      </tr>
-                    </thead>
-
-                    <tbody
-                      className="
-                        divide-y divide-slate-200
-                      "
-                    >
-                      {debitNotes.map(
-                        (debitNote) => (
-                          <tr
-                            key={debitNote.id}
-                            className="
-                              hover:bg-slate-50
-                            "
-                          >
-                            <td data-label="Debit note"
-                              className="
-                                px-4 py-4 text-sm
-                                font-semibold
-                                text-slate-950
-                              "
-                            >
-                              {
-                                debitNote
-                                  .debit_note_number
-                              }
-                            </td>
-
-                            <td data-label="Supplier"
-                              className="
-                                px-4 py-4 text-sm
-                                text-slate-700
-                              "
-                            >
-                              {
-                                debitNote
-                                  .supplier.name
-                              }
-                            </td>
-
-                            <td data-label="Purchase return"
-                              className="
-                                px-4 py-4 text-sm
-                                text-slate-700
-                              "
-                            >
-                              {
-                                debitNote
-                                  .purchase_return
-                                  .return_number
-                              }
-                            </td>
-
-                            <td data-label="Date"
-                              className="
-                                px-4 py-4 text-sm
-                                text-slate-700
-                              "
-                            >
-                              {formatDate(
-                                debitNote
-                                  .debit_note_date,
-                              )}
-                            </td>
-
-                            <td data-label="Total"
-                              className="
-                                px-4 py-4 text-sm
-                                font-semibold
-                                text-slate-950
-                              "
-                            >
-                              {formatAmount(
-                                debitNote
-                                  .total_amount,
-                              )}
-                            </td>
-
-                            <td data-label="Applied"
-                              className="
-                                px-4 py-4 text-sm
-                                text-emerald-700
-                              "
-                            >
-                              {formatAmount(
-                                debitNote
-                                  .applied_amount,
-                              )}
-                            </td>
-
-                            <td data-label="Remaining"
-                              className="
-                                px-4 py-4 text-sm
-                                text-blue-700
-                              "
-                            >
-                              {formatAmount(
-                                debitNote
-                                  .remaining_credit,
-                              )}
-                            </td>
-
-                            <td data-label="Status"
-                              className="
-                                px-4 py-4
-                              "
-                            >
-                              <span
-                                className={`
-                                  rounded-full
-                                  px-2.5 py-1
-                                  text-xs font-bold
-                                  ${
-                                    statusStyles[
-                                      debitNote.status
-                                    ]
-                                  }
-                                `}
-                              >
-                                {debitNote.status}
-                              </span>
-                            </td>
-
-                            <td data-label="Actions"
-                              className="
-                                px-4 py-4 text-right
-                              "
-                            >
-                              <button title="View"
-                                type="button"
-                                onClick={() => {
-                                  openDetail(
-                                    debitNote.id,
-                                  );
-                                }}
-                                className="
-                                  inline-flex
-                                  items-center gap-2
-                                  rounded-lg border
-                                  border-slate-300
-                                  px-3 py-2
-                                  text-xs font-semibold
-                                  text-slate-700
-                                  hover:bg-slate-100
-                                "
-                              >
-                                <Eye size={15} />
-                                <span className="sr-only">View</span>
-                              </button>
-                            </td>
-                          </tr>
-                        ),
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )
-            : null}
-
-          {pagination
-            &&
-            pagination.total_pages
-            >
-            1
-            ? (
-              <footer
-                className="
-                  flex items-center
-                  justify-between gap-4
-                  border-t border-slate-200
-                  px-4 py-4 sm:px-5
-                "
-              >
-                <p
-                  className="
-                    text-sm text-slate-600
-                  "
-                >
-                  Page {pagination.page} of{" "}
-                  {pagination.total_pages}
-                </p>
-
-                <div
-                  className="
-                    flex items-center gap-2
-                  "
-                >
-                  <button
-                    type="button"
-                    aria-label="Previous page"
-                    disabled={
-                      !pagination
-                        .has_previous
-                    }
-                    onClick={() => {
-                      setPage(
-                        (current) =>
-                          Math.max(
-                            1,
-                            current - 1,
-                          ),
-                      );
-                    }}
-                    className="
-                      rounded-lg border
-                      border-slate-300 p-2
-                      text-slate-700
-                      hover:bg-slate-50
-                      disabled:opacity-40
-                    "
-                  >
-                    <ChevronLeft size={18} />
-                  </button>
-
-                  <button
-                    type="button"
-                    aria-label="Next page"
-                    disabled={
-                      !pagination.has_next
-                    }
-                    onClick={() => {
-                      setPage(
-                        (current) =>
-                          current + 1,
-                      );
-                    }}
-                    className="
-                      rounded-lg border
-                      border-slate-300 p-2
-                      text-slate-700
-                      hover:bg-slate-50
-                      disabled:opacity-40
-                    "
-                  >
-                    <ChevronRight size={18} />
-                  </button>
-                </div>
-              </footer>
-            )
-            : null}
-        </section>
-      </div>
-
-      <VendorDebitNoteDialog
-        open={createOpen}
-        onClose={() => {
-          setCreateOpen(false);
-        }}
-        onCreated={handleCreated}
-      />
-
+      {docs.dialog}
+      <VendorDebitNoteDialog open={createOpen} onClose={() => setCreateOpen(false)} onCreated={(id) => { setCreateOpen(false); setDetailId(id); }} />
       <VendorDebitNoteDetailDialog
-        open={detailOpen}
-        debitNoteId={
-          selectedDebitNoteId
-          ||
-          null
-        }
-        canIssue={canIssue}
-        canCancel={canCancel}
-        onClose={() => {
-          setDetailOpen(false);
-        }}
-        onChanged={() => {
-          void debitNoteQuery.refetch();
-        }}
+        open={detailId !== null}
+        debitNoteId={detailId}
+        canIssue={hasPermission(permissions, "vendor_debit_notes.issue")}
+        canCancel={hasPermission(permissions, "vendor_debit_notes.cancel")}
+        onClose={() => setDetailId(null)}
+        onChanged={() => void query.refetch()}
       />
     </>
   );

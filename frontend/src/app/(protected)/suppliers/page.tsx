@@ -1,709 +1,135 @@
 "use client";
-import {confirmAction} from "@/components/nex-feedback";
-import PageHeader from "@/components/ui/page-header";
-import IconButton from "@/components/ui/icon-button";
-import FilterSheet from "@/components/ui/filter-sheet";
-import SearchSelect from "@/components/search-select";
 
-
-import {
-  useMemo,
-  useState,
-} from "react";
-
-import {
-  Pencil,
-  Plus,
-  Power,
-  PowerOff,
-  RefreshCw,
-  Search,
-  SlidersHorizontal,
-  Truck,
-} from "lucide-react";
-
-import {
-  useAuth,
-} from "@/features/auth/auth-context";
-
+import { useMemo, useState } from "react";
+import { FileSpreadsheet, MessageCircle, Pencil, Phone, Plus, Power, PowerOff, Users } from "lucide-react";
+import { CompactList, CompactRow, ListScreen, ListState, Pager, useDebounced, type ListAction } from "@/components/list/list-kit";
+import { Badge } from "@/components/ui/badge";
+import EmptyState from "@/components/ui/empty-state";
+import { confirmAction, notify } from "@/components/nex-feedback";
+import { useAuth } from "@/features/auth/auth-context";
 import SupplierDialog from "@/features/suppliers/components/supplier-dialog";
+import { useActivateSupplier, useSupplierList, useDeactivateSupplier } from "@/features/suppliers/hooks";
+import type { SupplierSummary } from "@/features/suppliers/types";
+import { hasPermission } from "@/lib/authorization/permissions";
+import { downloadCsv } from "@/lib/export-csv";
+import { whatsappNumber } from "@/lib/phone";
 
-import {
-  useActivateSupplier,
-  useSupplierList,
-  useDeactivateSupplier,
-} from "@/features/suppliers/hooks";
-
-import type {
-  SupplierSummary,
-} from "@/features/suppliers/types";
-
-import {
-  hasPermission,
-} from "@/lib/authorization/permissions";
+type ActiveFilter = "" | "active" | "inactive";
+const chips: Array<{ value: ActiveFilter; label: string }> = [
+  { value: "", label: "All" },
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
+];
 
 export default function SuppliersPage() {
-  const {
-    authentication,
-  } = useAuth();
+  const { authentication } = useAuth();
+  const permissions = authentication?.role.permissions ?? [];
+  const canRead = hasPermission(permissions, "suppliers.read");
+  const canCreate = hasPermission(permissions, "suppliers.create");
+  const canUpdate = hasPermission(permissions, "suppliers.update");
 
-  const [filtersOpen,setFiltersOpen]=useState(false);
-  const [
-    search,
-    setSearch,
-  ] = useState("");
-
-  const [
-    activeFilter,
-    setActiveFilter,
-  ] = useState<
-    "all" | "active" | "inactive"
-  >("all");
-
-  const [
-    page,
-    setPage,
-  ] = useState(1);
-
-  const [
-    dialogOpen,
-    setDialogOpen,
-  ] = useState(false);
-
-  const [
-    editingSupplierId,
-    setEditingSupplierId,
-  ] = useState<string | null>(
-    null,
-  );
-
-  const [
-    actionError,
-    setActionError,
-  ] = useState<string | null>(
-    null,
-  );
-
-  const activateMutation =
-    useActivateSupplier();
-
-  const deactivateMutation =
-    useDeactivateSupplier();
-
-  const permissions =
-    authentication
-      ?.role
-      .permissions
-    ??
-    [];
-
-  const canRead = hasPermission(
-    permissions,
-    "suppliers.read",
-  );
-
-  const canCreate = hasPermission(
-    permissions,
-    "suppliers.create",
-  );
-
-  const canUpdate = hasPermission(
-    permissions,
-    "suppliers.update",
-  );
+  const [searchInput, setSearchInput] = useState("");
+  const search = useDebounced(searchInput.trim());
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter>("");
+  const [page, setPage] = useState(1);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const activateMutation = useActivateSupplier();
+  const deactivateMutation = useDeactivateSupplier();
+  const pending = activateMutation.isPending || deactivateMutation.isPending;
 
   const listParameters = useMemo(
-    () => ({
-      page,
-      page_size: 25,
-      search:
-        search.trim()
-        ||
-        undefined,
-      is_active:
-        activeFilter === "all"
-          ? undefined
-          : activeFilter === "active",
-      sort: "name",
-    }),
-    [
-      activeFilter,
-      page,
-      search,
-    ],
+    () => ({ page, page_size: 25, search: search || undefined, is_active: activeFilter === "" ? undefined : activeFilter === "active", sort: "name" }),
+    [activeFilter, page, search],
   );
+  const query = useSupplierList(listParameters);
+  const suppliers = query.data?.suppliers ?? [];
 
-  const supplierQuery =
-    useSupplierList(
-      listParameters,
-    );
-
-  if (!authentication) {
-    return null;
-  }
-
+  if (!authentication) return null;
   if (!canRead) {
-    return (
-      <section
-        className="
-          rounded-2xl border
-          border-amber-200 bg-amber-50
-          p-6
-        "
-      >
-        <h1
-          className="
-            text-lg font-semibold
-            text-amber-900
-          "
-        >
-          Supplier access restricted
-        </h1>
-
-        <p className="mt-2 text-sm text-amber-800">
-          Your role does not include the
-          suppliers.read permission.
-        </p>
-      </section>
-    );
+    return <div className="nx-card"><EmptyState icon={Users} title="Supplier access restricted" description="Your role does not include the suppliers.read permission." /></div>;
   }
 
-  const suppliers =
-    supplierQuery.data
-      ?.suppliers
-    ??
-    [];
+  const openCreate = () => { setEditingId(null); setDialogOpen(true); };
+  const openEdit = (id: string) => { setEditingId(id); setDialogOpen(true); };
 
-  const pagination =
-    supplierQuery.data
-      ?.pagination;
-
-  const actionPending =
-    activateMutation.isPending
-    ||
-    deactivateMutation.isPending;
-
-  function openCreateDialog(): void {
-    setEditingSupplierId(
-      null,
-    );
-
-    setDialogOpen(
-      true,
-    );
-  }
-
-  function openEditDialog(
-    supplierId: string,
-  ): void {
-    setEditingSupplierId(
-      supplierId,
-    );
-
-    setDialogOpen(
-      true,
-    );
-  }
-
-  async function activate(
-    supplier: SupplierSummary,
-  ): Promise<void> {
-    if (
-      !await confirmAction(
-        `Activate ${supplier.name}?`,
-      )
-    ) {
-      return;
-    }
-
-    setActionError(
-      null,
-    );
-
+  async function toggleActive(supplier: SupplierSummary) {
+    const activating = !supplier.is_active;
+    const message = activating ? `Activate ${supplier.name}?` : `Deactivate ${supplier.name}?\n\nThe supplier remains available in historical records.`;
+    if (!(await confirmAction(message))) return;
     try {
-      await activateMutation.mutateAsync(
-        supplier.id,
-      );
+      await (activating ? activateMutation : deactivateMutation).mutateAsync(supplier.id);
+      notify(`${supplier.name} ${activating ? "activated" : "deactivated"}.`);
     } catch (error) {
-      setActionError(
-        error instanceof Error
-          ? error.message
-          : "Unable to activate supplier.",
-      );
+      notify(error instanceof Error ? error.message : `Unable to ${activating ? "activate" : "deactivate"} supplier.`, "error");
     }
   }
 
-  async function deactivate(
-    supplier: SupplierSummary,
-  ): Promise<void> {
-    if (
-      !await confirmAction(
-        (
-          `Deactivate ${supplier.name}?`
-          +
-          "\n\nThe supplier remains "
-          +
-          "available in historical records."
-        ),
-      )
-    ) {
-      return;
-    }
-
-    setActionError(
-      null,
-    );
-
-    try {
-      await deactivateMutation.mutateAsync(
-        supplier.id,
-      );
-    } catch (error) {
-      setActionError(
-        error instanceof Error
-          ? error.message
-          : "Unable to deactivate supplier.",
-      );
-    }
+  function rowActions(c: SupplierSummary): ListAction[] {
+    const actions: ListAction[] = [];
+    const phone = c.phone?.trim();
+    const wa = whatsappNumber(phone);
+    if (phone) actions.push({ icon: Phone, label: `Call ${c.name}`, onClick: () => { window.location.href = `tel:${phone.replace(/[^\d+]/g, "")}`; } });
+    if (wa) actions.push({ icon: MessageCircle, label: `WhatsApp ${c.name}`, onClick: () => window.open(`https://wa.me/${wa}`, "_blank", "noopener,noreferrer") });
+    if (canUpdate && c.is_active) actions.push({ icon: Pencil, label: `Edit ${c.name}`, disabled: pending, onClick: () => openEdit(c.id) });
+    if (canUpdate) actions.push({ icon: c.is_active ? PowerOff : Power, label: `${c.is_active ? "Deactivate" : "Activate"} ${c.name}`, disabled: pending, onClick: () => void toggleActive(c) });
+    return actions;
   }
 
+  function exportCsv() {
+    void downloadCsv(`NexEase-suppliers-page-${page}`, suppliers, [
+      { header: "Code", value: (c) => c.code },
+      { header: "Name", value: (c) => c.name },
+      { header: "Phone", value: (c) => c.phone },
+      { header: "Email", value: (c) => c.email },
+      { header: "GSTIN", value: (c) => c.gstin },
+      { header: "City", value: (c) => c.city },
+      { header: "State", value: (c) => c.state },
+      { header: "Status", value: (c) => (c.is_active ? "Active" : "Inactive") },
+    ]).catch((e: unknown) => notify(e instanceof Error ? e.message : "Export failed.", "error"));
+  }
+
+  const filtered = Boolean(search || activeFilter);
   return (
-    <section className="space-y-6">
-      <PageHeader title="Suppliers" actions={<>
-        <IconButton icon={SlidersHorizontal} label="Filter suppliers" onClick={()=>setFiltersOpen(true)}/>
-        <IconButton icon={RefreshCw} label="Refresh suppliers" disabled={supplierQuery.isFetching} onClick={()=>void supplierQuery.refetch()}/>
-        {canCreate && <IconButton icon={Plus} label="New supplier" className="nx-primary-icon" onClick={openCreateDialog}/>}
-      </>}/>
-      <label className="nx-compact-search"><Search size={18} aria-hidden="true"/>
-        <input type="search" aria-label="Search suppliers" placeholder="Search name or GSTIN" value={search} onChange={event=>{setSearch(event.target.value);setPage(1)}}/>
-      </label>
-      <FilterSheet open={filtersOpen} onClose={()=>setFiltersOpen(false)}>
-        <label className="block space-y-2"><span>Status</span>
-          <SearchSelect value={activeFilter} onChange={event=>{setActiveFilter(event.target.value as "all"|"active"|"inactive");setPage(1)}} className="nx-input w-full">
-            <option value="all">All suppliers</option><option value="active">Active suppliers</option><option value="inactive">Inactive suppliers</option>
-          </SearchSelect>
-        </label>
-      </FilterSheet>
-
-      {actionError ? (
-        <div
-          className="
-            rounded-xl border
-            border-red-200 bg-red-50
-            px-4 py-3 text-sm
-            text-red-700
-          "
-        >
-          {actionError}
-        </div>
-      ) : null}
-
-      <div
-        className="
-          overflow-hidden rounded-2xl
-          border border-slate-200
-          bg-white shadow-sm
-        "
+    <>
+      <ListScreen
+        title="Suppliers"
+        primary={canCreate ? { label: "New supplier", icon: Plus, onClick: openCreate } : null}
+        actions={[{ icon: FileSpreadsheet, label: "Export this page to CSV", onClick: exportCsv, disabled: !suppliers.length }]}
+        onRefresh={() => void query.refetch()}
+        refreshing={query.isFetching}
+        search={{ value: searchInput, onChange: (v) => { setSearchInput(v); setPage(1); }, placeholder: "Search name, phone or GSTIN", label: "Search suppliers" }}
+        chips={{ options: chips, value: activeFilter, label: "Filter by status", onChange: (v) => { setActiveFilter(v); setPage(1); } }}
+        footer={<Pager pagination={query.data?.pagination} noun="suppliers" onPage={setPage} />}
       >
-        {supplierQuery.isPending ? (
-          <div
-            className="
-              flex min-h-72 items-center
-              justify-center text-sm
-              text-slate-500
-            "
-          >
-            Loading suppliers…
-          </div>
-        ) : supplierQuery.isError ? (
-          <div
-            className="
-              flex min-h-72 flex-col
-              items-center justify-center
-              gap-3 p-6
-            "
-          >
-            <p className="text-sm text-red-700">
-              {supplierQuery.error.message}
-            </p>
-
-            <button
-              type="button"
-              onClick={() => {
-                void supplierQuery.refetch();
-              }}
-              className="
-                rounded-lg bg-slate-900
-                px-4 py-2 text-sm
-                font-semibold text-white
-              "
-            >
-              Try again
-            </button>
-          </div>
-        ) : suppliers.length === 0 ? (
-          <div
-            className="
-              flex min-h-72 flex-col
-              items-center justify-center
-              p-6 text-center
-            "
-          >
-            <Truck
-              size={36}
-              className="text-slate-300"
-            />
-
-            <h2 className="mt-3 font-semibold text-slate-900">
-              No suppliers found
-            </h2>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Change the filters or create
-              your first supplier.
-            </p>
-
-            {canCreate ? (
-              <button title="Create supplier"
-                type="button"
-                onClick={
-                  openCreateDialog
-                }
-                className="
-                  mt-4 inline-flex
-                  items-center gap-2
-                  rounded-lg bg-blue-600
-                  px-4 py-2 text-sm
-                  font-semibold text-white
-                "
-              >
-                <Plus size={16} /><span className="sr-only">Create supplier</span></button>
-            ) : null}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table role="table"
-              className="nx-mobile-records
-                min-w-full divide-y
-                divide-slate-200
-              "
-            >
-              <thead className="bg-slate-50">
-                <tr>
-                  {[
-                    "Code",
-                    "Supplier",
-                    "Contact",
-                    "GSTIN",
-                    "Location",
-                    "Status",
-                    "Actions",
-                  ].map(
-                    (heading) => (
-                      <th
-                        key={heading}
-                        className="
-                          whitespace-nowrap
-                          px-4 py-3 text-left
-                          text-xs font-semibold
-                          uppercase tracking-wide
-                          text-slate-500
-                        "
-                      >
-                        {heading}
-                      </th>
-                    ),
-                  )}
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-slate-100">
-                {suppliers.map(
-                  (supplier) => (
-                    <tr
-                      key={supplier.id}
-                      className="hover:bg-slate-50"
-                    >
-                      <td data-label="Code"
-                        className="
-                          whitespace-nowrap
-                          px-4 py-4 text-sm
-                          font-bold text-slate-900
-                        "
-                      >
-                        {supplier.code}
-                      </td>
-
-                      <td data-label="Supplier"
-                        className="
-                          px-4 py-4 text-sm
-                          font-semibold
-                          text-slate-900
-                        "
-                      >
-                        {supplier.name}
-                      </td>
-
-                      <td data-label="Contact"
-                        className="
-                          px-4 py-4 text-sm
-                          text-slate-600
-                        "
-                      >
-                        <p>
-                          {supplier.email ?? "—"}
-                        </p>
-
-                        <p className="mt-0.5 text-xs">
-                          {supplier.phone ?? "—"}
-                        </p>
-                      </td>
-
-                      <td data-label="GSTIN"
-                        className="
-                          whitespace-nowrap
-                          px-4 py-4 text-sm
-                          text-slate-600
-                        "
-                      >
-                        {supplier.gstin ?? "—"}
-                      </td>
-
-                      <td data-label="Location"
-                        className="
-                          px-4 py-4 text-sm
-                          text-slate-600
-                        "
-                      >
-                        {
-                          [
-                            supplier.city,
-                            supplier.state,
-                          ]
-                            .filter(Boolean)
-                            .join(", ")
-                          ||
-                          supplier.country
-                          ||
-                          "—"
-                        }
-                      </td>
-
-                      <td data-label="Status"
-                        className="
-                          whitespace-nowrap
-                          px-4 py-4
-                        "
-                      >
-                        <span
-                          className={`
-                            inline-flex rounded-full
-                            border px-2.5 py-1
-                            text-xs font-semibold
-                            ${
-                              supplier.is_active
-                                ? (
-                                  "border-emerald-200 "
-                                  +
-                                  "bg-emerald-50 "
-                                  +
-                                  "text-emerald-700"
-                                )
-                                : (
-                                  "border-slate-200 "
-                                  +
-                                  "bg-slate-100 "
-                                  +
-                                  "text-slate-600"
-                                )
-                            }
-                          `}
-                        >
-                          {
-                            supplier.is_active
-                              ? "Active"
-                              : "Inactive"
-                          }
-                        </span>
-                      </td>
-
-                      <td data-label="Actions"
-                        className="
-                          whitespace-nowrap
-                          px-4 py-4
-                        "
-                      >
-                        {canUpdate ? (
-                          <div className="flex gap-2">
-                            {supplier.is_active ? (
-                              <>
-                                <button
-                                  type="button"
-                                  title="Edit supplier"
-                                  disabled={
-                                    actionPending
-                                  }
-                                  onClick={() => {
-                                    openEditDialog(
-                                      supplier.id,
-                                    );
-                                  }}
-                                  className="
-                                    rounded-lg border
-                                    border-slate-300
-                                    bg-white p-2
-                                    text-slate-600
-                                    hover:text-blue-700
-                                    disabled:opacity-40
-                                  "
-                                >
-                                  <Pencil size={16} />
-                                </button>
-
-                                <button
-                                  type="button"
-                                  title="Deactivate supplier"
-                                  disabled={
-                                    actionPending
-                                  }
-                                  onClick={() => {
-                                    void deactivate(
-                                      supplier,
-                                    );
-                                  }}
-                                  className="
-                                    rounded-lg border
-                                    border-red-200
-                                    bg-red-50 p-2
-                                    text-red-700
-                                    disabled:opacity-40
-                                  "
-                                >
-                                  <PowerOff size={16} />
-                                </button>
-                              </>
-                            ) : (
-                              <button
-                                type="button"
-                                title="Activate supplier"
-                                disabled={
-                                  actionPending
-                                }
-                                onClick={() => {
-                                  void activate(
-                                    supplier,
-                                  );
-                                }}
-                                className="
-                                  rounded-lg border
-                                  border-emerald-200
-                                  bg-emerald-50 p-2
-                                  text-emerald-700
-                                  disabled:opacity-40
-                                "
-                              >
-                                <Power size={16} />
-                              </button>
-                            )}
-                          </div>
-                        ) : null}
-                      </td>
-                    </tr>
-                  ),
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {pagination ? (
-          <div
-            className="
-              flex flex-col gap-3
-              border-t border-slate-200
-              px-4 py-3
-              sm:flex-row sm:items-center
-              sm:justify-between
-            "
-          >
-            <p className="text-sm text-slate-600">
-              Page {pagination.page} of{" "}
-              {pagination.total_pages || 1}
-              {" · "}
-              {pagination.total_items} suppliers
-            </p>
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled={
-                  !pagination.has_previous
-                  ||
-                  supplierQuery.isFetching
-                }
-                onClick={() => {
-                  setPage(
-                    (current) =>
-                      Math.max(
-                        1,
-                        current - 1,
-                      ),
-                  );
-                }}
-                className="
-                  rounded-lg border
-                  border-slate-300 bg-white
-                  px-3 py-1.5 text-sm
-                  font-semibold text-slate-700
-                  disabled:opacity-40
-                "
-              >
-                Previous
-              </button>
-
-              <button
-                type="button"
-                disabled={
-                  !pagination.has_next
-                  ||
-                  supplierQuery.isFetching
-                }
-                onClick={() => {
-                  setPage(
-                    (current) =>
-                      current + 1,
-                  );
-                }}
-                className="
-                  rounded-lg border
-                  border-slate-300 bg-white
-                  px-3 py-1.5 text-sm
-                  font-semibold text-slate-700
-                  disabled:opacity-40
-                "
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        ) : null}
-      </div>
-
-      <SupplierDialog
-        open={dialogOpen}
-        supplierId={
-          editingSupplierId
-        }
-        onClose={() => {
-          setDialogOpen(
-            false,
-          );
-
-          setEditingSupplierId(
-            null,
-          );
-        }}
-      />
-    </section>
+        <ListState
+          loading={query.isPending}
+          error={query.error}
+          onRetry={() => void query.refetch()}
+          isEmpty={!suppliers.length}
+          emptyIcon={Users}
+          emptyTitle={filtered ? "No suppliers match" : "No suppliers yet"}
+          emptyDescription={filtered ? "Try a different search or filter." : "Add a supplier by name, or fetch details from a GSTIN."}
+          emptyAction={canCreate && !filtered ? <button type="button" className="nx-button" onClick={openCreate}><Plus size={16} />New supplier</button> : null}
+        >
+          <CompactList label="Suppliers" columns={[{ label: "Supplier" }, { label: "Phone" }, { label: "GSTIN" }, { label: "Location" }]}>
+            {suppliers.map((c) => (
+              <CompactRow
+                key={c.id}
+                openLabel={canUpdate && c.is_active ? `Open ${c.name}` : undefined}
+                onOpen={canUpdate && c.is_active ? () => openEdit(c.id) : undefined}
+                title={c.name}
+                subtitle={[c.code, c.phone, c.gstin].filter(Boolean).join(" · ")}
+                meta={[c.phone ?? "—", c.gstin ?? "—"]}
+                amount={<span className="nxl-hide-sm text-[13px] font-medium">{[c.city, c.state].filter(Boolean).join(", ") || c.country || "—"}</span>}
+                badge={c.is_active ? undefined : <Badge tone="neutral">Inactive</Badge>}
+                actions={rowActions(c)}
+              />
+            ))}
+          </CompactList>
+        </ListState>
+      </ListScreen>
+      <SupplierDialog open={dialogOpen} supplierId={editingId} onClose={() => { setDialogOpen(false); setEditingId(null); }} />
+    </>
   );
 }
