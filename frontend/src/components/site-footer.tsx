@@ -5,7 +5,7 @@ export default function SiteFooter(){
  const columns=[
   {title:"Software",links:[["Billing & invoices","/#features"],["Inventory & purchases","/#features"],["Workforce & payroll","/#features"],["AI assistance","/#features"],["Plans & pricing","/pricing"]]},
   {title:"Services",links:[["Accounting & bookkeeping","/pricing"],["GST compliance support","/pricing"],["Payroll support","/pricing"],["Finance automation","/pricing"],["Request a quotation","/#contact"]]},
-  {title:"Resources",links:[["Create your organisation","/signup"],["Log in","/login"],["Compliance calendar","/deadlines"],["Download price list","/NexEase_Pricing.pdf"],["Frequently asked questions","/#questions"]]},
+  {title:"Resources",links:[["Download Tally Connector","/download"],["Create your organisation","/signup"],["Log in","/login"],["Compliance calendar","/deadlines"],["Download price list","/NexEase_Pricing.pdf"],["Frequently asked questions","/#questions"]]},
  ];
  return <footer className="nx-site-footer">
   <div className="nx-footer-grid">

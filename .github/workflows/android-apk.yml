@@ -1,13 +1,15 @@
 name: Android APK
 # Builds the NexEase Android app and publishes the APK as a GitHub pre-release
-# (Releases → "NexEase Android …"). Runs automatically when the mobile branch or an
+# (Releases → "NexEase Android …") and refreshes "android-latest", the file the website's
+# download page links to. Runs when the app changes on main, when the mobile branch or an
 # apk-v* tag is pushed, or manually from Actions → "Android APK" → Run workflow.
 # A signed release APK is built when the signing secrets exist; otherwise a debug APK
 # (installs directly, but cannot later be updated by a signed build without reinstalling).
 on:
   push:
-    branches: [feature/mobile-app]
+    branches: [main, feature/mobile-app]
     tags: ['apk-v*']
+    paths: ['frontend/**', '.github/workflows/android-apk.yml']
   workflow_dispatch:
     inputs:
       api_url:
@@ -121,3 +123,14 @@ jobs:
           Install: download $NAME on the phone and open it (allow installs from this source when Android asks)."
           gh release create "$tag" "apk/$NAME" --target "$GITHUB_SHA" --prerelease \
             --title "NexEase Android $version ($TYPE)" --notes "$notes"
+      - name: Update the website download (android-latest)
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAME: ${{ steps.apk.outputs.name }}
+        run: |
+          # The website download page links to releases/download/android-latest/NexEase.apk; keep it current.
+          cp "apk/$NAME" apk/NexEase.apk
+          gh release view android-latest >/dev/null 2>&1 || gh release create android-latest --prerelease --title "NexEase Android (latest)" \
+            --notes "The newest NexEase Android build, as linked from the website. Older builds are kept as android-<version>." --target "$GITHUB_SHA"
+          gh release upload android-latest apk/NexEase.apk --clobber
