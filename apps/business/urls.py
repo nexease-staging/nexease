@@ -42,6 +42,7 @@ urlpatterns[:0] = [
     path("manufacturing/", manufacturing_orders),
     path("manufacturing/<str:order_id>/", manufacturing_orders),
     path("quotations/<slug:number>/pdf/", quotation_pdf),
+    path("invoice-templates/preview/", billing.template_preview),
     path("quotations/", quotations),
     path("sales-reports/", sales_report),
     path("e-way-bills/", eway_bills),

@@ -1259,6 +1259,11 @@ class SalesOrderPDF:
         Generate Sales Order PDF bytes.
         """
 
+        # Every sales document uses the business's chosen print template (Settings → Invoice formats).
+        if sales_order is not None:
+            from apps.business.doc_templates import from_sales_order, render_for
+            return render_for(sales_order.organization, from_sales_order(sales_order))
+
         if not sales_order:
 
             raise ValueError(

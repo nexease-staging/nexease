@@ -12,14 +12,7 @@ from .views import permitted, payload, audit
 from .automation import write_lock
 from .payroll import money
 
-TEMPLATES = [
-    ('classic','Classic ledger','#243447','grid'), ('modern','Modern blue','#2563eb','stripe'),
-    ('minimal','Minimal ink','#334155','minimal'), ('executive','Executive navy','#172554','banner'),
-    ('emerald','Emerald studio','#047857','stripe'), ('service','Service statement','#6d28d9','service'),
-    ('contractor','Contractor works','#b45309','grid'), ('compact','Compact register','#475569','compact'),
-    ('elegant','Elegant violet','#7c3aed','minimal'), ('bold','Bold graphite','#18181b','banner'),
-    ('retail_blue','Retail blue - detailed grid','#176fa3','retail'), ('retail_emerald','NexEase retail emerald','#006b58','retail'),
-]
+from .doc_templates import TEMPLATES, DESCRIPTIONS, accepted_ids, resolve as resolve_template
 TEXT_FIELDS={'po_number':100,'po_date':10,'service_from':10,'service_to':10,'site_name':200,'shipping_address':1000,'payment_terms':1000,'bank_details':1000,'terms':2000,'signatory':200,'place_of_supply':2,'supply_type':30,'template':30}
 SUPPLIES=('taxable','exempt','nil_rated','non_gst','unregistered')
 # HSN/SAC is mandatory only on taxable supplies. Exempt, nil-rated, non-GST and unregistered
@@ -35,7 +28,9 @@ def hsn_problem(hsn_code,item_type,supply):
     return ''
 def settings(org):
     r=Record.objects(organization=org,kind='invoice_settings',key='default').first()
-    return r.data if r else {'template':'classic'}
+    data=dict(r.data) if r else {}
+    data['template']=resolve_template(data.get('template'))
+    return data
 
 def clean_details(raw, org, items):
     if not isinstance(raw,dict) or set(raw)-set(TEXT_FIELDS):raise ValueError('Unknown invoice detail fields.')
@@ -46,7 +41,7 @@ def clean_details(raw, org, items):
     for k in ('po_date','service_from','service_to'):
         if d.get(k):date.fromisoformat(d[k])
     if d.get('service_from') and d.get('service_to') and d['service_from']>d['service_to']:raise ValueError('Service end precedes start.')
-    if d.get('template','classic') not in [t[0] for t in TEMPLATES]:raise ValueError('Select an invoice format.')
+    if d.get('template') and d['template'] not in accepted_ids():raise ValueError('Select an invoice format.')
     supply=d.get('supply_type','')
     if supply not in SUPPLIES:raise ValueError('Choose GST taxable or an explicit non-taxable classification.')
     reg=Record.objects(organization=org,kind='gst_settings',key='registration').first()
@@ -85,14 +80,16 @@ def invoice_settings(request):
     try:
         if request.method=='POST':
             p=payload(request)
-            allowed={'template','logo','accent_color','bank_details','payment_terms','terms','signatory','payslip_template','document_style'}
+            allowed={'template','logo','accent_color','bank_details','payment_terms','terms','signatory','payslip_template','document_style','upi_id'}
             if p.get('accent_color') and not re.fullmatch(r'#[0-9a-fA-F]{6}',p['accent_color']):raise ValueError('Choose a valid document colour.')
             if set(p)-allowed:raise ValueError('Unknown setting.')
             for k,v in p.items():
                 if not isinstance(v,str) or len(v)>(400000 if k=='logo' else 2000):raise ValueError('Invalid '+k)
             if p.get('payslip_template','professional') not in ('professional','classic'):raise ValueError('Choose a payslip format.')
             if p.get('document_style','classic') not in ('classic','letterhead','minimal'):raise ValueError('Choose a document style.')
-            if p.get('template') not in [t[0] for t in TEMPLATES]:raise ValueError('Choose a template.')
+            if p.get('template') not in accepted_ids():raise ValueError('Choose a template.')
+            p['template']=resolve_template(p['template'])
+            if p.get('upi_id') and not re.fullmatch(r'[A-Za-z0-9._-]{2,64}@[A-Za-z][A-Za-z0-9.-]{1,64}',p['upi_id'].strip()):raise ValueError('Enter a valid UPI ID, like business@okhdfcbank.')
             if p.get('logo'):
                 from PIL import Image
                 prefix,encoded=p['logo'].split(',',1)
@@ -103,7 +100,7 @@ def invoice_settings(request):
                 im.verify()
             Record.objects(organization=request.api_organization,kind='invoice_settings',key='default').update_one(upsert=True,set__data=p,set__created_by=request.api_user,inc__revision=1)
             audit(request,'invoice_settings',request.api_organization.id,'update')
-        return R.success(data={'settings':settings(request.api_organization),'templates':[dict(id=i,name=n,color=c,layout=l) for i,n,c,l in TEMPLATES]},request=request)
+        return R.success(data={'settings':settings(request.api_organization),'templates':[dict(id=i,name=n,color=c,layout=l,description=DESCRIPTIONS.get(i,'')) for i,n,c,l in TEMPLATES]},request=request)
     except (ValueError,TypeError,ValidationError,OSError) as e:return R.validation_error(message=str(e),request=request)
 
 @api_login_required
@@ -133,7 +130,7 @@ def invoice_details(request,invoice_id):
                     if key in allowed:
                         if not isinstance(value,str) or len(value)>TEXT_FIELDS[key]:raise ValueError('Invalid '+key)
                         if key in ('po_date','service_from','service_to') and value:date.fromisoformat(value)
-                        if key=='template' and value not in [t[0] for t in TEMPLATES]:raise ValueError('Choose a template.')
+                        if key=='template' and value not in accepted_ids():raise ValueError('Choose a template.')
                         inv.billing_details[key]=value.strip()
             else:
                 clean=clean_details(raw,request.api_organization,inv.items)
@@ -161,3 +158,25 @@ def invoice_account(org,user,key):
         a=ChartOfAccount.objects(organization=org,system_key=key,is_active=True,account_type=kind).first()
         if not a:raise ValueError('Concurrent control account conflict. Reload and retry.')
         return a
+
+
+@api_login_required
+@require_http_methods(['GET'])
+def template_preview(request):
+    """Sample PDF for a template and document type, so the choice can be seen before saving."""
+    from django.http import HttpResponse
+    from .doc_templates import sample_document, render, branding as org_branding
+    if not (permitted(request,'invoices.read') or permitted(request,'organizations.update')):return R.forbidden(message='Sales read permission required.',request=request)
+    template=request.GET.get('template','')
+    kind=request.GET.get('kind','invoice')
+    if template not in accepted_ids():return R.validation_error(message='Choose a template.',request=request)
+    if kind not in ('invoice','quotation','sales_order','credit_note','delivery_challan'):return R.validation_error(message='Unknown document type.',request=request)
+    brand=dict(org_branding(request.api_organization))
+    colour=request.GET.get('accent','')
+    if re.fullmatch(r'#[0-9a-fA-F]{6}',colour):brand['accent_color']=colour
+    upi=request.GET.get('upi','').strip()
+    if upi:brand['upi_id']=upi[:130]
+    response=HttpResponse(render(sample_document(request.api_organization,kind),template,brand),content_type='application/pdf')
+    response['Content-Disposition']='inline; filename="NexEase-'+resolve_template(template)+'-'+kind+'.pdf"'
+    response['Cache-Control']='private, no-store'
+    return response

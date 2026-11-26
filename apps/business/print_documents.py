@@ -1,12 +1,11 @@
 """Portable, escaped PDF documents with no remote image fetches."""
 from io import BytesIO
-import base64
 from xml.sax.saxutils import escape
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
-from .billing import TEMPLATES, tax_heads, settings
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from .billing import settings
 from pathlib import Path
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -21,70 +20,9 @@ def document_styles():
 
 
 def invoice_pdf(invoice):
-    d=dict(invoice.billing_details or {});org=invoice.organization
-    branding=settings(org)
-    if d.get('template') in ('retail_blue','retail_emerald'):
-        from .professional_documents import retail_invoice
-        return retail_invoice(invoice,branding)
-    if branding.get('logo'):d['logo']=branding['logo']
-    _,name,color,layout=next((t for t in TEMPLATES if t[0]==d.get('template')),TEMPLATES[0])
-    color=settings(invoice.organization).get("accent_color") or color
-    accent=colors.HexColor(color);buf=BytesIO();styles=document_styles()
-    styles.add(ParagraphStyle(name='Cell',fontName='NX',fontSize=8 if layout!='compact' else 7,leading=11,wordWrap='CJK'))
-    styles.add(ParagraphStyle(name='Brand',fontName='NX-Bold',fontSize=21,leading=25,textColor=accent,spaceAfter=8))
-    def p(v,style='Cell'):return Paragraph(escape(str('—' if v is None or v=='' else v)).replace('\n','<br/>'),styles[style])
-    story=[]
-    if d.get('logo'):
-        im=Image(BytesIO(base64.b64decode(d['logo'].split(',',1)[1])));im._restrictSize(110,48);im.hAlign='LEFT';story+=[im,Spacer(1,8)]
-    title='Tax invoice' if d.get('supply_type')=='taxable' else 'Bill of supply' if d.get('supply_type') in ('exempt','nil_rated','non_gst') else 'Invoice'
-    header=Table([[p(org.name,'Brand'),p(title.upper(),'Heading2')],[p(org.address),p(invoice.invoice_number)],[p('GSTIN: '+d.get('supplier_gstin','Not configured')),p('Status: '+invoice.status)]],colWidths=[330,205])
-    header.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'TOP'),('LINEBELOW',(0,-1),(-1,-1),2,accent)]))
-    if layout=='banner':header.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,-1),colors.HexColor('#f1f5f9')),('BOX',(0,0),(-1,-1),1,accent)]))
-    story += [header,Spacer(1,16)]
-    irp=getattr(invoice,'einvoice',None) or {}
-    if irp.get('status')=='registered' and irp.get('environment')=='live':
-        from reportlab.graphics.barcode.qr import QrCodeWidget
-        from reportlab.graphics.shapes import Drawing
-        qr=QrCodeWidget(irp['qr'])
-        x,y,w,h=qr.getBounds()
-        side=130; scale=side/(w-x)
-        drawing=Drawing(side,side,transform=[scale,0,0,scale,-x*scale,-y*scale]);drawing.add(qr)
-        block=Table([[p('Registered e-invoice\nIRN: '+irp['irn']+'\nAcknowledgment: '+irp.get('ack_no','')+' '+irp.get('ack_date','')),drawing]],colWidths=[385,150])
-        block.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'MIDDLE')]))
-        story += [block,Spacer(1,10)]
-    elif irp.get('status'):
-        story += [p('IRP status: '+irp['status'].replace('_',' ')+(' (TEST ONLY)' if irp.get('environment')!='live' else '')),Spacer(1,10)]
-    meta=[['Invoice date',str(invoice.invoice_date.date()),'Due date',str(invoice.due_date.date()) if invoice.due_date else '—'],['PO number',d.get('po_number',''),'PO date',d.get('po_date','')],['Service period',d.get('service_from','')+' to '+d.get('service_to',''),'Site / project',d.get('site_name','')],['Place of supply',d.get('place_of_supply',''),'Supply classification',d.get('supply_type','Unclassified')]]
-    mt=Table([[p(v) for v in r] for r in meta],colWidths=[100,167,100,168]);mt.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'TOP'),('BACKGROUND',(0,0),(0,-1),colors.HexColor('#f8fafc')),('BACKGROUND',(2,0),(2,-1),colors.HexColor('#f8fafc'))]));story += [mt,Spacer(1,14)]
-    party=Table([[p('BILL TO','Heading4'),p('SHIP TO / SERVICE LOCATION','Heading4')],[p(invoice.billing_name+'\n'+invoice.billing_address+'\nGSTIN: '+(invoice.customer_gstin or 'Unregistered')),p(d.get('shipping_address') or d.get('site_name') or invoice.billing_address)]],colWidths=[268,267]);party.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'TOP')]));story += [party,Spacer(1,14)]
-    rows=[['Description / G-S','HSN/SAC','Qty / unit','Rate','Discount','GST %','Amount']]
-    for i in invoice.items:
-        desc=i.item_name or i.product.name
-        if i.show_description and i.description:desc+='\n'+i.description
-        desc+='\n'+(i.item_type or i.product.item_type).upper()
-        rows.append([desc,i.hsn_code or i.product.hsn_code,str(i.quantity)+' '+(i.unit or i.product.unit),str(i.unit_price),str(i.discount),str(i.tax_rate),str(i.line_total)])
-    styles.add(ParagraphStyle(name='TableHead',parent=styles['Cell'],textColor=colors.white,fontName='NX-Bold'))
-    table=Table([[p(v,'TableHead' if ri==0 else 'Cell') for v in r] for ri,r in enumerate(rows)],colWidths=[170,55,65,65,60,45,75],repeatRows=1)
-    commands=[('BACKGROUND',(0,0),(-1,0),accent),('VALIGN',(0,0),(-1,-1),'TOP'),('TOPPADDING',(0,0),(-1,-1),4 if layout=='compact' else 8),('BOTTOMPADDING',(0,0),(-1,-1),4 if layout=='compact' else 8)]
-    # Header paragraphs use white text independently of body.
-
-    if layout in ('grid','compact'):commands += [('GRID',(0,0),(-1,-1),.3,colors.HexColor('#cbd5e1'))]
-    elif layout in ('stripe','banner'):commands += [('ROWBACKGROUNDS',(0,1),(-1,-1),[colors.white,colors.HexColor('#f1f5f9')])]
-    else:commands += [('LINEBELOW',(0,0),(-1,-1),.4,colors.HexColor('#e2e8f0'))]
-    table.setStyle(TableStyle(commands));story += [table,Spacer(1,16)]
-    cg,sg,ig=tax_heads(invoice)
-    totals=[['Subtotal',invoice.subtotal],['Discount',invoice.discount_amount]]
-    totals += [['CGST',cg],['SGST / UTGST',sg],['IGST',ig]] if d.get('tax_reviewed') else [['Tax (unclassified)',invoice.tax_amount]]
-    totals += [['Total '+(org.currency or 'INR'),invoice.total_amount],['Paid',invoice.amount_paid],['Balance due',invoice.balance_due]]
-    tt=Table([[p(k),p(v)] for k,v in totals],colWidths=[135,95],hAlign='RIGHT');tt.setStyle(TableStyle([('LINEABOVE',(0,-3),(-1,-3),1,accent),('BACKGROUND',(0,-1),(-1,-1),colors.HexColor('#f1f5f9'))]));story += [tt]
-    for label,key in [('Payment terms','payment_terms'),('Bank details','bank_details'),('Terms & conditions','terms'),('Authorised signatory','signatory')]:
-        if d.get(key):story += [Spacer(1,10),p(label,'Heading4'),p(d[key])]
-    if invoice.notes:story += [Spacer(1,10),p('Notes','Heading4'),p(invoice.notes)]
-    if not d.get('tax_reviewed'):story += [Spacer(1,10),p('Tax classification pending. Review before GST reporting.')]
-    def footer(c,doc):
-        c.saveState();c.setFont('NX',8);c.setFillColor(accent);c.drawString(30,22,'NexEase · '+name);c.drawRightString(565,22,'Page '+str(doc.page));c.restoreState()
-    SimpleDocTemplate(buf,pagesize=A4,leftMargin=30,rightMargin=30,topMargin=30,bottomMargin=40,title='Invoice '+invoice.invoice_number).build(story,onFirstPage=footer,onLaterPages=footer)
-    return buf.getvalue()
+    """Invoice PDF in the business's chosen template (applies to every invoice and estimate)."""
+    from .doc_templates import from_invoice, render_for
+    return render_for(invoice.organization, from_invoice(invoice))
 
 def payslip_pdf(org,run,row):
     branding=settings(org)
