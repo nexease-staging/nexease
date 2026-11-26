@@ -5,17 +5,18 @@ import { Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   AlertTriangle, ArrowDownUp, BookOpen, Boxes, Check, CheckCircle2, CircleDot, Copy, Download, FileSpreadsheet, HandCoins, Landmark, Laptop, Link2, MessageCircle,
-  Package, PauseCircle, PlayCircle, Plug, ReceiptIndianRupee, RefreshCw, Search, Settings2, ShoppingCart, Users, Wallet, X,
+  Package, PauseCircle, PlayCircle, Plug, ReceiptIndianRupee, RefreshCw, Search, Send, Settings2, ShoppingCart, Users, Wallet, X,
 } from "lucide-react";
 import { Badge, type Tone } from "@/components/ui/badge";
 import StatCard from "@/components/ui/stat-card";
 import { exportWorkbook } from "@/features/business/workspace";
 import ReportChart from "@/features/reports/components/report-chart";
 import { formatDate } from "@/lib/format";
+import { openShare } from "@/features/share/api";
 import {
   MAPPING_LABELS, WRITE_LABELS, ago, exportPath, fyStart, inr, today, useCompany, useDaybook, useIssues, useJobs, useOverview, usePair, useParties,
   useRegister, useResync, useRetryIssues, useRetryJob, useRevoke, useSaveSettings, useSettings, useStatement, useStatus, useStock, useTrialBalance, useVoucher,
-  whatsappLink, type Status, type SyncSettings, type Voucher,
+  type Status, type SyncSettings, type Voucher,
 } from "./api";
 
 const TABS = [
@@ -155,7 +156,7 @@ function VoucherRows({ rows, onOpen, balance = false }: { rows: (Voucher & { deb
   );
 }
 
-function OverviewPanel({ enabled, company, openParty, openVoucher, go }: { enabled: boolean; company: string; openParty: (g: string) => void; openVoucher: (g: string) => void; go: (t: Tab) => void }) {
+function OverviewPanel({ enabled, openParty, openVoucher, go }: { enabled: boolean; openParty: (g: string) => void; openVoucher: (g: string) => void; go: (t: Tab) => void }) {
   const q = useOverview(enabled);
   const d = q.data;
   return (
@@ -183,7 +184,7 @@ function OverviewPanel({ enabled, company, openParty, openVoucher, go }: { enabl
                   {d.top_debtors.map((p) => (
                     <li key={p.guid}>
                       <button type="button" onClick={() => openParty(p.guid)}><span>{p.name}</span><strong>{inr(p.balance)}</strong></button>
-                      {p.phone ? <a className="nxty-wa" href={whatsappLink(p.phone, p.name, p.balance, company)} target="_blank" rel="noreferrer" aria-label={`Remind ${p.name} on WhatsApp`}><MessageCircle size={16} /></a> : null}
+                      <button type="button" className="nxty-wa" onClick={() => openShare({ kind: "tally_ledger", id: p.guid, title: p.name })} aria-label={`Remind ${p.name} on WhatsApp`}><MessageCircle size={16} /></button>
                     </li>
                   ))}
                 </ul>
@@ -205,7 +206,7 @@ function OverviewPanel({ enabled, company, openParty, openVoucher, go }: { enabl
 // Parties and statement
 // ---------------------------------------------------------------------------------------------
 
-function PartiesPanel({ openParty, company }: { openParty: (g: string) => void; company: string }) {
+function PartiesPanel({ openParty }: { openParty: (g: string) => void }) {
   const [side, setSide] = useState("debtors");
   const [q, setQ] = useState("");
   const parties = useParties(side, q);
@@ -231,7 +232,7 @@ function PartiesPanel({ openParty, company }: { openParty: (g: string) => void; 
                       <td>{p.phone || "—"}</td>
                       <td className="num" data-neg={p.balance < 0 || undefined}>{inr(p.balance, 2)}</td>
                       <td className="nxty-actions" onClick={(e) => e.stopPropagation()}>
-                        {p.phone && p.balance > 0 && side === "debtors" ? <a className="nxty-wa" href={whatsappLink(p.phone, p.name, p.balance, company)} target="_blank" rel="noreferrer" aria-label={`Remind ${p.name} on WhatsApp`}><MessageCircle size={16} /></a> : null}
+                        <button type="button" className="nxty-wa" onClick={() => openShare({ kind: "tally_ledger", id: p.guid, title: p.name })} aria-label={`Share statement of ${p.name}`}><Send size={15} /></button>
                         {p.nexease_id ? <Link className="nxty-link" href={p.nexease_model === "supplier" ? "/suppliers" : "/customers"} title="Also in NexEase">NexEase</Link> : null}
                       </td>
                     </tr>
@@ -247,12 +248,11 @@ function PartiesPanel({ openParty, company }: { openParty: (g: string) => void; 
   );
 }
 
-function StatementModal({ guid, onClose, openVoucher, company }: { guid: string; onClose: () => void; openVoucher: (g: string) => void; company: string }) {
+function StatementModal({ guid, onClose, openVoucher }: { guid: string; onClose: () => void; openVoucher: (g: string) => void }) {
   const [from, setFrom] = useState(fyStart());
   const [to, setTo] = useState(today());
   const q = useStatement(guid, from, to);
   const d = q.data;
-  const owed = d ? (d.group === "creditors" ? -d.closing : d.closing) : 0;
   return (
     <Modal title={d?.name ?? "Ledger"} onClose={onClose} wide>
       <State q={q}>
@@ -261,7 +261,7 @@ function StatementModal({ guid, onClose, openVoucher, company }: { guid: string;
             <div className="nxty-head-row">
               <p className="nxty-muted">{[d.parent, d.gstin, d.phone, d.state].filter(Boolean).join(" · ")}</p>
               <div className="nxty-actions">
-                {d.phone && owed > 0 && d.group === "debtors" ? <a className="nx-button nx-secondary nxty-inline" href={whatsappLink(d.phone, d.name, owed, company)} target="_blank" rel="noreferrer"><MessageCircle size={16} />Remind</a> : null}
+                <button type="button" className="nx-button nxty-inline" onClick={() => openShare({ kind: "tally_ledger", id: guid, from, to, title: d.name })}><Send size={16} />Share statement</button>
                 <button type="button" className="nx-button nx-secondary nxty-inline" onClick={() => download(exportPath(`parties/${guid}/`, { from, to }), `${d.name}-statement.xlsx`)}><Download size={16} />Excel</button>
               </div>
             </div>
@@ -304,6 +304,7 @@ function VoucherModal({ guid, onClose }: { guid: string; onClose: () => void }) 
               <div><span>Amount</span><strong>{inr(d.amount, 2)}</strong></div>
               {d.from_nexease ? <div><span>Source</span><strong>Entered in NexEase</strong></div> : null}
             </div>
+            <div className="nxty-actions"><button type="button" className="nx-button nxty-inline" onClick={() => openShare({ kind: "tally_voucher", id: guid, title: `${d.type} ${d.number}` })}><Send size={16} />Share voucher</button></div>
             {d.cancelled || d.deleted ? <p className="nxty-warn"><AlertTriangle size={16} />{d.deleted ? "Deleted in Tally." : "Cancelled in Tally."}</p> : null}
             {d.inventory.length ? (
               <div className="nxty-table-wrap"><table className="nxty-table"><thead><tr><th>Item</th><th className="num">Qty</th><th className="num">Rate</th><th className="num">Amount</th></tr></thead>
@@ -665,8 +666,8 @@ function Hub() {
                 {TABS.map((t) => <button key={t.key} type="button" role="tab" aria-selected={tab === t.key} onClick={() => go(t.key)}><t.icon size={16} />{t.label}{t.key === "sync" && s.issues ? <span className="nxty-count">{s.issues}</span> : null}</button>)}
               </nav>
               {active && active.progress < 100 && tab !== "sync" ? <p className="nxty-warn"><RefreshCw size={16} />First sync in progress ({active.progress}%). Figures fill in as Tally data arrives.</p> : null}
-              {tab === "overview" ? <OverviewPanel enabled={hasData} company={active?.name ?? ""} openParty={setParty} openVoucher={setVoucher} go={go} /> : null}
-              {tab === "parties" ? <PartiesPanel openParty={setParty} company={active?.name ?? ""} /> : null}
+              {tab === "overview" ? <OverviewPanel enabled={hasData} openParty={setParty} openVoucher={setVoucher} go={go} /> : null}
+              {tab === "parties" ? <PartiesPanel openParty={setParty} /> : null}
               {tab === "stock" ? <StockPanel /> : null}
               {tab === "daybook" ? <DaybookPanel openVoucher={setVoucher} /> : null}
               {tab === "reports" ? <ReportsPanel openVoucher={setVoucher} /> : null}
@@ -675,7 +676,7 @@ function Hub() {
           )
         ) : null}
       </State>
-      {party ? <StatementModal guid={party} onClose={() => setParty(null)} openVoucher={setVoucher} company={active?.name ?? ""} /> : null}
+      {party ? <StatementModal guid={party} onClose={() => setParty(null)} openVoucher={setVoucher} /> : null}
       {voucher ? <VoucherModal guid={voucher} onClose={() => setVoucher(null)} /> : null}
     </div>
   );

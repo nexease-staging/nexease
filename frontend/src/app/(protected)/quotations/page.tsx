@@ -1,10 +1,11 @@
 "use client";
 
+import { openShare } from "@/features/share/api";
 import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Capacitor } from "@capacitor/core";
-import { ChevronLeft, ChevronRight, ClipboardList, Download, FilePlus2, FileSpreadsheet, FileText, MessageCircle, Plus, Share2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, ClipboardList, Download, FilePlus2, FileSpreadsheet, FileText, MessageCircle, Plus, Share2, Mail } from "lucide-react";
 import { ActionIcon, CompactList, CompactRow, ListScreen, ListState, type ListAction } from "@/components/list/list-kit";
 import { Badge } from "@/components/ui/badge";
 import { notify } from "@/components/nex-feedback";
@@ -49,10 +50,8 @@ export default function Quotations() {
 
   function rowActions(q: Quotation): ListAction[] {
     const actions: ListAction[] = [{ icon: native ? Share2 : Download, label: `${native ? "Share" : "Download"} PDF ${q.number}`, busy: sharing === q.number, onClick: () => void pdf(q.number) }];
-    if (!native) {
-      const text = `Quotation ${q.number} for ${formatMoney(q.total)}${q.valid_until ? `, valid until ${formatDate(q.valid_until)}` : ""}.`;
-      actions.push({ icon: MessageCircle, label: `WhatsApp ${q.number}`, onClick: () => window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer") });
-    }
+    actions.push({ icon: MessageCircle, label: `WhatsApp ${q.number}`, onClick: () => openShare({ kind: "quotation", id: q.number, title: q.number }) });
+    actions.push({ icon: Mail, label: `Email ${q.number}`, onClick: () => openShare({ kind: "quotation", id: q.number, channel: "email", title: q.number }) });
     return actions;
   }
 

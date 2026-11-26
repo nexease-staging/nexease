@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { Capacitor } from "@capacitor/core";
-import { Download, Mail, MessageCircle, Share2 } from "lucide-react";
+import { Download, Mail, MessageCircle, Send, Share2 } from "lucide-react";
 import type { ListAction } from "@/components/list/list-kit";
 import { notify } from "@/components/nex-feedback";
-import DocumentEmailDialog from "@/features/documents/components/document-email-dialog";
+import { DOC_KIND, openShare } from "@/features/share/api";
 import { useDownloadDocumentPDF } from "@/features/documents/hooks";
 import type { DocumentType } from "@/features/documents/types";
 
@@ -23,7 +23,6 @@ interface Target {
 export function useDocumentRowActions() {
   const download = useDownloadDocumentPDF();
   const [pendingId, setPendingId] = useState<string | null>(null);
-  const [emailTarget, setEmailTarget] = useState<Target | null>(null);
   const native = Capacitor.isNativePlatform();
 
   function actionsFor(target: Target, options: { whatsapp?: string; email?: boolean } = {}): ListAction[] {
@@ -42,30 +41,15 @@ export function useDocumentRowActions() {
         },
       },
     ];
-    if (options.email !== false) {
-      actions.push({ icon: Mail, label: `Email ${target.documentNumber}`, onClick: () => setEmailTarget(target) });
-    }
-    if (options.whatsapp && !native) {
-      const text = options.whatsapp;
-      actions.push({
-        icon: MessageCircle,
-        label: `WhatsApp ${target.documentNumber}`,
-        onClick: () => window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer"),
-      });
-    }
+    const share = (channel: "whatsapp" | "email") => openShare({ kind: DOC_KIND[target.documentType], id: target.documentId, channel, title: target.documentNumber });
+    actions.push({ icon: Send, label: `Share ${target.documentNumber}`, onClick: () => share("whatsapp") });
+    if (options.whatsapp) actions.push({ icon: MessageCircle, label: `WhatsApp ${target.documentNumber}`, onClick: () => share("whatsapp") });
+    if (options.email !== false) actions.push({ icon: Mail, label: `Email ${target.documentNumber}`, onClick: () => share("email") });
     return actions;
   }
 
-  const dialog = emailTarget ? (
-    <DocumentEmailDialog
-      open
-      documentType={emailTarget.documentType}
-      documentId={emailTarget.documentId}
-      documentNumber={emailTarget.documentNumber}
-      defaultRecipient={emailTarget.recipient ?? null}
-      onClose={() => setEmailTarget(null)}
-    />
-  ) : null;
+  // The share sheet is mounted once in the app shell; kept for pages that render `dialog`.
+  const dialog = null;
 
   return { actionsFor, dialog };
 }
