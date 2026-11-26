@@ -76,6 +76,16 @@ describe("Fast invoice", () => {
     expect(vi.mocked(apiRequest).mock.calls.filter(([,options])=>options?.method === 'POST')).toHaveLength(0);
   });
 
+  it("stops a rate with three decimals before it reaches the server", async () => {
+    mount();
+    fillMinimal();
+    fireEvent.change(screen.getByPlaceholderText("State code, e.g. 27"), { target: { value: "27" } });
+    fireEvent.change(screen.getByLabelText("unit_price line 1"), { target: { value: "84.746" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("at most 2 decimal places");
+    expect(vi.mocked(apiRequest).mock.calls.filter(([,options])=>options?.method === 'POST')).toHaveLength(0);
+  });
+
   it("saves and issues via the direct-invoice endpoint, then offers sharing", async () => {
     mount();
     fillMinimal();

@@ -22,3 +22,11 @@ it('merges Workforce tools into one section for users with access',()=>{
  expect(links.filter(href=>href==='/workforce')).toHaveLength(1);
  expect(links).toContain('/workforce/sites');
 });
+
+it('keeps the Sales tab active on every Sales screen',async()=>{
+ const {tabMatches}=await import('./easy-workspace');
+ expect(tabMatches('/invoices','/sales-orders/')).toBe(true);
+ expect(tabMatches('/invoices','/quotations')).toBe(true);
+ expect(tabMatches('/invoices','/products')).toBe(false);
+ expect(tabMatches('/home','/home/')).toBe(true);
+});

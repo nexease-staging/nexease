@@ -121,61 +121,19 @@ export default function DocumentActions({
   return (
     <>
       <div>
-        <div
-          className="
-            flex flex-wrap gap-2
-          "
-        >
+        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={`${documentNumber} actions`}>
           <DocumentPDFPreview documentType={documentType} documentId={documentId} documentNumber={documentNumber} disabled={disabled}/>
-          <button
-            type="button"
-            aria-label={pdfLabel} title={pdfLabel} disabled={actionDisabled}
-            onClick={() => {
-              void handleDownload();
-            }}
-            className="
-              inline-flex items-center
-              gap-2 rounded-lg
-              border border-slate-300
-              bg-white px-3 py-2
-              text-sm font-semibold
-              text-slate-700
-              hover:bg-slate-50
-              hover:text-slate-950
-              disabled:cursor-not-allowed
-              disabled:opacity-50
-            "
-          >
-            {native ? <Share2 size={16} aria-hidden="true" /> : <Download size={16} aria-hidden="true" />}
-            {downloadMutation.isPending ? "Preparing…" : pdfLabel}
+          <button type="button" className="nxl-icon" aria-label={pdfLabel} title={pdfLabel} disabled={actionDisabled} aria-busy={downloadMutation.isPending || undefined} onClick={() => { void handleDownload(); }}>
+            {native ? <Share2 size={18} strokeWidth={1.8} aria-hidden="true" /> : <Download size={18} strokeWidth={1.8} aria-hidden="true" className={downloadMutation.isPending ? "animate-pulse" : undefined} />}
           </button>
-
-          <button
-            type="button"
-            aria-label="Email" title="Email" disabled={disabled}
-            onClick={
-              handleOpenEmail
-            }
-            className="
-              inline-flex items-center
-              gap-2 rounded-lg
-              border border-blue-200
-              bg-white px-3 py-2
-              text-sm font-semibold
-              text-blue-700
-              hover:bg-blue-50
-              disabled:cursor-not-allowed
-              disabled:opacity-50
-            "
-          >
-            <Mail size={16} />
-            <span>Email</span>
+          <button type="button" className="nxl-icon" aria-label="Email" title="Email" disabled={disabled} onClick={handleOpenEmail}>
+            <Mail size={18} strokeWidth={1.8} aria-hidden="true" />
           </button>
           {whatsappMessage && !native && !disabled && (
-            <a className="nx-button nx-secondary nx-btn-sm"
+            <a className="nxl-icon" aria-label="WhatsApp message" title="WhatsApp message"
               href={`https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`}
               target="_blank" rel="noopener noreferrer">
-              <MessageCircle size={16} aria-hidden="true" /> WhatsApp message
+              <MessageCircle size={18} strokeWidth={1.8} aria-hidden="true" />
             </a>
           )}
         </div>

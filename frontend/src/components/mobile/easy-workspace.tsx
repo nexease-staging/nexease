@@ -35,10 +35,13 @@ export function useEasyFeatures() {
   return groups;
  }, []);
 }
+const SALES_ROUTES=['/invoices','/quotations','/sales-orders','/delivery-challans','/sales-returns','/credit-notes','/customers','/e-invoices','/e-way-bills'];
+/** Bottom-nav tab is active on its own route and, for Sales, on every Sales screen. */
+export function tabMatches(href:string,path:string){const p=path.replace(/\/$/,'')||'/';if(href==='/invoices')return SALES_ROUTES.some(r=>p===r||p.startsWith(r+'/'));return p===href;}
 export function EasyNav(){
  const path=usePathname(); const features=useEasyFeatures().flatMap(s=>s.items);
  const tabs=[{href:'/home',label:'Home',icon:Home},{href:'/invoices',label:'Sales',icon:FileText},{href:'/products',label:'Items',icon:Package},{href:'/tools',label:'More',icon:LayoutGrid}];
- return <nav className="easy-nav" aria-label="Main navigation">{tabs.filter(t=>['/home','/tools'].includes(t.href)||features.some(f=>f.href===t.href)).map(t=><Link key={t.href} href={t.href} aria-current={path.replace(/\/$/,'')===t.href?'page':undefined}><t.icon size={22}/><span>{t.label}</span></Link>)}</nav>;
+ return <nav className="easy-nav" aria-label="Main navigation">{tabs.filter(t=>['/home','/tools'].includes(t.href)||features.some(f=>f.href===t.href)).map(t=><Link key={t.href} href={t.href} aria-current={tabMatches(t.href,path)?'page':undefined}><t.icon size={22}/><span>{t.label}</span></Link>)}</nav>;
 }
 export function EasyTools(){
  const [search,setSearch]=useState(''); const [advanced,setAdvanced]=useState(false); const sections=useEasyFeatures();

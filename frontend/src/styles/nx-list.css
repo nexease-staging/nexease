@@ -1,0 +1,86 @@
+/* NexEase list kit (components/list/list-kit.tsx). Compact Go GST Bill-style lists for web and mobile.
+   Uses the tokens from nexease-ui.css, so light and dark themes both work. */
+
+.nxl-screen{max-width:1400px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.nxl-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.nxl-header h1{font-size:22px;font-weight:750;letter-spacing:-.02em;color:var(--nx-text);line-height:1.2}
+.nxl-header p{font-size:13px;margin-top:2px}
+.nxl-toolbar{display:flex;align-items:center;gap:6px}
+.nxl-primary{gap:6px}
+
+.nxl-icon{display:inline-grid;place-items:center;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;border:1px solid var(--nx-border);background:var(--nx-surface);color:var(--nx-text-muted);flex-shrink:0;transition:background .12s,color .12s,border-color .12s}
+.nxl-icon[data-size="sm"]{width:32px;height:32px;border-radius:8px;border-color:transparent;background:transparent}
+.nxl-icon:hover:not(:disabled){color:var(--nx-primary);border-color:var(--nx-border-strong);background:var(--nx-primary-soft)}
+.nxl-icon:disabled{opacity:.4;cursor:not-allowed}
+.nxl-icon[data-active]{color:var(--nx-primary);border-color:var(--nx-primary);background:var(--nx-primary-soft)}
+
+.nxl-panel{background:var(--nx-surface);border:1px solid var(--nx-border);border-radius:var(--nx-radius);box-shadow:var(--nx-shadow-sm);overflow:hidden}
+.nxl-filters{display:flex;gap:8px;padding:10px 12px 0}
+.nxl-search{flex:1;display:flex;align-items:center;gap:8px;min-width:0;height:38px;padding:0 12px;border:1px solid var(--nx-border);border-radius:10px;background:var(--nx-surface-muted);color:var(--nx-text-muted)}
+.nxl-search:focus-within{border-color:var(--nx-primary);background:var(--nx-surface)}
+.nxl-search input{flex:1;min-width:0;background:transparent;border:0;outline:0;font-size:14px;color:var(--nx-text)}
+.nxl-chips{padding:10px 12px}
+.nxl-chips .nx-chip{padding:5px 12px;font-size:12.5px}
+.nxl-filters+.nxl-list,.nxl-filters+.nxl-error{margin-top:10px}
+
+/* Rows. Phones: [party + number·date] [amount + status] [icon actions]. */
+.nxl-list{border-top:1px solid var(--nx-border)}
+.nxl-list ul{list-style:none;margin:0;padding:0}
+.nxl-row{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:4px 12px;padding:10px 12px;border-bottom:1px solid var(--nx-border);font-size:13.5px;color:var(--nx-text)}
+.nxl-row[data-clickable]{cursor:pointer}
+.nxl-row[data-clickable]:hover{background:var(--nx-surface-muted)}
+.nxl-open{position:absolute;inset:0;z-index:0;border-radius:0;background:transparent}
+.nxl-open:focus-visible{outline-offset:-2px}
+.nxl-main,.nxl-amount{min-width:0;display:flex;flex-direction:column;gap:2px}
+.nxl-title{font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nxl-sub{font-size:12px;color:var(--nx-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nxl-amount{align-items:flex-end;text-align:right}
+.nxl-amount strong{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.nxl-amount[data-tone="danger"] strong{color:var(--nx-danger-fg)}
+.nxl-amount[data-tone="success"] strong{color:var(--nx-success-fg)}
+.nxl-badge-slot .nx-badge{padding:1px 7px;font-size:10.5px}
+.nxl-actions{position:relative;z-index:1;display:flex;justify-content:flex-end;gap:0}
+.nxl-actions:empty{display:none}
+.nxl-meta{display:none}
+.nxl-row[data-expanded]{background:var(--nx-surface-muted)}
+.nxl-expand{grid-column:1/-1;position:relative;z-index:1;margin-top:8px;padding:12px;border-radius:10px;background:var(--nx-surface);border:1px solid var(--nx-border);cursor:default}
+.nxl-head{display:none}
+.nxl-end{text-align:right;justify-self:end}
+
+.nxl-pager{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;font-size:12.5px;color:var(--nx-text-muted)}
+.nxl-error{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px;font-size:14px;color:var(--nx-danger-fg)}
+
+/* Mobile bottom action bar: sticks to the bottom of the scrolling page, just above the app nav. */
+.nxl-actionbar{display:none}
+@media(max-width:767px){
+  .nxl-header .nxl-toolbar{display:none}
+  .nxl-header h1{font-size:20px}
+  .nxl-screen{padding-bottom:4px}
+  /* Fixed just above the app's bottom nav (73px + safe area); hidden with it when the keyboard opens. */
+  .nxl-screen{padding-bottom:72px}
+  .nxl-actionbar{position:fixed;left:0;right:0;bottom:calc(var(--nxl-nav-h,73px) + env(safe-area-inset-bottom,0px));z-index:30;display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--nx-surface);border-top:1px solid var(--nx-border);box-shadow:0 -6px 18px rgb(16 40 34/.08)}
+  body:has(.nxl-actionbar) .nx-page-help,body:has(.nxl-actionbar) button[aria-label="Open NexEase AI"]{bottom:calc(var(--nxl-nav-h,73px) + 72px + env(safe-area-inset-bottom,0px))!important}
+  .nxl-actionbar-primary{flex:1;justify-content:center;gap:6px;min-height:42px}
+  html[data-keyboard=open] .nxl-actionbar{display:none}
+  body:has([role=dialog][aria-modal=true]) .nxl-actionbar{visibility:hidden}
+  .nxl-row{padding:10px 12px;gap:2px 10px}
+  /* Phones keep only the most important row action (pay, share PDF, call); everything else is one tap away in the record. */
+  .nxl-row .nxl-actions>:nth-child(n+2){display:none}
+  .nxl-row .nxl-hide-sm{display:none}
+  .nxl-panel{border-radius:12px}
+}
+
+/* Web: dense table-like grid with meta columns and a header row. */
+@media(min-width:768px){
+  .nxl-row{grid-template-columns:minmax(200px,2fr) repeat(var(--nxl-meta,0),minmax(90px,1fr)) minmax(120px,150px) 132px;padding:9px 14px}
+  .nxl-meta{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--nx-text-muted)}
+  .nxl-actions:empty{display:flex}
+  .nxl-head{display:grid;background:var(--nx-surface-muted);color:var(--nx-text-muted);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding-top:8px;padding-bottom:8px}
+  .nxl-head .nxl-meta{color:inherit}
+  /* Desktop rows are mouse-driven: compact 32px icons (phones keep the global 44px touch target). */
+  .nx-app-shell .nxl-row .nxl-icon[data-size="sm"]{min-width:32px;min-height:32px;padding:0}
+  .nxl-actions{opacity:.75}
+  .nxl-row:hover .nxl-actions,.nxl-row:focus-within .nxl-actions{opacity:1}
+}
+
+@media print{.nxl-actionbar,.nxl-toolbar,.nxl-actions,.nxl-filters,.nxl-chips{display:none!important}}
