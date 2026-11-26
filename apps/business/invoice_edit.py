@@ -220,22 +220,14 @@ def edit(request, invoice_id):
             )
         if not new.billing_name:
             raise ValueError("Billing name is required.")
-        if (
-            new.billing_details.get("tax_reviewed")
-            and new.billing_details.get("supply_type") != "unregistered"
-        ):
-            import re
+        if new.billing_details.get("tax_reviewed"):
+            from .billing import hsn_problem
 
+            supply = new.billing_details.get("supply_type", "")
             for item in new.items:
-                if not re.fullmatch(
-                    (
-                        r"[0-9]{6}"
-                        if item.item_type == "service"
-                        else r"[0-9]{4}|[0-9]{6}|[0-9]{8}"
-                    ),
-                    item.hsn_code or "",
-                ):
-                    raise ValueError("Every reviewed GST line needs a valid HSN/SAC.")
+                problem = hsn_problem(item.hsn_code, item.item_type, supply)
+                if problem:
+                    raise ValueError(problem)
         new.validate()
         journal = None
         stock_changes = []

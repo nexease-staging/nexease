@@ -26,3 +26,34 @@ describe("directInvoiceProblem", () => {
     expect(directInvoiceProblem([line(), line({ name: "", unit_price: "1.999" })], "2026-11-26", "")).toBe("");
   });
 });
+
+import { hsnProblem, saleProblem } from "./direct-invoice-rules";
+
+describe("saleProblem GST rules", () => {
+  const ctx = { invoiceDate: "2026-11-26", dueDate: "", placeOfSupply: "27" };
+  const item = (over = {}) => ({ sku: "", name: "Rice", quantity: "1", unit_price: "60", tax_rate: "0", item_type: "goods", hsn_code: "", ...over });
+
+  it("requires HSN/SAC on taxable sales and points at the line", () => {
+    expect(saleProblem([item({ tax_rate: "5" })], { ...ctx, supply: "taxable" })).toMatchObject({ line: 0, field: "hsn_code" });
+  });
+  it.each(["exempt", "nil_rated", "non_gst", "unregistered"])("lets %s sales leave HSN/SAC blank", (supply) => {
+    expect(saleProblem([item()], { ...ctx, supply })).toBeNull();
+  });
+  it("still rejects a malformed code on non-taxable sales", () => {
+    expect(saleProblem([item({ hsn_code: "123" })], { ...ctx, supply: "exempt" })?.message).toMatch(/4, 6 or 8 digits/);
+  });
+  it("rejects GST on a non-taxable sale, like the server", () => {
+    expect(saleProblem([item({ tax_rate: "18", hsn_code: "1006" })], { ...ctx, supply: "exempt" })).toMatchObject({ field: "tax_rate" });
+  });
+  it("needs place of supply except for unregistered sellers", () => {
+    expect(saleProblem([item()], { ...ctx, placeOfSupply: "", supply: "exempt" })).toMatchObject({ field: "place_of_supply" });
+    expect(saleProblem([item()], { ...ctx, placeOfSupply: "", supply: "unregistered" })).toBeNull();
+  });
+  it("skips GST rules for quotations", () => {
+    expect(saleProblem([item({ tax_rate: "18" })], { ...ctx, supply: "exempt", quotation: true })).toBeNull();
+  });
+  it("requires a 6-digit SAC for services", () => {
+    expect(hsnProblem("9985", "service", "taxable")).toMatch(/6-digit SAC/);
+    expect(hsnProblem("998519", "service", "taxable")).toBe("");
+  });
+});

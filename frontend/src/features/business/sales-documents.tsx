@@ -2,9 +2,10 @@
 import PasswordInput from "@/components/password-input";
 
 import {useState, type FormEvent} from 'react';
-import {Ban, Download, FileText, Plus, RefreshCw, Send, ShieldCheck, Truck, X} from 'lucide-react';
+import {Ban, Download, FileText, Plus, RefreshCw, Send, ShieldCheck, Truck} from 'lucide-react';
 import {CompactList, CompactRow, ListScreen, ListState, StatusBadge, useDebounced, type ListAction} from '@/components/list/list-kit';
 import {Badge} from '@/components/ui/badge';
+import {FormSheet} from '@/components/form/form-sheet';
 import {confirmAction, notify} from '@/components/nex-feedback';
 import {challanStatus} from '@/features/sales/status';
 import {formatDate} from '@/lib/format';
@@ -91,17 +92,17 @@ export default function SalesDocuments({mode}:{mode:keyof typeof paths}) {
   return <ListScreen
     title={title}
     subtitle={irp?'Register B2B tax invoices with the IRP; the signed QR prints on the invoice PDF.':'Movement documents for goods, in three labelled copies. Stock and invoicing are handled separately.'}
-    primary={canOpenForm?{label:form?'Close form':formLabel,icon:form?X:irp?ShieldCheck:Plus,onClick:()=>setForm(!form)}:null}
+    primary={canOpenForm?{label:formLabel,icon:irp?ShieldCheck:Plus,onClick:()=>{setMessage('');setForm(true);}}:null}
     actions={[{icon:FileText,label:'Sales invoices',onClick:()=>router.push('/invoices')},...(irp?[{icon:Truck,label:'E-way bills',onClick:()=>router.push('/e-way-bills')}]:[])]}
     onRefresh={()=>void list.refetch()} refreshing={list.isFetching}
     search={{value:search,onChange:setSearch,placeholder:irp?'Search invoice number':'Search challan number'}}
     above={<>
     {data&&irp&&<p className="nx-panel flex flex-wrap items-center gap-2 text-sm"><Badge tone={data.environment==='live'?'success':'warning'}>{data.environment==='live'?'LIVE IRP':'TEST IRP · not a legal invoice'}</Badge><span>{data.gstin||'Set your GSTIN in Taxation'}</span><span className="nx-muted">· {data.configured?'Credentials saved':'IRP credentials not connected'}</span></p>}
-    {form&&<form onSubmit={submit} className="nx-panel space-y-4">
-      {irp?<><h2 className="text-xl font-semibold">Connect this workspace’s GSTIN</h2><p>Use dedicated IRP API credentials for Quicko GSP. The password is encrypted on the server.</p><div className="grid gap-3 sm:grid-cols-2">
+    {form&&<FormSheet title={irp?'Connect IRP':'New delivery challan'} subtitle={irp?'Dedicated IRP API credentials for Quicko GSP. The password is encrypted on the server.':'Records goods movement. Does not post stock or accounting entries.'} onClose={()=>setForm(false)} busy={busy} size={irp?'md':'xl'}><form onSubmit={submit}>
+      {irp?<><div className="nxf-grid">
         <label>IRP API username<input required className={input} name="username" maxLength={100}/></label><label>IRP API password<PasswordInput required className={input} name="password" type="password" autoComplete="new-password" maxLength={200}/></label>
         <label>Registered seller address<input required className={input} name="address" maxLength={100}/></label><label>Seller city<input required className={input} name="city" maxLength={50}/></label><label>Seller PIN code<input required className={input} name="pincode" pattern="[1-9][0-9]{5}" inputMode="numeric"/></label></div></>:
-        <><h2 className="text-xl font-semibold">Issue a delivery challan</h2><div className="grid gap-3 sm:grid-cols-2">
+        <><div className="nxf-grid">
         <Picker kind="customers" value={customer} onSelect={x=>setCustomer(x.id)} label="Consignee"/>
         <label>Dispatch date<input required className={input} type="date" name="date" defaultValue={new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'})}/></label>
         <label>Reason<select required className={input} name="reason" value={challanReason} onChange={e=>setChallanReason(e.target.value)}>{Object.entries(reasons).map(([k,v])=><option key={k} value={k}>{v}</option>)}</select></label>
@@ -110,18 +111,19 @@ export default function SalesDocuments({mode}:{mode:keyof typeof paths}) {
         <label>Delivery address (optional override)<input className={input} name="address" maxLength={500}/></label>
         <label>Vehicle registration (if applicable)<input className={input} name="vehicle_number" maxLength={24}/></label><label>Transport reference<input className={input} name="transport" maxLength={100}/></label>
         <label>Notes<input className={input} name="notes" maxLength={500}/></label></div>
-        {lines.map((line,i)=><div key={i} className="grid items-end gap-2 rounded border p-3 sm:grid-cols-5">
+        {lines.map((line,i)=><div key={i} className="nxf-section grid items-end gap-2 sm:grid-cols-5">
           <Picker kind="products" value={line.product_id} onSelect={x=>setLines(v=>v.map((l,j)=>i===j?{...l,product_id:x.id}:l))} label={`Product ${i+1}`}/>
           {(['qty','value','rate'] as const).map((key,j)=><label key={key}>{['Quantity','Taxable value ₹','GST %'][j]}<input required className={input} type="number" step=".01" min={key==='qty'&&challanReason!=='liquid_gas'?'.01':'0'} value={line[key]} onChange={e=>setLines(v=>v.map((l,n)=>i===n?{...l,[key]:e.target.value}:l))}/></label>)}
           <button type="button" className="nx-button nx-secondary" disabled={lines.length===1} onClick={()=>setLines(v=>v.filter((_,j)=>i!==j))}>Remove</button></div>)}
         <button type="button" className="nx-button nx-secondary" disabled={lines.length>=50} onClick={()=>setLines(v=>[...v,emptyLine()])}>Add goods line</button></>}
-      <button className="nx-button ml-2" disabled={busy}>{irp?'Save IRP credentials':'Issue challan'}</button>
-    </form>}
+      {message&&<p role="alert" className="nxf-error">{message}</p>}
+      <div className="nxf-actions"><span/><div className="nxf-buttons"><button type="button" className="nx-button nx-secondary nxf-secondary-sm" disabled={busy} onClick={()=>setForm(false)}>Cancel</button><button className="nx-button" disabled={busy}>{busy?'Saving…':irp?'Save IRP credentials':'Issue challan'}</button></div></div>
+    </form></FormSheet>}
     {cancel&&<form className="nx-panel flex flex-wrap items-end gap-3" onSubmit={e=>{e.preventDefault();void confirmAction(`Cancel the IRN for ${cancel.number}? This cannot be undone.`).then(yes=>{if(yes)void send({id:cancel.id,action:'cancel',reason,remarks},path,'IRN cancellation submitted.');});}}>
       <label>IRP cancellation reason<select className={input} value={reason} onChange={e=>setReason(e.target.value)}>{['Duplicate','Data entry mistake','Order cancelled','Other'].map((v,i)=><option key={v} value={i+1}>{v}</option>)}</select></label>
       <label>Remarks<input required className={input} minLength={3} maxLength={100} value={remarks} onChange={e=>setRemarks(e.target.value)}/></label><button className="nx-button" disabled={busy}>Confirm IRP cancellation</button><button type="button" className="nx-button nx-secondary" onClick={()=>setCancel(undefined)}>Back</button>
     </form>}
-    {message&&<p role="alert" className="nx-panel" style={{color:'var(--nx-danger-fg)'}}>{message}</p>}
+    {message&&!form&&<p role="alert" className="nx-panel" style={{color:'var(--nx-danger-fg)'}}>{message}</p>}
     </>}>
     <ListState loading={list.isLoading} error={list.error} onRetry={()=>void list.refetch()} isEmpty={!data?.records.length}
       emptyIcon={irp?ShieldCheck:Truck} emptyTitle={query?'No matching documents':irp?'No invoices to register yet':'No delivery challans yet'}
