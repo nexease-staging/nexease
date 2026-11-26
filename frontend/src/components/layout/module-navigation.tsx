@@ -26,13 +26,13 @@ export default function ModuleNavigation() {
     document.addEventListener("pointerdown",close);document.addEventListener("keydown",key);
     return()=>{document.removeEventListener("pointerdown",close);document.removeEventListener("keydown",key)};
   },[]);
-  const order=["Overview","Inventory","Sales","Purchasing","Workforce","Taxation","Finance","Expenses","Administration"];
+  const order=["Overview","Inventory","Sales","Purchasing","Payments","Workforce","Taxation","Finance","Expenses","Administration"];
   const sections=order.flatMap(label=>{
     const section=navigationSections.find(s=>s.label===label);if(!section)return [];
     if(config.data){
       const moduleKey:Record<string,string>={Workforce:"workforce",Taxation:"taxation",Finance:"finance",Expenses:"expenses"};
       if(moduleKey[label]&&config.data.modules?.[moduleKey[label]]===false)return [];
-      if(!["Overview","Expenses","Administration","Taxation","Finance","Workforce"].includes(label)&&!config.data.profile.modules.includes(label))return [];
+      if(!["Overview","Expenses","Administration","Taxation","Finance","Workforce","Payments"].includes(label)&&!config.data.profile.modules.includes(label))return [];
     }
     const extra=label==="Inventory"?navigationSections.find(s=>s.label==="Barcode")?.items??[]:[];
     const items=[...section.items,...extra].filter(item=>
