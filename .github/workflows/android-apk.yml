@@ -1,6 +1,13 @@
 name: Android APK
-# Run from GitHub → Actions → "Android APK" → Run workflow. The APK appears under the run's Artifacts.
+# Builds the NexEase Android app and publishes the APK as a GitHub pre-release
+# (Releases → "NexEase Android …"). Runs automatically when the mobile branch or an
+# apk-v* tag is pushed, or manually from Actions → "Android APK" → Run workflow.
+# A signed release APK is built when the signing secrets exist; otherwise a debug APK
+# (installs directly, but cannot later be updated by a signed build without reinstalling).
 on:
+  push:
+    branches: [feature/mobile-app]
+    tags: ['apk-v*']
   workflow_dispatch:
     inputs:
       api_url:
@@ -8,13 +15,16 @@ on:
         required: true
         default: https://nexease-backend-singapore.onrender.com/api/v1
       build_type:
-        description: debug installs directly; release needs the signing secrets
+        description: auto picks release when signing secrets exist, else debug
         required: true
-        default: debug
+        default: auto
         type: choice
-        options: [debug, release]
+        options: [auto, debug, release]
 permissions:
-  contents: read
+  contents: write
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -23,11 +33,24 @@ jobs:
       run:
         working-directory: frontend
     env:
-      NEXT_PUBLIC_API_BASE_URL: ${{ inputs.api_url }}
+      NEXT_PUBLIC_API_BASE_URL: ${{ inputs.api_url || 'https://nexease-backend-singapore.onrender.com/api/v1' }}
       # Continues the existing app's version 7 so a new build can update an installed one.
       VERSION_CODE: ${{ github.run_number }}
     steps:
       - uses: actions/checkout@v4
+      - name: Decide build type
+        id: kind
+        env:
+          REQUESTED: ${{ inputs.build_type || 'auto' }}
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ "$REQUESTED" = "auto" ]; then
+            if [ -n "$KEYSTORE_BASE64" ]; then type=release; else type=debug; fi
+          else
+            type="$REQUESTED"
+          fi
+          echo "type=$type" >> "$GITHUB_OUTPUT"
+          echo "Building a $type APK"
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -44,13 +67,13 @@ jobs:
       - name: Copy it into the Android project
         run: npx cap sync android
       - name: Build debug APK
-        if: inputs.build_type == 'debug'
+        if: steps.kind.outputs.type == 'debug'
         working-directory: frontend/android
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon assembleDebug -PnexeaseVersionCode=$((100 + VERSION_CODE))
       - name: Build signed release APK
-        if: inputs.build_type == 'release'
+        if: steps.kind.outputs.type == 'release'
         working-directory: frontend/android
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -71,13 +94,30 @@ jobs:
             -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
           rm -f "$RUNNER_TEMP/release.keystore"
       - name: Name the APK
+        id: apk
         run: |
           mkdir -p ../apk
-          src=$(ls android/app/build/outputs/apk/${{ inputs.build_type }}/*.apk | head -1)
-          cp "$src" "../apk/NexEase-${{ inputs.build_type }}-$((100 + VERSION_CODE)).apk"
+          src=$(ls android/app/build/outputs/apk/${{ steps.kind.outputs.type }}/*.apk | head -1)
+          name="NexEase-${{ steps.kind.outputs.type }}-$((100 + VERSION_CODE)).apk"
+          cp "$src" "../apk/$name"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
           ls -la ../apk
       - uses: actions/upload-artifact@v4
         with:
-          name: NexEase-${{ inputs.build_type }}-apk
+          name: NexEase-${{ steps.kind.outputs.type }}-apk
           path: apk/*.apk
           retention-days: 30
+      - name: Publish as a GitHub pre-release
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TYPE: ${{ steps.kind.outputs.type }}
+          NAME: ${{ steps.apk.outputs.name }}
+        run: |
+          version=$((100 + VERSION_CODE))
+          tag="android-$version"
+          notes="NexEase Android build $version ($TYPE) from ${GITHUB_REF_NAME} @ ${GITHUB_SHA::7}.
+          Backend: $NEXT_PUBLIC_API_BASE_URL
+          Install: download $NAME on the phone and open it (allow installs from this source when Android asks)."
+          gh release create "$tag" "apk/$NAME" --target "$GITHUB_SHA" --prerelease \
+            --title "NexEase Android $version ($TYPE)" --notes "$notes"
