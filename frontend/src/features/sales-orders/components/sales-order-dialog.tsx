@@ -1,4 +1,5 @@
 "use client";
+import { FormSheet } from "@/components/form/form-sheet";
 import DiscountMode from "@/features/invoices/components/discount-mode";
 import {discountedPayload, previewDiscount} from "@/features/invoices/discount";
 import type {Quotation} from "@/features/invoices/quotation";
@@ -17,7 +18,6 @@ import {
 import {
   Plus,
   Trash2,
-  X,
 } from "lucide-react";
 
 import {
@@ -792,66 +792,8 @@ export default function SalesOrderDialog({
 
   return (
     <>
-      <div
-        role="presentation"
-      className="
-        fixed inset-0 z-50
-        flex items-center justify-center
-        bg-slate-950/50 p-3
-        sm:p-4
-      "
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="sales-order-dialog-title"
-        className="nx-sales-order-editor 
-          max-h-[94vh] w-full
-          max-w-6xl overflow-y-auto
-          rounded-2xl bg-white
-          text-slate-900 shadow-2xl
-        "
-      >
-        <div
-          className="
-            sticky top-0 z-10
-            flex items-start justify-between
-            border-b border-slate-200
-            bg-white p-5
-          "
-        >
-          <div>
-            <h2
-              id="sales-order-dialog-title"
-              className="text-xl font-bold"
-            >
-              {isEditing
-                ? "Edit sales order"
-                : "Create sales order"}
-            </h2>
-
-            <p className="mt-1 text-sm text-slate-600">
-              Add customer, warehouse,
-              delivery, and product details.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            aria-label="Close"
-            disabled={isPending}
-            onClick={onClose}
-            className="
-              rounded-lg p-2 text-slate-500
-              hover:bg-slate-100
-              disabled:opacity-50
-            "
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        {isEditing
+      <FormSheet title={isEditing ? "Edit sales order" : "New sales order"} subtitle="Customer, warehouse, delivery date and items." titleId="sales-order-dialog-title" onClose={onClose} busy={isPending} size="xl">
+      {isEditing
         && salesOrderQuery.isPending ? (
           <div
             className="
@@ -1517,25 +1459,12 @@ export default function SalesOrderDialog({
               </p>
             ) : null}
 
-            <div
-              className="
-                flex flex-col-reverse gap-3
-                border-t border-slate-200
-                pt-5 sm:flex-row
-                sm:justify-end
-              "
-            >
+            <div className="nxf-actions"><span /><div className="nxf-buttons">
               <button
                 type="button"
                 disabled={isPending}
                 onClick={onClose}
-                className="
-                  rounded-lg border
-                  border-slate-300 px-4
-                  py-2 text-sm font-semibold
-                  text-slate-700
-                  hover:bg-slate-50
-                "
+                className="nx-button nx-secondary nxf-secondary-sm"
               >
                 Cancel
               </button>
@@ -1547,13 +1476,7 @@ export default function SalesOrderDialog({
                   ||
                   lookupPending
                 }
-                className="
-                  rounded-lg bg-blue-600
-                  px-4 py-2 text-sm
-                  font-semibold text-white
-                  hover:bg-blue-700
-                  disabled:opacity-50
-                "
+                className="nx-button"
               >
                 {isPending
                   ? "Saving…"
@@ -1561,11 +1484,10 @@ export default function SalesOrderDialog({
                     ? "Save changes"
                     : "Create sales order"}
               </button>
-            </div>
-          </form>
+            </div></div>
+</form>
         )}
-      </div>
-    </div>
+    </FormSheet>
     <CustomerDialog
       open={customerDialogOpen}
       customerId={null}

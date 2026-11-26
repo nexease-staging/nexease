@@ -1,0 +1,80 @@
+/* NexEase form kit (components/form/form-sheet.tsx). Full-screen sheets on phones, centred panels on web.
+   Field styles are scoped to .nxf-body so legacy forms adopt the design without per-field rewrites. */
+
+.nxf-overlay{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:24px;background:rgb(10 25 20/.5)}
+.nxf-sheet{display:flex;flex-direction:column;width:100%;max-height:calc(100dvh - 48px);background:var(--nx-surface-muted);color:var(--nx-text);border-radius:16px;box-shadow:var(--nx-shadow-md);overflow:hidden;outline:none}
+.nxf-sheet[data-size="md"]{max-width:640px}
+.nxf-sheet[data-size="lg"]{max-width:960px}
+.nxf-sheet[data-size="xl"]{max-width:1200px}
+.nxf-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;background:var(--nx-surface);border-bottom:1px solid var(--nx-border)}
+.nxf-header h2{font-size:18px;font-weight:750;letter-spacing:-.01em}
+.nxf-header p{font-size:12.5px;color:var(--nx-text-muted);margin-top:2px}
+.nxf-close{display:grid;place-items:center;width:38px;height:38px;border-radius:10px;color:var(--nx-text-muted);flex-shrink:0}
+.nxf-close:hover:not(:disabled){background:var(--nx-surface-muted);color:var(--nx-text)}
+.nxf-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:16px 20px;display:flex;flex-direction:column;gap:14px}
+.nxf-body>form{display:flex;flex-direction:column;gap:14px;padding:0!important}
+.nxf-footer,.nxf-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 20px;background:var(--nx-surface);border-top:1px solid var(--nx-border)}
+.nxf-actions{position:sticky;bottom:-16px;margin:0 -20px -16px;z-index:5}
+.nxf-buttons{display:flex;align-items:center;gap:8px;margin-left:auto}
+.nxf-total{display:flex;flex-direction:column;line-height:1.15}
+.nxf-total span{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--nx-text-muted)}
+.nxf-total strong{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+.nxf-hint{font-size:12px;color:var(--nx-text-muted)}
+.nxf-section{background:var(--nx-surface);border:1px solid var(--nx-border);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.nxf-section-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.nxf-section-head h3{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:750;text-transform:uppercase;letter-spacing:.05em;color:var(--nx-text-muted)}
+.nxf-grid{display:grid;gap:12px}
+@media(min-width:640px){.nxf-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.nxf-grid[data-cols="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}.nxf-grid[data-cols="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}.nxf-span{grid-column:1/-1}}
+.nxf-field-hint{display:block;font-size:11.5px;font-weight:500;color:var(--nx-text-muted);margin-top:4px}
+.nxf-error{border-radius:10px;padding:10px 12px;background:var(--nx-danger-bg);color:var(--nx-danger-fg);font-size:13.5px}
+.nxf-segment{display:inline-flex;padding:3px;border-radius:10px;background:var(--nx-surface-muted);border:1px solid var(--nx-border);gap:2px}
+.nxf-segment button{padding:6px 14px;border-radius:8px;font-size:13px;font-weight:650;color:var(--nx-text-muted)}
+.nxf-segment button[aria-pressed="true"]{background:var(--nx-surface);color:var(--nx-primary);box-shadow:var(--nx-shadow-sm)}
+
+/* Consistent fields inside any sheet (beats single Tailwind utilities on legacy markup). */
+.nxf-body label{font-size:12.5px;font-weight:650;color:var(--nx-text-muted)}
+.nxf-body input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=color]),.nxf-body select,.nxf-body textarea{width:100%;min-height:40px;margin-top:4px;padding:8px 11px;border:1px solid var(--nx-border-strong);border-radius:10px;background:var(--nx-surface);color:var(--nx-text);font-size:14px;font-weight:450;box-shadow:none}
+.nxf-body textarea{min-height:72px}
+.nxf-body input:focus,.nxf-body select:focus,.nxf-body textarea:focus{outline:none;border-color:var(--nx-primary);box-shadow:0 0 0 3px var(--nx-primary-soft)}
+.nxf-body input:disabled,.nxf-body select:disabled,.nxf-body textarea:disabled{background:var(--nx-surface-muted);opacity:.8}
+.nxf-body [aria-invalid="true"]{border-color:var(--nx-danger-fg)!important}
+.nxf-body details>summary{cursor:pointer;font-size:13px;font-weight:650;color:var(--nx-primary)}
+
+/* Line items: table on web, stacked cards on phones. */
+.nxf-lines{display:flex;flex-direction:column;gap:8px}
+.nxf-line{display:grid;grid-template-columns:minmax(220px,3fr) repeat(4,minmax(80px,1fr)) minmax(100px,1fr) 40px;gap:8px;align-items:start;padding:10px;border:1px solid var(--nx-border);border-radius:10px;background:var(--nx-surface)}
+.nxf-line-head{display:grid;grid-template-columns:minmax(220px,3fr) repeat(4,minmax(80px,1fr)) minmax(100px,1fr) 40px;gap:8px;padding:0 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--nx-text-muted)}
+.nxf-line-total{align-self:center;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.nxf-line .nxf-mobile-label{display:none}
+.nxf-line-extra{grid-column:1/-1;display:grid;gap:8px;grid-template-columns:repeat(4,minmax(0,1fr))}
+
+@media(max-width:767px){
+  .nxf-overlay{padding:0;align-items:stretch}
+  .nxf-sheet,.nxf-sheet[data-size]{max-width:none;max-height:none;height:100dvh;border-radius:0}
+  .nxf-header{padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px 16px}
+  .nxf-header h2{font-size:17px}
+  .nxf-body{padding:12px}
+  .nxf-actions{bottom:-12px;margin:0 -12px -12px}
+  .nxf-footer,.nxf-actions{padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px))}
+  .nxf-buttons{flex:1;justify-content:flex-end}
+  .nxf-buttons>:last-child{flex:1;justify-content:center;min-height:44px}
+  .nxf-buttons>.nxf-secondary-sm{display:none}
+  .nxf-section{padding:12px}
+  .nxf-line-head{display:none}
+  .nxf-line{grid-template-columns:repeat(2,minmax(0,1fr));padding:10px}
+  .nxf-line>:first-child{grid-column:1/-1}
+  .nxf-line .nxf-mobile-label{display:block}
+  .nxf-line-total{grid-column:1/2;text-align:left}
+  .nxf-line-remove{justify-self:end}
+  .nxf-line-extra{grid-template-columns:repeat(2,minmax(0,1fr))}
+  html[data-keyboard=open] .nxf-actions,html[data-keyboard=open] .nxf-footer{position:static}
+}
+
+/* NexDialog (native <dialog>) shares the sheet look; confirm popups (.nx-feedback) keep their compact size. */
+.nx-modal-sheet{border-radius:16px;border:1px solid var(--nx-border);background:var(--nx-surface-muted);color:var(--nx-text)}
+.nx-modal-sheet>.nxf-header{position:sticky;top:0;z-index:2}
+.nx-modal-body{overflow:visible;max-height:none}
+@media(max-width:767px){
+  .nx-modal-sheet:not(:has(.nx-feedback)){width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;border-radius:0;border:0}
+  .nx-modal-sheet:not(:has(.nx-feedback))>.nxf-header{padding-top:calc(10px + env(safe-area-inset-top,0px))}
+}

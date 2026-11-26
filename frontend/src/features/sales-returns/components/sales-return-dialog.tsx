@@ -1,4 +1,5 @@
 "use client";
+import { FormSheet } from "@/components/form/form-sheet";
 import SearchSelect from "@/components/search-select";
 
 
@@ -8,7 +9,6 @@ import {
 
 import {
   RotateCcw,
-  X,
 } from "lucide-react";
 
 import {
@@ -397,97 +397,8 @@ export default function SalesReturnDialog({
   }
 
   return (
-    <div
-      className="
-        fixed inset-0 z-50
-        flex items-end justify-center
-        bg-slate-950/50
-        sm:items-center sm:p-6
-      "
-      role="presentation"
-      onMouseDown={(event) => {
-        if (
-          event.target
-          ===
-          event.currentTarget
-        ) {
-          closeDialog();
-        }
-      }}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={
-          "sales-return-title"
-        }
-        className="
-          flex max-h-[96dvh]
-          w-full flex-col
-          overflow-hidden bg-slate-50
-          shadow-2xl
-          sm:max-w-5xl
-          sm:rounded-2xl
-        "
-      >
-        <header
-          className="
-            flex items-center
-            justify-between gap-4
-            border-b border-slate-200
-            bg-white px-4 py-4
-            sm:px-6
-          "
-        >
-          <div>
-            <h2
-              id="sales-return-title"
-              className="
-                text-lg font-bold
-                text-slate-950
-              "
-            >
-              Create sales return
-            </h2>
-
-            <p
-              className="
-                mt-1 text-sm
-                text-slate-500
-              "
-            >
-              Select an invoice and enter
-              the quantities returned.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            aria-label="Close"
-            disabled={
-              createMutation.isPending
-            }
-            onClick={
-              closeDialog
-            }
-            className="
-              rounded-lg p-2
-              text-slate-500
-              hover:bg-slate-100
-              disabled:opacity-50
-            "
-          >
-            <X className="size-5" />
-          </button>
-        </header>
-
-        <div
-          className="
-            flex-1 space-y-5
-            overflow-y-auto
-            px-4 py-5 sm:px-6
-          "
-        >
+    <FormSheet title="New sales return" subtitle="Pick the invoice, then enter what came back." titleId="sales-return-title" onClose={closeDialog} busy={createMutation.isPending} size="lg" footer={<div className="nxf-buttons"><button type="button" className="nx-button nx-secondary nxf-secondary-sm" disabled={createMutation.isPending} onClick={closeDialog}>Cancel</button><button type="button" className="nx-button" disabled={createMutation.isPending} onClick={() => { void submit(); }}><RotateCcw size={16} aria-hidden="true" />{createMutation.isPending ? "Creating…" : "Create sales return"}</button></div>}>
+      <div className="flex flex-col gap-4">
           {formError && (
             <div
               role="alert"
@@ -853,64 +764,6 @@ export default function SalesReturnDialog({
             </label>
           </div>
         </div>
-
-        <footer
-          className="
-            flex flex-col-reverse gap-3
-            border-t border-slate-200
-            bg-white px-4 py-4
-            sm:flex-row sm:justify-end
-            sm:px-6
-          "
-        >
-          <button
-            type="button"
-            disabled={
-              createMutation.isPending
-            }
-            onClick={
-              closeDialog
-            }
-            className="
-              rounded-xl border
-              border-slate-300
-              px-4 py-2.5
-              text-sm font-semibold
-              text-slate-700
-              hover:bg-slate-50
-              disabled:opacity-50
-            "
-          >
-            Cancel
-          </button>
-
-          <button
-            type="button"
-            disabled={
-              createMutation.isPending
-            }
-            onClick={() => {
-              void submit();
-            }}
-            className="
-              inline-flex items-center
-              justify-center gap-2
-              rounded-xl bg-blue-600
-              px-4 py-2.5
-              text-sm font-semibold
-              text-white
-              hover:bg-blue-700
-              disabled:opacity-50
-            "
-          >
-            <RotateCcw className="size-4" />
-
-            {createMutation.isPending
-              ? "Creating…"
-              : "Create sales return"}
-          </button>
-        </footer>
-      </div>
-    </div>
+    </FormSheet>
   );
 }

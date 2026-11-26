@@ -22,6 +22,17 @@ TEMPLATES = [
 ]
 TEXT_FIELDS={'po_number':100,'po_date':10,'service_from':10,'service_to':10,'site_name':200,'shipping_address':1000,'payment_terms':1000,'bank_details':1000,'terms':2000,'signatory':200,'place_of_supply':2,'supply_type':30,'template':30}
 SUPPLIES=('taxable','exempt','nil_rated','non_gst','unregistered')
+# HSN/SAC is mandatory only on taxable supplies. Exempt, nil-rated, non-GST and unregistered
+# sales may leave it blank, but a code that is entered must still be well formed.
+HSN_REQUIRED_SUPPLIES=('taxable',)
+
+def hsn_problem(hsn_code,item_type,supply):
+    code=(hsn_code or '').strip()
+    if not code:
+        return 'Enter HSN/SAC for every taxable invoice line in the product master.' if supply in HSN_REQUIRED_SUPPLIES else ''
+    if not re.fullmatch(r'[0-9]{4}|[0-9]{6}|[0-9]{8}',code):return 'HSN/SAC must contain 4, 6 or 8 digits.'
+    if item_type=='service' and len(code)!=6:return 'Service lines require a six-digit SAC.'
+    return ''
 def settings(org):
     r=Record.objects(organization=org,kind='invoice_settings',key='default').first()
     return r.data if r else {'template':'classic'}
@@ -52,8 +63,8 @@ def clean_details(raw, org, items):
         if not i.hsn_code:i.hsn_code=i.product.hsn_code
         if not i.unit:i.unit=i.product.unit
         i.item_type=i.product.item_type
-        if supply!='unregistered' and not re.fullmatch(r'[0-9]{4}|[0-9]{6}|[0-9]{8}',i.hsn_code or ''):raise ValueError('Enter HSN/SAC for every GST invoice line in the product master.')
-        if i.item_type=='service' and i.hsn_code and len(i.hsn_code)!=6:raise ValueError('Service lines require a six-digit SAC.')
+        problem=hsn_problem(i.hsn_code,i.item_type,supply)
+        if problem:raise ValueError(problem)
     d['supplier_gstin']=r.get('gstin','') if supply!='unregistered' else ''
     d['supplier_state']=r.get('state_code','')
     d['tax_reviewed']=True

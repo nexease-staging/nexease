@@ -116,3 +116,27 @@ class UpgradeTests(unittest.TestCase):
   credit=SimpleNamespace(id=ObjectId(),organization=self.org,invoice=inv,credit_note_number='CN1',credit_note_date=datetime(2026,10,2),subtotal=Decimal(200),tax_amount=Decimal('34.2'),total_amount=Decimal('224.2'),items=[SimpleNamespace(product=self.product,line_subtotal=Decimal(200),line_tax=Decimal('34.2'),line_total=Decimal('224.2'))])
   with patch('apps.authorization.services.AuthorizationService.has_permission',return_value=True):CreditNoteService._post_credit_note_accounting(user=self.user,organization=self.org,credit_note=credit)
   j=JournalEntry.objects(source_type='SALES_CREDIT_NOTE').get();self.assertEqual(j.total_debit,Decimal('224.2'));self.assertEqual(j.total_credit,Decimal('224.2'));self.assertIn('SERVICE_REVENUE',{l.account.system_key for l in j.lines})
+
+class HsnOptionalForNonTaxableTests(unittest.TestCase):
+ """HSN/SAC is required on taxable sales only; a code that is entered must still be valid."""
+ setUp=UpgradeTests.setUp;req=UpgradeTests.req;call=UpgradeTests.call
+ def line(self,hsn,item_type='goods',rate=0):
+  product=Product(organization=self.org,category=self.cat,sku='G'+str(len(hsn)),name='Loose rice',unit='KG',item_type=item_type,hsn_code='').save()
+  return InvoiceItem(product=product,item_type=item_type,item_name='Loose rice',hsn_code=hsn,unit='KG',quantity=1,unit_price=100,line_subtotal=100,tax_rate=rate,line_tax=0,line_total=100)
+ def test_taxable_still_requires_hsn(self):
+  with self.assertRaisesRegex(ValueError,'HSN/SAC'):clean_details({'supply_type':'taxable','place_of_supply':'27'},self.org,[self.line('')])
+ def test_non_taxable_supplies_allow_blank_hsn(self):
+  for supply in ('exempt','nil_rated','non_gst'):
+   with self.subTest(supply=supply):
+    details=clean_details({'supply_type':supply,'place_of_supply':'27'},self.org,[self.line('')])
+    self.assertEqual(details['supply_type'],supply)
+ def test_non_taxable_still_rejects_malformed_hsn(self):
+  with self.assertRaisesRegex(ValueError,'4, 6 or 8 digits'):clean_details({'supply_type':'exempt','place_of_supply':'27'},self.org,[self.line('123')])
+  with self.assertRaisesRegex(ValueError,'six-digit SAC'):clean_details({'supply_type':'exempt','place_of_supply':'27'},self.org,[self.line('9985',item_type='service')])
+ def test_exempt_direct_invoice_without_hsn_saves(self):
+  body={'invoice_date':'2026-10-01','customer':{'code':'C1','name':'Client'},'items':[{'sku':'RICE','name':'Loose rice','unit':'KG','quantity':'5','unit_price':'60','tax_rate':'0','item_type':'goods','hsn_code':''}],'billing_details':{'supply_type':'exempt','place_of_supply':'27'}}
+  response=self.call(direct_invoice,'POST',body);self.assertEqual(response.status_code,200,response.content)
+  self.assertEqual(Invoice.objects.get().items[0].hsn_code,'')
+ def test_taxable_direct_invoice_without_hsn_is_rejected(self):
+  body={'invoice_date':'2026-10-01','customer':{'code':'C1','name':'Client'},'items':[{'sku':'RICE','name':'Loose rice','unit':'KG','quantity':'5','unit_price':'60','tax_rate':'5','item_type':'goods','hsn_code':''}],'billing_details':{'supply_type':'taxable','place_of_supply':'27'}}
+  response=self.call(direct_invoice,'POST',body);self.assertEqual(response.status_code,400,response.content);self.assertIn(b'HSN/SAC',response.content)

@@ -68,3 +68,41 @@ it('opens a reviewed quotation as a direct draft and submits the quotation link'
  fireEvent.click(screen.getByRole("button",{name:"Save draft invoice"}));
  await waitFor(()=>expect(apiRequest).toHaveBeenCalledWith("/business/direct-invoices/?quotation=EST-42",expect.objectContaining({method:"POST"})));
 });
+
+describe('HSN/SAC and GST treatment',()=>{
+ it('blocks a taxable invoice without HSN/SAC before calling the server',async()=>{
+  mount();
+  fireEvent.change(screen.getByLabelText('Customer name *'),{target:{value:'Customer'}});
+  fireEvent.change(screen.getByLabelText('GST treatment'),{target:{value:'taxable'}});
+  fireEvent.change(screen.getByLabelText('Place of supply *'),{target:{value:'27'}});
+  fireEvent.change(screen.getByLabelText('name line 1'),{target:{value:'Cement'}});
+  fireEvent.change(screen.getByLabelText('unit_price line 1'),{target:{value:'400'}});
+  expect(screen.getByLabelText('hsn_code line 1').closest('label')).toHaveTextContent('HSN/SAC *');
+  fireEvent.click(screen.getByRole('button',{name:'Save draft invoice'}));
+  expect(await screen.findByRole('alert')).toHaveTextContent('HSN/SAC is required');
+  expect(screen.getByLabelText('hsn_code line 1')).toHaveAttribute('aria-invalid','true');
+  expect(apiRequest).not.toHaveBeenCalledWith('/business/direct-invoices/',expect.anything());
+ });
+ it('saves an exempt sale without HSN/SAC and zeroes GST on the lines',async()=>{
+  const callbacks=mount();
+  fireEvent.change(screen.getByLabelText('Customer name *'),{target:{value:'Customer'}});
+  fireEvent.change(screen.getByLabelText('name line 1'),{target:{value:'Loose rice'}});
+  fireEvent.change(screen.getByLabelText('unit_price line 1'),{target:{value:'60'}});
+  fireEvent.change(screen.getByLabelText('tax_rate line 1'),{target:{value:'5'}});
+  fireEvent.change(screen.getByLabelText('GST treatment'),{target:{value:'exempt'}});
+  expect(screen.getByText(/GST set to 0% on every line/)).toHaveAttribute('role','status');
+  expect(screen.getByLabelText('tax_rate line 1')).toHaveValue(0);
+  expect(screen.getByLabelText('hsn_code line 1').closest('label')).toHaveTextContent('HSN/SAC (optional)');
+  fireEvent.change(screen.getByLabelText('Place of supply *'),{target:{value:'27'}});
+  fireEvent.click(screen.getByRole('button',{name:'Save draft invoice'}));
+  await waitFor(()=>expect(callbacks.onCreated).toHaveBeenCalledWith('invoice1'));
+  expect(apiRequest).toHaveBeenCalledWith('/business/direct-invoices/',expect.objectContaining({body:expect.objectContaining({items:[expect.objectContaining({hsn_code:'',tax_rate:'0'})],billing_details:expect.objectContaining({supply_type:'exempt'})})}));
+ });
+ it('restores GST rates when switching back to taxable',()=>{
+  mount();
+  fireEvent.change(screen.getByLabelText('tax_rate line 1'),{target:{value:'18'}});
+  fireEvent.change(screen.getByLabelText('GST treatment'),{target:{value:'nil_rated'}});
+  fireEvent.change(screen.getByLabelText('GST treatment'),{target:{value:'taxable'}});
+  expect(screen.getByLabelText('tax_rate line 1')).toHaveValue(18);
+ });
+});
