@@ -3,6 +3,7 @@ import type {
 } from "lucide-react";
 
 import {
+  Contact,
   Database,
   ListChecks,
   Activity,
@@ -110,6 +111,12 @@ export const navigationSections:
           label: "Customers",
           href: "/customers",
           icon: Users,
+          permission: "customers.read",
+        },
+        {
+          label: "Parties & balances",
+          href: "/parties",
+          icon: Contact,
           permission: "customers.read",
         },
         {
