@@ -1,4 +1,5 @@
 "use client";
+import { FormSheet } from "@/components/form/form-sheet";
 import SearchSelect from "@/components/search-select";
 
 
@@ -9,7 +10,6 @@ import {
 
 import {
   RotateCcw,
-  X,
 } from "lucide-react";
 
 import {
@@ -568,94 +568,10 @@ export default function PurchaseReturnDialog({
     receivedQuery.error;
 
   return (
-    <div
-      className="
-        fixed inset-0 z-50
-        flex items-end justify-center
-        bg-slate-950/50
-        sm:items-center sm:p-6
-      "
-      role="presentation"
-      onMouseDown={(event) => {
-        if (
-          event.target
-          ===
-          event.currentTarget
-        ) {
-          closeDialog();
-        }
-      }}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={
-          "purchase-return-title"
-        }
-        className="
-          flex max-h-[96dvh]
-          w-full flex-col
-          overflow-hidden bg-slate-50
-          shadow-2xl
-          sm:max-w-5xl
-          sm:rounded-2xl
-        "
-      >
-        <header
-          className="
-            flex items-center
-            justify-between gap-4
-            border-b border-slate-200
-            bg-white px-4 py-4
-            sm:px-6
-          "
-        >
-          <div>
-            <h2
-              id="purchase-return-title"
-              className="
-                text-lg font-bold
-                text-slate-950
-              "
-            >
-              Create purchase return
-            </h2>
+    <FormSheet title={"New purchase return"} subtitle={"Pick the bill, then enter what you are sending back."} onClose={closeDialog} busy={createMutation.isPending} size="lg" closeLabel="Close">
+      
 
-            <p
-              className="
-                mt-1 text-sm
-                text-slate-500
-              "
-            >
-              Return received inventory to a supplier.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            aria-label="Close dialog"
-            disabled={
-              createMutation.isPending
-            }
-            onClick={closeDialog}
-            className="
-              rounded-lg p-2
-              text-slate-500
-              hover:bg-slate-100
-              hover:text-slate-900
-              disabled:opacity-50
-            "
-          >
-            <X size={20} />
-          </button>
-        </header>
-
-        <div
-          className="
-            flex-1 overflow-y-auto
-            px-4 py-5 sm:px-6
-          "
-        >
+        <div className="flex flex-col gap-4">
           <div
             className="
               space-y-5
@@ -1261,30 +1177,14 @@ export default function PurchaseReturnDialog({
           </div>
         </div>
 
-        <footer
-          className="
-            flex items-center
-            justify-end gap-2
-            border-t border-slate-200
-            bg-white px-4 py-4
-            sm:px-6
-          "
-        >
+        <footer className="nxf-actions"><span /><div className="nxf-buttons">
           <button
             type="button"
             disabled={
               createMutation.isPending
             }
             onClick={closeDialog}
-            className="
-              rounded-lg border
-              border-slate-300
-              bg-white px-4 py-2
-              text-sm font-semibold
-              text-slate-700
-              hover:bg-slate-50
-              disabled:opacity-50
-            "
+            className="nx-button nx-secondary nxf-secondary-sm"
           >
             Cancel
           </button>
@@ -1299,16 +1199,7 @@ export default function PurchaseReturnDialog({
             onClick={() => {
               void submit();
             }}
-            className="
-              inline-flex items-center
-              gap-2 rounded-lg
-              bg-blue-600 px-4 py-2
-              text-sm font-semibold
-              text-white
-              hover:bg-blue-700
-              disabled:cursor-not-allowed
-              disabled:opacity-50
-            "
+            className="nx-button"
           >
             <RotateCcw size={17} />
 
@@ -1316,8 +1207,7 @@ export default function PurchaseReturnDialog({
               ? "Creating…"
               : "Create return"}
           </button>
-        </footer>
-      </div>
-    </div>
+        </div></footer>
+      </FormSheet>
   );
 }

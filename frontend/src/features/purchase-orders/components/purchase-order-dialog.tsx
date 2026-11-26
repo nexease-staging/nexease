@@ -1,4 +1,5 @@
 "use client";
+import { FormSheet } from "@/components/form/form-sheet";
 import {getProduct} from "@/features/products/api";
 import SearchSelect from "@/components/search-select";
 
@@ -14,7 +15,6 @@ import {
 import {
   Plus,
   Trash2,
-  X,
 } from "lucide-react";
 
 import {
@@ -540,77 +540,8 @@ export default function PurchaseOrderDialog({
   }
 
   return (
-    <div
-      role="presentation"
-      className="
-        fixed inset-0 z-50 flex
-        items-center justify-center
-        bg-slate-950/50 p-4
-      "
-    >
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="purchase-order-dialog-title"
-        className="
-          max-h-[calc(100vh-2rem)]
-          w-full max-w-5xl
-          overflow-y-auto rounded-2xl
-          border border-slate-200
-          bg-white text-slate-900
-          shadow-2xl
-        "
-      >
-        <header
-          className="
-            sticky top-0 z-20
-            flex items-start
-            justify-between gap-4
-            border-b border-slate-200
-            bg-white px-5 py-4
-            sm:px-6
-          "
-        >
-          <div>
-            <h2
-              id="purchase-order-dialog-title"
-              className="
-                text-lg font-semibold
-                text-slate-950
-              "
-            >
-              {editing
-                ? "Edit Purchase Order"
-                : "New Purchase Order"}
-            </h2>
-
-            <p
-              className="
-                mt-1 text-sm
-                text-slate-600
-              "
-            >
-              Add the supplier, expected date
-              and products to be purchased.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            aria-label="Close"
-            disabled={pending}
-            onClick={onClose}
-            className="
-              rounded-lg p-2
-              text-slate-500
-              hover:bg-slate-100
-              hover:text-slate-900
-              disabled:opacity-50
-            "
-          >
-            <X size={20} />
-          </button>
-        </header>
+    <FormSheet title={editing ? "Edit purchase order" : "New purchase order"} subtitle={"Supplier, expected date and the items to buy."} onClose={onClose} busy={pending} size="xl" closeLabel="Close">
+      
 
         {(
           editing
@@ -1146,29 +1077,12 @@ export default function PurchaseOrderDialog({
               ) : null}
             </div>
 
-            <footer
-              className="
-                sticky bottom-0 z-20
-                flex flex-col-reverse
-                gap-3 border-t
-                border-slate-200
-                bg-white px-5 py-4
-                sm:flex-row
-                sm:justify-end sm:px-6
-              "
-            >
+            <footer className="nxf-actions"><span /><div className="nxf-buttons">
               <button
                 type="button"
                 disabled={pending}
                 onClick={onClose}
-                className="
-                  rounded-lg border
-                  border-slate-300
-                  bg-white px-4 py-2.5
-                  text-sm font-semibold
-                  text-slate-700
-                  hover:bg-slate-100
-                "
+                className="nx-button nx-secondary nxf-secondary-sm"
               >
                 Cancel
               </button>
@@ -1176,14 +1090,7 @@ export default function PurchaseOrderDialog({
               <button
                 type="submit"
                 disabled={pending}
-                className="
-                  rounded-lg bg-blue-600
-                  px-4 py-2.5
-                  text-sm font-semibold
-                  text-white
-                  hover:bg-blue-700
-                  disabled:opacity-50
-                "
+                className="nx-button"
               >
                 {pending
                   ? "Saving…"
@@ -1193,10 +1100,9 @@ export default function PurchaseOrderDialog({
                       : "Create Order"
                   )}
               </button>
-            </footer>
+            </div></footer>
           </form>
         )}
-      </section>
-    </div>
+      </FormSheet>
   );
 }

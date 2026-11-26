@@ -1,4 +1,5 @@
 "use client";
+import { FormSheet } from "@/components/form/form-sheet";
 import SearchSelect from "@/components/search-select";
 
 
@@ -8,7 +9,6 @@ import {
 
 import {
   FilePlus2,
-  X,
 } from "lucide-react";
 
 import {
@@ -221,97 +221,10 @@ export default function VendorBillDialog({
   }
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="
-        vendor-bill-dialog-title
-      "
-      className="
-        fixed inset-0 z-50 flex
-        items-end justify-center
-        bg-slate-950/50
-        sm:items-center sm:p-4
-      "
-    >
-      <div
-        className="
-          flex max-h-[95vh] w-full
-          flex-col overflow-hidden
-          rounded-t-2xl bg-white
-          text-slate-950 shadow-2xl
-          sm:max-w-2xl sm:rounded-2xl
-        "
-      >
-        <header
-          className="
-            flex items-start
-            justify-between gap-4
-            border-b border-slate-200
-            px-4 py-4 sm:px-6
-          "
-        >
-          <div>
-            <p
-              className="
-                text-xs font-semibold
-                uppercase tracking-wide
-                text-blue-600
-              "
-            >
-              Purchasing
-            </p>
+    <FormSheet title={"New purchase bill"} subtitle={"Creates a draft bill from a fully received purchase order."} onClose={closeDialog} busy={createMutation.isPending} size="md" closeLabel="Close dialog">
+      
 
-            <h2
-              id="
-                vendor-bill-dialog-title
-              "
-              className="
-                mt-1 text-lg font-bold
-                text-slate-950 sm:text-xl
-              "
-            >
-              Create vendor bill
-            </h2>
-
-            <p
-              className="
-                mt-1 text-sm
-                text-slate-600
-              "
-            >
-              Generate a draft bill from
-              a fully received purchase
-              order.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            aria-label="Close dialog"
-            disabled={
-              createMutation.isPending
-            }
-            onClick={closeDialog}
-            className="
-              rounded-lg p-2
-              text-slate-500
-              hover:bg-slate-100
-              hover:text-slate-900
-              disabled:opacity-50
-            "
-          >
-            <X size={20} />
-          </button>
-        </header>
-
-        <div
-          className="
-            min-h-0 flex-1
-            overflow-y-auto
-            bg-slate-50 p-4 sm:p-6
-          "
-        >
+        <div className="flex flex-col gap-4">
           <div
             className="
               space-y-5 rounded-xl
@@ -611,28 +524,14 @@ export default function VendorBillDialog({
           </div>
         </div>
 
-        <footer
-          className="
-            flex justify-end gap-2
-            border-t border-slate-200
-            bg-white px-4 py-4
-            sm:px-6
-          "
-        >
+        <footer className="nxf-actions"><span /><div className="nxf-buttons">
           <button
             type="button"
             disabled={
               createMutation.isPending
             }
             onClick={closeDialog}
-            className="
-              rounded-lg border
-              border-slate-300 bg-white
-              px-4 py-2 text-sm
-              font-semibold text-slate-700
-              hover:bg-slate-50
-              disabled:opacity-50
-            "
+            className="nx-button nx-secondary nxf-secondary-sm"
           >
             Cancel
           </button>
@@ -647,16 +546,7 @@ export default function VendorBillDialog({
             onClick={() => {
               void submit();
             }}
-            className="
-              inline-flex items-center
-              gap-2 rounded-lg
-              bg-blue-600 px-4 py-2
-              text-sm font-semibold
-              text-white
-              hover:bg-blue-700
-              disabled:cursor-not-allowed
-              disabled:opacity-50
-            "
+            className="nx-button"
           >
             <FilePlus2 size={17} />
 
@@ -664,8 +554,7 @@ export default function VendorBillDialog({
               ? "Creating…"
               : "Create bill"}
           </button>
-        </footer>
-      </div>
-    </div>
+        </div></footer>
+      </FormSheet>
   );
 }
