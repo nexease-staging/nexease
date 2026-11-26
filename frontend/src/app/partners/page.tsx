@@ -189,7 +189,7 @@ export default function PartnersPage() {
           <ol className="nxp2-timeline">
             <li data-done><CheckCircle2 size={18} aria-hidden="true" />Application received</li>
             <li data-done={partner.email_verified || undefined}>{partner.email_verified ? <CheckCircle2 size={18} aria-hidden="true" /> : <Circle size={18} aria-hidden="true" />}Email verified</li>
-            <li>{<Clock size={18} aria-hidden="true" />}Approval by NexEase{partner.email_verified ? " — usually within 1–2 working days" : " (after email verification)"}</li>
+            <li>{<Clock size={18} aria-hidden="true" />}Approval by NexEase{partner.email_verified ? "" : " (after email verification)"}</li>
           </ol>
           {message ? <p role="status" className="nxp2-note">{message}</p> : null}
           <PartnerEmail email={partner.email} verified={partner.email_verified} approved={false} onVerified={async () => { setVerifiedNotice(true); await load(); }} />
