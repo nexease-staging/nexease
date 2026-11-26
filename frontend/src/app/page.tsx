@@ -1,19 +1,205 @@
+import "@fontsource-variable/bricolage-grotesque";
+import Link from "next/link";
+import { ArrowUpRight, Check, Lock, MonitorSmartphone, Plug, RefreshCw, ShieldCheck, Smartphone, UserCheck } from "lucide-react";
 import SiteFooter from "@/components/site-footer";
 import ContactNexEase from "@/components/contact-nexease";
-import Link from 'next/link';
-import Pricing from '@/features/saas/pricing';
-import {ArrowUpRight,Check,Package,ReceiptText,Users,BarChart3,Wallet,ShieldCheck,ArrowRight} from 'lucide-react';
-const features=[{icon:ReceiptText,title:'From the first order to the final payment',text:'Keep sales orders, invoices, purchases and collections connected. Find customers and products as you type.',tag:'SALES & PURCHASES'},{icon:Package,title:'Know what is on the shelf',text:'Manage products, warehouses, receipts and stock movements in a shared workspace.',tag:'INVENTORY'},{icon:Users,title:'Bring people and work together',text:'Assign a team to a site, approve attendance and review payroll. Manage in-house staff alongside your field workforce.',tag:'WORKFORCE'},{icon:Wallet,title:'Give everyday spending a home',text:'Record travel, fuel, utilities and other expenses with payment methods and references. Keep the books connected.',tag:'EXPENSES'},{icon:BarChart3,title:'A clearer conversation with your accountant',text:'Review ledgers and trial balances. Export sales, purchases, expenses and payroll for your accountant.',tag:'REPORTING'},{icon:ShieldCheck,title:'A workspace with clear responsibilities',text:'Use organisation boundaries, role permissions and recorded actions to keep your team’s work organised.',tag:'CONTROL'}];
-// Publish only real, consented customer statements here. Empty by default.
-const testimonials:{quote:string;name:string;company:string}[]=[];
-export default function Home(){return <main className="nx-marketing min-h-screen bg-[#f8fafc] text-[#082f49]">
- <nav className="sticky top-0 z-30 border-b border-emerald-950/10 bg-[#f8fafc]/95 backdrop-blur"><div className="mx-auto flex max-w-7xl items-center justify-between gap-5 px-6 py-5"><Link href="/" className="flex items-center gap-2 text-2xl font-bold tracking-tight"><img src="/nexease-brand-icon.png" width="36" height="36" alt=""/>NexEase<span className="text-emerald-600">.</span></Link><div className="hidden items-center gap-8 text-sm md:flex"><a href="#features">Features</a><a href="#workflow">How it works</a><a href="#businesses">Your business</a><Link href="/pricing">Pricing</Link><Link href="/deadlines">Deadlines</Link><a href="#questions">Questions</a></div><div className="flex items-center gap-5"><Link href="/login" className="text-sm font-semibold">Log in</Link><Link href="/signup" className="rounded-full bg-[#008b6c] px-5 py-3 text-sm font-semibold text-white">Get started <span aria-hidden>↗</span></Link></div></div></nav>
- <section className="mx-auto grid max-w-7xl items-center gap-12 px-6 pb-24 pt-16 lg:grid-cols-[0.85fr_1.35fr] lg:pt-24"><div><div className="mb-7 inline-flex items-center gap-2 rounded-full border border-emerald-900/15 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-widest"><span className="size-2 rounded-full bg-emerald-500"/>One business. A clearer view.</div><h1 className="max-w-2xl text-5xl font-semibold leading-[1.08] tracking-[-.045em] md:text-7xl">More clarity.<br/>Less busywork.<br/><span className="text-[#00ae85]">That’s NexEase.</span></h1><p className="mt-7 max-w-lg text-lg leading-8 text-slate-600">Your stock, sales, people and books — connected in one practical workspace. Spend less time chasing entries and more time running your business.</p><div className="mt-9 flex flex-wrap gap-4"><Link href="/signup" className="flex items-center gap-3 rounded-full bg-[#008b6c] px-7 py-4 font-semibold text-white shadow-lg shadow-emerald-900/10">Create your workspace <ArrowUpRight size={19}/></Link><a href="#features" className="rounded-full border border-emerald-900/20 px-7 py-4 font-semibold">Explore the features</a></div><div className="mt-7 flex flex-wrap gap-5 text-xs text-slate-600">{['Guided imports','Role-based access','Exportable reports'].map(x=><span className="flex items-center gap-1" key={x}><Check size={15}/>{x}</span>)}</div></div>
- <figure className="nx-device-preview"><img src="/nexease-devices-preview.png" alt="Illustrative NexEase desktop and mobile dashboards displayed on a laptop and phone, using demo data" width="1672" height="941" fetchPriority="high"/><figcaption>One workspace, on desktop and mobile. Illustrative preview with demo data.</figcaption></figure></section>
- <section id="businesses" className="border-y border-emerald-950/10 bg-white px-6 py-8"><div className="mx-auto max-w-7xl"><p className="mb-5 text-center text-xs uppercase tracking-[.2em] text-slate-500">Built around the way your business works</p><div className="flex flex-wrap justify-center gap-x-10 gap-y-4 font-semibold">{['Retail','Wholesale','Labour supply','Services','Construction','Mixed businesses'].map(x=><span key={x}>{x}</span>)}</div></div></section>
- <section id="features" className="mx-auto max-w-7xl px-6 py-24"><div className="mb-12 max-w-2xl"><p className="text-xs font-semibold uppercase tracking-widest text-emerald-700">Less switching. More doing.</p><h2 className="mt-4 text-4xl font-semibold tracking-tight md:text-5xl">The essentials,<br/>working together.</h2></div><div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">{features.map(({icon:Icon,title,text,tag})=><article key={tag} className="rounded-2xl border border-emerald-950/10 bg-white p-8 transition hover:-translate-y-1 hover:shadow-lg"><Icon className="mb-8 text-emerald-700" size={30}/><p className="text-[10px] font-bold tracking-widest text-slate-500">{tag}</p><h3 className="mb-4 mt-3 text-2xl font-semibold leading-tight">{title}</h3><p className="text-sm leading-7 text-slate-600">{text}</p></article>)}</div></section>
- <section id="workflow" className="bg-[#082f49] px-6 py-20 text-white"><div className="mx-auto max-w-7xl"><p className="text-xs uppercase tracking-widest text-emerald-200">A practical start</p><h2 className="mt-4 text-4xl font-semibold">Make your next working day simpler.</h2><div className="mt-12 grid gap-10 md:grid-cols-3">{[['01','Set up your business','Create your organisation, choose modules and bring in your opening records using sample import files.'],['02','Record work as it happens','Find products quickly, assign people, confirm attendance and capture expenses.'],['03','Review, finalise and share','Check payroll and invoices, record payments, and export reports for your accountant.']].map(([n,t,d])=><div key={n}><span className="text-emerald-300">{n}</span><h3 className="mt-5 text-xl font-semibold">{t}</h3><p className="mt-3 text-sm leading-7 text-emerald-50/75">{d}</p></div>)}</div></div></section>
- {testimonials.length>0?<section className="mx-auto max-w-7xl px-6 py-20"><h2 className="text-3xl font-semibold">In our customers’ words</h2><div className="mt-8 grid gap-6 md:grid-cols-3">{testimonials.map(t=><blockquote className="rounded-2xl bg-white p-8" key={t.name}><p className="text-xl">“{t.quote}”</p><footer className="mt-4 text-sm font-semibold">{t.name} · {t.company}</footer></blockquote>)}</div></section>:<section className="mx-auto max-w-7xl px-6 pt-20"><div className="rounded-2xl border border-emerald-900/15 bg-[#e8f6f1] p-8 md:flex md:items-center md:justify-between"><div><h2 className="text-2xl font-semibold">Help shape the next customer story.</h2><p className="mt-3 max-w-xl text-slate-600">We’re welcoming early users. Explore NexEase with sample data and share feedback from your own business.</p></div><Link href="/signup" className="mt-5 inline-flex items-center gap-2 font-semibold">Get started <ArrowRight size={18}/></Link></div></section>}
- <section className="mx-auto max-w-7xl px-6 py-16"><div className="rounded-3xl bg-[#082f49] p-8 text-white sm:p-12"><p className="text-sm uppercase tracking-widest text-lime-200">NexEase Pro</p><h2 className="mt-4 text-4xl font-semibold">Tell it. Scan it. Review it.</h2><div className="mt-8 grid gap-8 md:grid-cols-2"><div><h3 className="text-xl font-semibold">Your everyday entry assistant</h3><p className="mt-3 leading-7 text-emerald-50">Describe an expense, advance, sales invoice or supplier bill in your preferred language. NexEase AI prepares the fields; you review and confirm.</p></div><div><h3 className="text-xl font-semibold">Turn bills into draft entries</h3><p className="mt-3 leading-7 text-emerald-50">Upload a PDF or photo, inspect the extracted lines and totals, match your masters and save. Unclear details stay yours to review.</p></div></div><p className="mt-6 text-sm text-emerald-100">Pro includes monthly AI and scan allowances. No entry is posted just because you upload a file.</p></div></section><section className="nx-reveal mx-auto max-w-7xl px-6 py-16"><p className="text-sm font-semibold uppercase tracking-widest text-emerald-700">MORE THAN SOFTWARE</p><h2 className="mt-4 text-4xl font-semibold">Practical support for your next step.</h2><div className="mt-8 grid gap-5 md:grid-cols-3">{['Accounting & bookkeeping','GST, ITR & TDS support','Payroll support','Finance automation & reporting','Business registration support','Software setup & onboarding'].map(x=><article key={x} className="rounded-2xl border bg-white p-6"><Check className="mb-4 text-emerald-700"/><h3 className="text-xl font-semibold">{x}</h3><p className="mt-3 text-sm text-slate-600">Discuss your requirements with our team for a tailored service scope and quotation.</p></article>)}</div><p className="mt-5 text-sm text-slate-500">Professional services are quoted separately from software subscriptions.</p></section><section className="mx-auto max-w-7xl px-6 py-10"><div className="rounded-3xl bg-emerald-900 p-8 text-white"><h2 className="text-3xl font-semibold">Your first 14 days. NexEase Plus.</h2><p className="mt-4">New organisations receive a 14-day Plus trial from signup. Explore workforce, inventory and business reporting. After the trial, choose the subscription that fits your team. AI is included in Pro, not the Plus trial.</p><Link href="/signup" className="mt-6 inline-block rounded-full bg-white px-6 py-3 font-semibold text-emerald-900">Start your 14-day trial</Link></div></section><Pricing/><section className="mx-auto max-w-7xl px-6 pb-12"><div className="rounded-2xl border bg-white p-8"><h2 className="text-2xl font-semibold">Software + GST from ₹1,099/month</h2><p className="my-4 text-slate-600">GST compliance ₹499/month individually. Explore accounting, payroll, automation and discounted managed packages.</p><div className="flex flex-wrap gap-4"><Link className="nx-button" href="/pricing">All services & packages →</Link><a className="nx-button nx-secondary" href="/NexEase_Pricing.pdf" download>Download price list PDF ↓</a><Link className="nx-button nx-secondary" href="/deadlines">Live compliance countdowns →</Link></div></div></section><section className="mx-auto max-w-7xl px-6 py-8"><Link href="/partners" className="nx-button">Become a NexEase partner</Link></section><ContactNexEase/><section id="questions" className="mx-auto max-w-4xl px-6 py-20"><h2 className="mb-8 text-3xl font-semibold">A few things worth knowing</h2>{[['Can I manage my own staff as well as site workers?','Yes. Mark employees as in-house or assign site workers to customers. Attendance supports both workflows.'],['Can I choose the modules my team sees?','Yes. Settings lets your administrator show or hide Workforce and Daily expenses in the sidebar. Role permissions continue to control access.'],['Can my accountant use the data?','Yes. Export sales, purchases, payments, expenses, payroll, ledgers and trial balances for review.'],['Does NexEase file statutory returns automatically?','Tax reports are preparation workpapers. Statutory applicability, rates and filing require review. Payroll rules should be checked for your business.']].map(([q,a])=><details className="border-b border-emerald-950/15 py-5" key={q}><summary className="cursor-pointer font-semibold">{q}</summary><p className="mt-4 text-sm leading-7 text-slate-600">{a}</p></details>)}</section>
- <section className="mx-6 mb-12 rounded-[2rem] bg-[#e3f5ef] px-6 py-16 text-center"><h2 className="text-4xl font-semibold tracking-tight">A better-organised business starts here.</h2><p className="mt-4 text-slate-600">Bring the everyday work together with NexEase.</p><Link href="/signup" className="mt-8 inline-flex items-center gap-3 rounded-full bg-[#008b6c] px-8 py-4 font-semibold text-white">Create your workspace <ArrowUpRight size={20}/></Link></section><SiteFooter/>
- </main>}
+import Relay from "@/components/marketing/relay";
+import SiteNav from "@/components/marketing/site-nav";
+import { AndroidButton, ConnectorButton } from "@/components/marketing/download-buttons";
+import Pricing from "@/features/saas/pricing";
+
+const fromTally = ["Companies, groups and ledgers with balances, GSTIN and contacts", "Every voucher: sales, purchase, receipt, payment, journal, notes, orders", "Stock items, units, godowns and closing stock",
+  "Debtors and creditors become your customers and suppliers", "Deletions and cancellations in Tally"];
+const toTally = ["Invoices, purchase bills, credit and debit notes", "Receipts and payments, settled against bills", "Sales and purchase orders, expenses, journals",
+  "New customers, suppliers and stock items", "Edits and cancellations, on the same Tally voucher"];
+
+const areas: { name: string; items: [string, string][] }[] = [
+  { name: "Tally on the go", items: [["Live dashboard", "Sales, purchases, receivables, payables, cash and bank, updated from Tally."], ["Party statements", "Running balance, pending bills and overdue days for any ledger."], ["Day book, registers, trial balance", "Read Tally reports on the phone, export to Excel."], ["Entries back into Tally", "Make an invoice or receipt in NexEase; it appears in Tally."]] },
+  { name: "Sales and GST", items: [["Six invoice formats", "One choice applies to invoices, quotations, orders, notes and challans."], ["E-invoice and e-way bill", "Generate IRN and e-way bills from the invoice."], ["GST returns", "GSTR-1 and GSTR-3B workings, GSTR-2B matching and IMS actions."], ["Share on WhatsApp and email", "Send the PDF and a message; a live link always shows today's figures."]] },
+  { name: "Stock and purchases", items: [["Inventory", "Warehouses, transfers, barcodes and stock movements."], ["Purchasing", "Purchase orders, goods receipts, bills and returns."], ["Manufacturing", "Production orders that move raw materials and finished stock together."], ["Bill scanning", "Turn a photo or PDF of a bill into a draft entry."]] },
+  { name: "Money and people", items: [["Finance", "Profit and loss, balance sheet, cash flow, banking and ledgers."], ["Collections", "Outstanding by party with WhatsApp reminders and payments."], ["Workforce and payroll", "Attendance for staff and site workers, payroll and payslips."], ["Daily expenses", "Fuel, travel and utilities with payment modes and references."]] },
+];
+
+const faqs: [string, string][] = [
+  ["Do I need to change anything in Tally?", "No add-on or TDL. Turn on Tally's connection port once (F1 → Settings → Connectivity → Client/Server, port 9000), install the connector on the same computer and enter the pairing code from NexEase."],
+  ["How fresh is the data on my phone?", "The connector checks Tally every 30 seconds while Tally is open. Only what changed is sent, so a busy day syncs in seconds. If the computer is off, NexEase shows the last synced figures and catches up when Tally opens again."],
+  ["Will entries made in NexEase create duplicates in Tally?", "No. Each entry carries its own ID, so editing it changes the same Tally voucher and cancelling it cancels that voucher. Data that came from Tally is never sent back."],
+  ["Which ledgers do NexEase invoices post to?", "You choose the sales, purchase, GST, cash, bank and round-off ledgers once in NexEase → Tally → Settings. NexEase suggests them from your Tally chart of accounts."],
+  ["Can my accountant still work in Tally?", "Yes. Tally stays your main books. NexEase reads from it and writes to it, so both of you see the same numbers."],
+  ["Can I manage my own staff as well as site workers?", "Yes. Mark employees as in-house or assign site workers to customers. Attendance supports both."],
+  ["Does NexEase file statutory returns automatically?", "Tax reports are preparation workpapers. Applicability, rates and filing need review before you file."],
+];
+
+export default function Home() {
+  return (
+    <main className="nx-marketing nxw min-h-screen">
+      <SiteNav />
+
+      <section className="nxw-hero">
+        <div className="nxw-wrap nxw-hero-grid">
+          <h1>Tally on your desk.<br />Your business in your pocket.</h1>
+          <div className="nxw-hero-side">
+            <p>NexEase keeps TallyPrime and your phone in sync, both ways. See outstanding, stock and every voucher live, send a ledger on WhatsApp from anywhere, and run billing, GST, inventory and payroll in the same place.</p>
+            <div className="nxw-hero-cta">
+              <ConnectorButton />
+              <Link href="/signup" className="nxw-text-cta">Create your workspace first <ArrowUpRight size={17} /></Link>
+            </div>
+            <p className="nxw-fine">Free 14-day trial. The connector pairs with your NexEase workspace using a one-time code.</p>
+          </div>
+        </div>
+        <div className="nxw-wrap"><Relay /></div>
+      </section>
+
+      <section className="nxw-facts" aria-label="At a glance">
+        <div className="nxw-wrap nxw-facts-row">
+          <p><b>30 s</b> between Tally and your phone</p>
+          <p><b>2-way</b> sync, with no duplicate vouchers</p>
+          <p><b>0</b> add-ons or TDL inside Tally</p>
+          <p><b>13</b> kinds of entries written back to Tally</p>
+        </div>
+      </section>
+
+      <section id="tally" className="nxw-section">
+        <div className="nxw-wrap">
+          <h2 className="nxw-h2">Connect Tally in three steps</h2>
+          <p className="nxw-lead">The connector is a small Windows app that sits next to Tally. It only talks to Tally on that computer and to your NexEase workspace.</p>
+          <ol className="nxw-steps">
+            <li>
+              <span className="nxw-step-n">1</span>
+              <h3>Turn on Tally&apos;s port</h3>
+              <p>In TallyPrime press F1 → Settings → Connectivity → Client/Server configuration. Set it to act as Both, ODBC Yes, port 9000.</p>
+            </li>
+            <li>
+              <span className="nxw-step-n">2</span>
+              <h3>Install the connector</h3>
+              <p>Download it on the computer where Tally runs and open it. Tick “Start with Windows” so sync keeps running.</p>
+              <ConnectorButton tone="light" />
+            </li>
+            <li>
+              <span className="nxw-step-n">3</span>
+              <h3>Pair and confirm ledgers</h3>
+              <p>In NexEase open Finance → Tally sync, copy the pairing code into the connector, then confirm the suggested sales, GST and bank ledgers.</p>
+            </li>
+          </ol>
+
+          <div className="nxw-sync">
+            <div>
+              <h3><RefreshCw size={18} />From Tally to NexEase</h3>
+              <ul>{fromTally.map((x) => <li key={x}><Check size={16} />{x}</li>)}</ul>
+            </div>
+            <div>
+              <h3><RefreshCw size={18} className="nxw-flip" />From NexEase to Tally</h3>
+              <ul>{toTally.map((x) => <li key={x}><Check size={16} />{x}</li>)}</ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="features" className="nxw-section nxw-features">
+        <div className="nxw-wrap">
+          <h2 className="nxw-h2">Everything after the entry</h2>
+          <p className="nxw-lead">Tally keeps the books. NexEase is where your team bills, collects, stocks, pays and shares — with the books always up to date.</p>
+          <div className="nxw-areas">
+            {areas.map((a) => (
+              <section key={a.name} className="nxw-area">
+                <h3>{a.name}</h3>
+                <dl>{a.items.map(([t, d]) => <div key={t}><dt>{t}</dt><dd>{d}</dd></div>)}</dl>
+              </section>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="mobile" className="nxw-section nxw-mobile">
+        <div className="nxw-wrap nxw-mobile-grid">
+          <div>
+            <h2 className="nxw-h2">When a customer asks for their ledger, send it from your phone</h2>
+            <p className="nxw-lead">Open the party, pick a period and tap WhatsApp. The PDF statement and a short message go together. It works away from the office, even when the Tally computer is off — the last synced figures are on your phone.</p>
+            <ul className="nxw-ticks">
+              <li><Check size={16} />Invoices, bills, receipts and statements as PDF on WhatsApp or email</li>
+              <li><Check size={16} />Reminders for overdue bills with the amount and the bill list</li>
+              <li><Check size={16} />Quick sale, receipt and payment entry; saved lists work offline</li>
+              <li><Check size={16} />NexEase AI fills forms from a sentence or your voice</li>
+            </ul>
+            <div className="nxw-hero-cta"><AndroidButton /><Link href="/login" className="nxw-text-cta">Or open NexEase in your phone browser <ArrowUpRight size={17} /></Link></div>
+          </div>
+          <div className="nxw-share" aria-hidden="true">
+            <div className="nxw-share-card">
+              <b>Share statement · Krishna Hardware</b>
+              <span className="nxw-share-period">This financial year</span>
+              <span className="nxw-share-file">Statement-Krishna-Hardware.pdf</span>
+              <p>Dear Krishna Hardware, please find your statement of account with Sharma Traders for 01 Apr 2026 to 27 Nov 2026. The balance due is ₹3,68,072.68.</p>
+              <span className="nxw-share-btn">Send PDF on WhatsApp</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="nxw-section">
+        <div className="nxw-wrap">
+          <h2 className="nxw-h2">Your data stays under your control</h2>
+          <div className="nxw-trust">
+            <div><Lock size={22} /><h3>Encrypted in transit</h3><p>The connector and the app reach NexEase only over HTTPS. Nothing from Tally is stored on the connector computer.</p></div>
+            <div><Plug size={22} /><h3>One-time pairing</h3><p>A code that works once and expires in 15 minutes links a computer to your workspace. Remove a computer and it stops at once.</p></div>
+            <div><UserCheck size={22} /><h3>Roles and permissions</h3><p>Choose who sees finance, who can bill and who can change Tally settings. Actions are recorded.</p></div>
+            <div><ShieldCheck size={22} /><h3>Links you can withdraw</h3><p>Shared document links expire after 30 days and can be withdrawn at any time.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section className="nxw-section">
+        <div className="nxw-wrap">
+          <div className="nxw-pro">
+            <div>
+              <h2>Tell it. Scan it. Review it.</h2>
+              <p>NexEase Pro adds an entry assistant: describe an expense, invoice or supplier bill in your language, or upload a photo of a bill. NexEase prepares the fields; you review and confirm. Nothing is posted just because you upload a file.</p>
+            </div>
+            <div className="nxw-pro-side">
+              <p><MonitorSmartphone size={18} />On desktop and phone</p>
+              <p><Smartphone size={18} />Voice and photo input</p>
+              <p><Check size={18} />Monthly AI and scan allowances in Pro</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="nxw-section">
+        <div className="nxw-wrap">
+          <h2 className="nxw-h2">Practical support for your next step</h2>
+          <div className="nxw-services">{["Accounting and bookkeeping", "GST, ITR and TDS support", "Payroll support", "Finance automation and reporting", "Business registration support", "Software setup and Tally onboarding"].map((x) => <p key={x}><Check size={16} />{x}</p>)}</div>
+          <p className="nxw-fine">Professional services are scoped and quoted separately from software subscriptions.</p>
+          <div className="nxw-trial">
+            <div><h3>Your first 14 days on NexEase Plus</h3><p>New workspaces get Plus from signup: Tally sync, inventory, workforce and reports. Then choose the plan that fits. AI is part of Pro.</p></div>
+            <Link href="/signup" className="nxw-nav-start">Start your 14-day trial</Link>
+          </div>
+        </div>
+      </section>
+
+      <Pricing />
+      <section className="nxw-wrap nxw-links">
+        <Link className="nx-button" href="/pricing">All services and packages</Link>
+        <a className="nx-button nx-secondary" href="/NexEase_Pricing.pdf" download>Download price list (PDF)</a>
+        <Link className="nx-button nx-secondary" href="/deadlines">Compliance deadlines</Link>
+        <Link className="nx-button nx-secondary" href="/partners">Become a partner</Link>
+      </section>
+      <ContactNexEase />
+
+      <section id="questions" className="nxw-section nxw-faq">
+        <div className="nxw-wrap nxw-narrow">
+          <h2 className="nxw-h2">A few things worth knowing</h2>
+          {faqs.map(([q, a]) => <details key={q}><summary>{q}</summary><p>{a}</p></details>)}
+        </div>
+      </section>
+
+      <section className="nxw-final">
+        <div className="nxw-wrap">
+          <h2>Bring Tally to your phone today</h2>
+          <p>Create a workspace, install the connector on the Tally computer, and your figures are on your phone in minutes.</p>
+          <div className="nxw-final-cta"><ConnectorButton tone="light" /><AndroidButton tone="light" /><Link href="/signup" className="nxw-final-start">Create your workspace <ArrowUpRight size={18} /></Link></div>
+          <p className="nxw-legal">Tally and TallyPrime are trademarks of Tally Solutions Pvt. Ltd. NexEase is not affiliated with Tally Solutions; the names are used only to describe compatibility.</p>
+        </div>
+      </section>
+      <SiteFooter />
+    </main>
+  );
+}
