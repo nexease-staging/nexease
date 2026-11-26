@@ -83,12 +83,12 @@ class SalesDocumentTests(SimpleTestCase):
     def test_annual_checkout_publishes_the_exact_yearly_amount(self):
         from apps.saas import gateway
         from apps.saas.models import Plan
-        plan=Plan(code='pro',name='NexEase Pro',price_paise=129900,published=True,
+        plan=Plan(code='pro',name='NexEase Pro',price_paise=59900,published=True,
                   razorpay_plan_id='monthly-existing',gateway_mode='test')
         with patch.object(gateway,'mode',return_value='test'), patch.object(gateway,'api',return_value={'id':'annual-new'}) as api, patch.object(Plan,'save'):
             gateway.publish(plan,'yearly')
         sent=api.call_args.args[1]
-        self.assertEqual((sent['period'],sent['interval'],sent['item']['amount']),('yearly',1,1299900))
+        self.assertEqual((sent['period'],sent['interval'],sent['item']['amount']),('yearly',1,599900))
         self.assertEqual((plan.razorpay_plan_id,plan.annual_razorpay_plan_id),('monthly-existing','annual-new'))
 
     def test_uncertain_submission_is_not_sent_twice(self):

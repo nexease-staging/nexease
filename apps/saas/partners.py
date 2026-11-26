@@ -24,8 +24,33 @@ def partner_for(request):
         'generation': session.get('generation'), 'status': {'$in': ['pending', 'approved']}})
 
 
+SHORT_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'  # no 0/O, 1/I/L: easy to read aloud
+
+
+def normalise_code(code):
+    return ''.join(ch for ch in str(code or '').upper() if ch.isalnum())
+
+
+def ensure_short_code(partner):
+    """A short code such as NX7K4P2Q that people can type or say. Long codes stay valid."""
+    if partner.get('short_code') or partner.get('status') != 'approved':
+        return partner
+    db = get_db()
+    db.saas_partners.create_index('short_code', unique=True, sparse=True)
+    for _ in range(20):
+        code = 'NX' + ''.join(secrets.choice(SHORT_ALPHABET) for _ in range(6))
+        try:
+            result = db.saas_partners.update_one({'_id': partner['_id'], 'short_code': {'$exists': False}}, {'$set': {'short_code': code}})
+        except DuplicateKeyError:
+            continue
+        if result.modified_count:
+            return {**partner, 'short_code': code}
+        return db.saas_partners.find_one({'_id': partner['_id']}) or partner
+    raise ValueError('Could not create a referral code. Try again.')
+
+
 def public_partner(row):
-    return {k: row.get(k) for k in ('name', 'email', 'status', 'referral_code', 'email_verified')}
+    return {k: row.get(k) for k in ('name', 'email', 'status', 'referral_code', 'short_code', 'email_verified')}
 
 
 @sensitive_post_parameters('password')
@@ -94,6 +119,10 @@ def dashboard(request):
     except (ValueError, TypeError):
         return R.validation_error(message='Invalid page.', request=request)
     db = get_db()
+    try:
+        partner = ensure_short_code(partner)
+    except ValueError:
+        pass
     # Public portal always shows live records. Test activity is operator-only.
     scope = {'partner_id': partner['_id'], 'mode': 'live'}
     rows = list(db.saas_commissions.find(scope, {'_id':0, 'payment_id':1, 'paid_at':1,
@@ -111,7 +140,28 @@ def dashboard(request):
         'totals':totals[0] if totals else {'review_paise':0,'held':0}, 'page':page,
         'total':db.saas_commissions.count_documents(scope),
         'referral_total':db.saas_referrals.count_documents({'partner_id':partner['_id']}),
-        'referrals':[{'reference':r['_id'], 'date':r['assigned_at'].isoformat()} for r in referrals]}, request=request)
+        'paid_total':sum(1 for _ in db.saas_payments.aggregate([{'$match':{'mode':'live','organization_id':{'$in':[r['_id'] for r in db.saas_referrals.find({'partner_id':partner['_id']},{'_id':1})]}}},{'$group':{'_id':'$organization_id'}}])),
+        'referrals':referral_details(referrals)}, request=request)
+
+
+def referral_details(referrals):
+    """Business name, plan and status for the partner's own referrals. No amounts or client data."""
+    from bson import ObjectId
+    from apps.organizations.models import Organization
+    from .models import Membership
+    from .entitlements import DEFAULTS
+    ids = [r['_id'] for r in referrals]
+    names = {str(o.id): o.name for o in Organization.objects(id__in=[ObjectId(i) for i in ids if ObjectId.is_valid(i)]).only('id', 'name')}
+    members = {m.organization_id: m for m in Membership.objects(organization_id__in=ids)}
+    now = datetime.utcnow()
+    out = []
+    for r in referrals:
+        m = members.get(r['_id'])
+        live = bool(m and not m.suspended and m.status in ('active', 'trial') and m.start <= now < m.end)
+        status = 'Paid' if live and m.status == 'active' and m.plan != 'free' else 'Trial' if live and m.status == 'trial' else 'Free' if live else 'Inactive'
+        out.append({'reference': r['_id'], 'business': names.get(r['_id'], 'Business'), 'date': r['assigned_at'].isoformat(),
+                    'plan': DEFAULTS.get(m.plan, (m.plan,))[0] if m else '', 'status': status})
+    return out
 
 
 @owner_required
@@ -139,6 +189,8 @@ def owner_partners(request):
         db.saas_partners.update_one({'_id':partner['_id']}, {'$set':{'status':status,
             'referral_code':partner.get('referral_code') or secrets.token_hex(16),
             'approved_by':owner.email, 'updated_at':datetime.utcnow()}, '$inc':{'generation':1}})
+        if status == 'approved':
+            ensure_short_code({**partner, 'status': 'approved'})
         return R.success(data={'message':'Partner decision saved. Existing partner sessions were invalidated.'}, request=request)
     page = page_number(request)
     scope = {}
@@ -156,7 +208,9 @@ def resolve_referral(code, user_email):
         return None
     if not isinstance(code,str) or len(code)>64:
         raise ValueError('Invalid referral code.')
-    partner = get_db().saas_partners.find_one({'referral_code':code, 'status':'approved'})
+    partner = get_db().saas_partners.find_one({'referral_code':code.strip(), 'status':'approved'})
+    if not partner and normalise_code(code).startswith('NX') and len(normalise_code(code)) == 8:
+        partner = get_db().saas_partners.find_one({'short_code':normalise_code(code), 'status':'approved'})
     if not partner:
         raise ValueError('Referral code is not active. Remove it or contact your partner.')
     if partner['email'] == user_email.strip().lower():

@@ -73,14 +73,14 @@ class TierPolicyTests(SimpleTestCase):
 
 class CatalogueUpgradeTests(SimpleTestCase):
  def setUp(self):
-  self.collection=get_db().saas_catalog_revisions;self.old=list(Plan.objects);self.marker=self.collection.find_one({'_id':'launch-749-999-1299-annual-einvoice-v3'})
-  Plan.objects.delete();self.collection.delete_one({'_id':'launch-749-999-1299-annual-einvoice-v3'})
+  self.collection=get_db().saas_catalog_revisions;self.old=list(Plan.objects);self.marker=self.collection.find_one({'_id':'launch-199-349-599-annual-v4'})
+  Plan.objects.delete();self.collection.delete_one({'_id':'launch-199-349-599-annual-v4'})
  def tearDown(self):
   Plan.objects.delete()
   for p in self.old:p.save()
-  self.collection.delete_one({'_id':'launch-749-999-1299-annual-einvoice-v3'})
+  self.collection.delete_one({'_id':'launch-199-349-599-annual-v4'})
   if self.marker:self.collection.insert_one(self.marker)
  def test_existing_published_catalogue_is_repriced_without_touching_contracts(self):
   for code,price in [('basic',749),('plus',1499),('pro',1999)]:Plan(code=code,name=code,price_paise=price*100,published=True,razorpay_plan_id='old-'+code).save()
-  seed();self.assertEqual([Plan.objects.get(code=c).price_paise for c in ('basic','plus','pro')],[74900,99900,129900]);self.assertFalse(Plan.objects.get(code='plus').published);self.assertEqual(Plan.objects.get(code='plus').razorpay_plan_id,'')
+  seed();self.assertEqual([Plan.objects.get(code=c).price_paise for c in ('basic','plus','pro')],[19900,34900,59900]);self.assertFalse(Plan.objects.get(code='plus').published);self.assertEqual(Plan.objects.get(code='plus').razorpay_plan_id,'')
   p=Plan.objects.get(code='plus');p.price_paise=109900;p.save();seed();self.assertEqual(Plan.objects.get(code='plus').price_paise,109900)
