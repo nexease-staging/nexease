@@ -7,7 +7,8 @@ android {
         applicationId "com.nexease.business"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 7
+        // CI passes -PnexeaseVersionCode so every build can update the installed app.
+        versionCode((project.findProperty("nexeaseVersionCode") ?: "7") as Integer)
         versionName "1.5"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
