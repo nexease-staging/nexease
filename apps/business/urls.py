@@ -19,6 +19,7 @@ from . import mobile_home
 from . import report_engine
 from . import finance_hub
 from . import tally_api
+from . import share_center
 from . import tally_signals  # noqa: F401  (keeps updated_at current for Tally sync)
 from . import workforce_approvals
 from .setup_status import setup_status
@@ -84,4 +85,12 @@ urlpatterns[:0] = [
     path("tally/vouchers/<str:guid>/", tally_api.voucher),
     path("tally/registers/", tally_api.registers),
     path("tally/trial-balance/", tally_api.trial_balance),
+    # Share documents and statements on WhatsApp / email
+    path("share/prepare/", share_center.prepare),
+    path("share/pdf/", share_center.pdf),
+    path("share/email/", share_center.email),
+    path("share/log/", share_center.log),
+    path("share/history/", share_center.history),
+    path("share/links/<str:token>/revoke/", share_center.revoke),
+    path("share/l/<str:token>/", share_center.public_link),
 ]

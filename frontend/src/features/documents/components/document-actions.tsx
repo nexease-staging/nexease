@@ -8,12 +8,12 @@ import {
   Download,
   Mail,
   MessageCircle,
-  Share2,
-} from "lucide-react";
+  Share2, Send } from "lucide-react";
 
 import { Capacitor } from "@capacitor/core";
 
 import DocumentPDFPreview from "./document-pdf-preview";
+import { DOC_KIND, openShare } from "@/features/share/api";
 
 import DocumentEmailDialog from "@/features/documents/components/document-email-dialog";
 
@@ -122,6 +122,9 @@ export default function DocumentActions({
     <>
       <div>
         <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={`${documentNumber} actions`}>
+          <button type="button" className="nx-button nx-secondary nxsh-trigger" disabled={disabled} onClick={() => openShare({ kind: DOC_KIND[documentType], id: documentId, title: documentNumber })}>
+            <Send size={16} aria-hidden="true" />Share
+          </button>
           <DocumentPDFPreview documentType={documentType} documentId={documentId} documentNumber={documentNumber} disabled={disabled}/>
           <button type="button" className="nxl-icon" aria-label={pdfLabel} title={pdfLabel} disabled={actionDisabled} aria-busy={downloadMutation.isPending || undefined} onClick={() => { void handleDownload(); }}>
             {native ? <Share2 size={18} strokeWidth={1.8} aria-hidden="true" /> : <Download size={18} strokeWidth={1.8} aria-hidden="true" className={downloadMutation.isPending ? "animate-pulse" : undefined} />}

@@ -52,7 +52,10 @@ describe("Tally hub", () => {
     setup();
     expect(await screen.findByText("Sales this month")).toBeInTheDocument();
     expect(screen.getByText("In sync")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Remind Acme Retail on WhatsApp" }).getAttribute("href")).toContain("wa.me/919876500001");
+    const shared = vi.fn();
+    window.addEventListener("nexease:share", (e) => shared((e as CustomEvent).detail));
+    fireEvent.click(screen.getByRole("button", { name: "Remind Acme Retail on WhatsApp" }));
+    expect(shared).toHaveBeenCalledWith(expect.objectContaining({ kind: "tally_ledger", id: "l1" }));
     fireEvent.click(screen.getByText("T-1"));
     await waitFor(() => expect(screen.getByRole("dialog")).toHaveTextContent("Sales GST"));
   });

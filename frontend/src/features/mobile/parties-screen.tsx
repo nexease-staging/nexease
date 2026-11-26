@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { CloudOff, MessageCircle, Phone, Plus, RefreshCw, Search, Users } from "lucide-react";
+import { CloudOff, MessageCircle, Phone, Plus, RefreshCw, Search, Users, FileText } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
 import { hasPermission } from "@/lib/authorization/permissions";
 import { useDebounced } from "@/components/list/list-kit";
@@ -11,6 +11,7 @@ import { formatDate } from "@/lib/format";
 import { whatsappNumber } from "@/lib/phone";
 import { rupees, savedAt, useParties, useSaved, type Party, type PartyList } from "./api";
 import { runQuick } from "./quick-actions";
+import { openShare } from "@/features/share/api";
 
 const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase() || "?";
 
@@ -111,6 +112,7 @@ export default function PartiesScreen() {
                 <div className="nxm-party-actions">
                   {p.phone ? <a href={`tel:${p.phone.replace(/[^\d+]/g, "")}`} aria-label={`Call ${p.name}`}><Phone size={16} />Call</a> : null}
                   {p.phone && whatsappLink(p.phone, "") ? <a href={whatsappLink(p.phone, reminderText(p, business, customers))!} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${p.name}`}><MessageCircle size={16} />{customers && due ? "Remind" : "WhatsApp"}</a> : null}
+                  <button type="button" onClick={() => openShare({ kind: "statement", id: p.id, side: customers ? "customer" : "supplier", title: p.name })}><FileText size={16} />Statement</button>
                   {canSettle && due ? <button type="button" onClick={() => runQuick(customers ? "payment_in" : "payment_out", p.id)}>{customers ? "Receive" : "Pay"}</button> : null}
                 </div>
               </li>
