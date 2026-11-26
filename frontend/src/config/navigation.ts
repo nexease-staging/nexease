@@ -30,6 +30,7 @@ import {
   Undo2,
   UserRoundCog,
   Users,
+  Wallet,
   Warehouse,
 } from "lucide-react";
 
@@ -125,18 +126,6 @@ export const navigationSections:
           icon: ReceiptText,
           permission: "invoices.read",
         },
-          {
-            label: "Customer Payments",
-            href: "/customer-payments",
-            icon: Banknote,
-            permission: "customer_payments.read",
-          },
-          {
-            label: "Receivables",
-            href: "/accounts-receivable",
-            icon: ChartNoAxesCombined,
-            permission: "invoices.read",
-          },
         {
           label: "E-Invoices",
           href: "/e-invoices",
@@ -199,12 +188,6 @@ export const navigationSections:
           permission: "bills.read",
         },
         {
-          label: "Accounts Payable",
-          href: "/accounts-payable",
-          icon: CircleDollarSign,
-          permission: "bills.read",
-        },
-        {
           label: "Purchase Returns",
           href: "/purchase-returns",
           icon: Undo2,
@@ -219,6 +202,16 @@ export const navigationSections:
         },
       ],
     },
+    {
+      label: "Payments",
+      items: [
+        { label: "Payments", href: "/payments", icon: Wallet, permission: "invoices.read" },
+        { label: "Customer Payments", href: "/customer-payments", icon: Banknote, permission: "customer_payments.read" },
+        { label: "Receivables", href: "/accounts-receivable", icon: ChartNoAxesCombined, permission: "invoices.read" },
+        { label: "Payables", href: "/accounts-payable", icon: CircleDollarSign, permission: "bills.read" },
+      ],
+    },
+
 
       {
         label: "Finance",

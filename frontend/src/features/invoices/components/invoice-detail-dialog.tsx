@@ -706,7 +706,6 @@ export default function InvoiceDetailDialog({
                             "
                           >
                             ₹
-                            ₹
                             {formatAmount(
                               item.line_total,
                             )}

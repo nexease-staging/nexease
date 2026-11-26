@@ -1,0 +1,31 @@
+/* Payments: allocation lines in the receive/pay sheet and aging bars on party rows. */
+.nxp-alloc{display:flex;flex-direction:column;gap:6px}
+.nxp-alloc li{display:grid;grid-template-columns:auto minmax(0,1fr) auto 128px;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--nx-border);border-radius:12px;background:var(--nx-surface)}
+.nxp-alloc li[data-on]{border-color:var(--nx-primary);background:color-mix(in srgb,var(--nx-primary) 5%,var(--nx-surface))}
+.nxp-alloc-pick{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;color:var(--nx-text-muted)}
+.nxp-alloc li[data-on] .nxp-alloc-pick{color:var(--nx-primary)}
+.nxp-alloc-doc{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.nxp-alloc-doc strong{font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nxp-alloc-doc span{font-size:12px;color:var(--nx-text-muted)}
+.nxp-alloc-doc span[data-late]{color:var(--nx-danger-fg);font-weight:600}
+.nxp-alloc-due{font-size:13px;font-variant-numeric:tabular-nums;color:var(--nx-text-muted);text-align:right}
+.nxp-alloc input{text-align:right;font-variant-numeric:tabular-nums}
+@media(max-width:639px){
+ .nxp-alloc li{grid-template-columns:auto minmax(0,1fr) 112px;row-gap:2px}
+ .nxp-alloc-due{grid-column:2;grid-row:2;text-align:left;font-size:12px}
+ .nxp-alloc input{grid-column:3;grid-row:1/span 2}
+}
+.nxp-aging{display:flex;height:6px;border-radius:999px;overflow:hidden;background:var(--nx-surface-muted);margin-top:6px;max-width:220px}
+.nxp-aging span{display:block;height:100%}
+.nxp-aging [data-b="current"],.nxp-legend [data-b="current"]{background:#34d399}
+.nxp-aging [data-b="d1_30"],.nxp-legend [data-b="d1_30"]{background:#fbbf24}
+.nxp-aging [data-b="d31_60"],.nxp-legend [data-b="d31_60"]{background:#fb923c}
+.nxp-aging [data-b="d61_90"],.nxp-legend [data-b="d61_90"]{background:#f87171}
+.nxp-aging [data-b="d90_plus"],.nxp-legend [data-b="d90_plus"]{background:#b91c1c}
+.nxp-legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--nx-text-muted);padding:10px 14px 0}
+.nxp-legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.nxp-docs{display:flex;flex-direction:column;gap:4px;padding:4px 0 6px}
+.nxp-docs li{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:6px 10px;border-radius:9px;background:var(--nx-surface-muted)}
+.nxp-docs li span:last-child{font-variant-numeric:tabular-nums;font-weight:650}
+.nxp-docs li [data-late]{color:var(--nx-danger-fg)}
+.nxp-docs li.nxp-docs-actions{background:none;padding:6px 0 0;justify-content:flex-start;flex-wrap:wrap;gap:8px}

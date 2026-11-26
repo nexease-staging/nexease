@@ -99,7 +99,7 @@ export default function AppSidebar({
           section.items.length > 0,
       );
 
-  const order = ["Overview", "Inventory", "Sales", "Purchasing", "Workforce", "Taxation", "Finance", "Administration"];
+  const order = ["Overview", "Inventory", "Sales", "Purchasing", "Payments", "Workforce", "Taxation", "Finance", "Administration"];
   const byLabel = new Map(permittedSections.map(section => [section.label, section]));
   const visibleSections = workforceMode ? permittedSections : order.flatMap(label => {
     const section = byLabel.get(label);
