@@ -1,4 +1,5 @@
 "use client";
+import { FormSheet } from "@/components/form/form-sheet";
 import SearchSelect from "@/components/search-select";
 
 
@@ -8,7 +9,6 @@ import {
 
 import {
   LoaderCircle,
-  X,
 } from "lucide-react";
 
 import {
@@ -266,73 +266,8 @@ export default function StockAdjustmentDialog({
   }
 
   return (
-    <div
-      className="
-        fixed inset-0 z-50
-        flex items-center justify-center
-        bg-slate-950/50 p-4
-      "
-      role="presentation"
-    >
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={
-          "stock-adjustment-title"
-        }
-        className="
-          max-h-[90vh] w-full
-          max-w-lg overflow-y-auto
-          rounded-2xl bg-white
-          shadow-2xl
-        "
-      >
-        <header
-          className="
-            flex items-center
-            justify-between border-b
-            border-slate-200 px-6 py-4
-          "
-        >
-          <div>
-            <h2
-              id="stock-adjustment-title"
-              className="
-                text-lg font-bold
-                text-slate-900
-              "
-            >
-              Adjust inventory
-            </h2>
-
-            <p
-              className="
-                mt-1 text-sm text-slate-500
-              "
-            >
-              {inventory.product.sku}
-              {" — "}
-              {inventory.product.name}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            aria-label="Close dialog"
-            disabled={
-              adjustmentMutation.isPending
-            }
-            onClick={onClose}
-            className="
-              rounded-lg p-2
-              text-slate-500
-              hover:bg-slate-100
-              disabled:opacity-50
-            "
-          >
-            <X size={20} />
-          </button>
-        </header>
+    <FormSheet title={"Adjust stock"} subtitle={"Correct stock after a count, damage or loss. Every change is logged."} onClose={onClose} busy={adjustmentMutation.isPending} size="md" closeLabel="Close dialog">
+      
 
         <form
           onSubmit={(event) => {
@@ -594,27 +529,14 @@ export default function StockAdjustmentDialog({
             />
           </label>
 
-          <footer
-            className="
-              flex justify-end gap-3
-              border-t border-slate-200
-              pt-5
-            "
-          >
+          <footer className="nxf-actions"><span /><div className="nxf-buttons">
             <button
               type="button"
               disabled={
                 adjustmentMutation.isPending
               }
               onClick={onClose}
-              className="
-                rounded-lg border
-                border-slate-300 bg-white
-                px-4 py-2 text-sm
-                font-semibold text-slate-700
-                hover:bg-slate-50
-                disabled:opacity-50
-              "
+              className="nx-button nx-secondary nxf-secondary-sm"
             >
               Cancel
             </button>
@@ -624,16 +546,7 @@ export default function StockAdjustmentDialog({
               disabled={
                 adjustmentMutation.isPending
               }
-              className="
-                inline-flex items-center
-                gap-2 rounded-lg
-                bg-blue-600 px-4 py-2
-                text-sm font-semibold
-                text-white
-                hover:bg-blue-700
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-              "
+              className="nx-button"
             >
               {adjustmentMutation.isPending ? (
                 <LoaderCircle
@@ -644,9 +557,8 @@ export default function StockAdjustmentDialog({
 
               Apply adjustment
             </button>
-          </footer>
+          </div></footer>
         </form>
-      </section>
-    </div>
+      </FormSheet>
   );
 }

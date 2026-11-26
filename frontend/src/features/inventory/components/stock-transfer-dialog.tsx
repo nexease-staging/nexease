@@ -1,4 +1,5 @@
 "use client";
+import { FormSheet } from "@/components/form/form-sheet";
 import SearchSelect from "@/components/search-select";
 
 
@@ -12,7 +13,6 @@ import {
 
 import {
   ArrowRight,
-  X,
 } from "lucide-react";
 
 import {
@@ -304,74 +304,8 @@ export default function StockTransferDialog({
       : null;
 
   return (
-    <div
-      role="presentation"
-      className="
-        fixed inset-0 z-50
-        flex items-center
-        justify-center bg-slate-950/50
-        p-4
-      "
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="transfer-title"
-        className="
-          max-h-[90vh] w-full
-          max-w-2xl overflow-y-auto
-          rounded-2xl bg-white
-          text-slate-900 shadow-2xl
-        "
-      >
-        <div
-          className="
-            flex items-start
-            justify-between border-b
-            border-slate-200 p-5
-          "
-        >
-          <div>
-            <h2
-              id="transfer-title"
-              className="
-                text-xl font-bold
-                text-slate-900
-              "
-            >
-              Create stock transfer
-            </h2>
-
-            <p
-              className="
-                mt-1 text-sm text-slate-600
-              "
-            >
-              Move available product stock
-              between two warehouses.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            aria-label="Close"
-            disabled={
-              createMutation.isPending
-            }
-            onClick={onClose}
-            className="
-              rounded-lg p-2
-              text-slate-500
-              hover:bg-slate-100
-              hover:text-slate-900
-              disabled:opacity-50
-            "
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        <form
+    <FormSheet title={"New stock transfer"} subtitle="Move stock from one warehouse to another." titleId="stock-transfer-title" onClose={onClose} busy={createMutation.isPending} size="md">
+      <form
           onSubmit={
             (event) => {
               void handleSubmit(
@@ -688,28 +622,14 @@ export default function StockTransferDialog({
             </div>
           ) : null}
 
-          <div
-            className="
-              flex flex-col-reverse gap-3
-              border-t border-slate-200
-              pt-5 sm:flex-row
-              sm:justify-end
-            "
-          >
+          <div className="nxf-actions"><span /><div className="nxf-buttons">
             <button
               type="button"
               disabled={
                 createMutation.isPending
               }
               onClick={onClose}
-              className="
-                rounded-lg border
-                border-slate-300 bg-white
-                px-4 py-2 text-sm
-                font-semibold text-slate-700
-                hover:bg-slate-50
-                disabled:opacity-50
-              "
+              className="nx-button nx-secondary nxf-secondary-sm"
             >
               Cancel
             </button>
@@ -719,14 +639,7 @@ export default function StockTransferDialog({
               disabled={
                 createMutation.isPending
               }
-              className="
-                rounded-lg bg-blue-600
-                px-4 py-2 text-sm
-                font-semibold text-white
-                hover:bg-blue-700
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-              "
+              className="nx-button"
             >
               {
                 createMutation.isPending
@@ -734,9 +647,9 @@ export default function StockTransferDialog({
                   : "Complete transfer"
               }
             </button>
-          </div>
-        </form>
-      </div>
-    </div>
+          </div></div>
+</form>
+      
+    </FormSheet>
   );
 }

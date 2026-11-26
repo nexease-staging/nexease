@@ -1,4 +1,5 @@
 "use client";
+import { FormSheet } from "@/components/form/form-sheet";
 import SearchSelect from "@/components/search-select";
 
 
@@ -8,7 +9,6 @@ import {
 
 import {
   LoaderCircle,
-  X,
 } from "lucide-react";
 
 import {
@@ -280,83 +280,8 @@ export default function OpeningInventoryDialog({
     warehouseQuery.isPending;
 
   return (
-    <div
-      className="
-        fixed inset-0 z-50
-        flex items-center justify-center
-        bg-slate-950/50 p-4
-      "
-      role="presentation"
-      onMouseDown={(event) => {
-        if (
-          event.target
-          ===
-          event.currentTarget
-          &&
-          !createMutation.isPending
-        ) {
-          onClose();
-        }
-      }}
-    >
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={
-          "opening-inventory-title"
-        }
-        className="
-          w-full max-w-lg
-          rounded-2xl bg-white
-          shadow-2xl
-        "
-      >
-        <header
-          className="
-            flex items-center
-            justify-between border-b
-            border-slate-200 px-6 py-4
-          "
-        >
-          <div>
-            <h2
-              id="opening-inventory-title"
-              className="
-                text-lg font-bold
-                text-slate-900
-              "
-            >
-              Create opening inventory
-            </h2>
-
-            <p
-              className="
-                mt-1 text-sm text-slate-500
-              "
-            >
-              Establish the first stock
-              balance for a product and
-              warehouse.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            aria-label="Close dialog"
-            disabled={
-              createMutation.isPending
-            }
-            onClick={onClose}
-            className="
-              rounded-lg p-2
-              text-slate-500
-              hover:bg-slate-100
-              disabled:opacity-50
-            "
-          >
-            <X size={20} />
-          </button>
-        </header>
+    <FormSheet title={"Opening stock"} subtitle={"Record the stock you already have when you start using NexEase."} onClose={onClose} busy={createMutation.isPending} size="md" closeLabel="Close dialog">
+      
 
         <form
           onSubmit={(event) => {
@@ -527,27 +452,14 @@ export default function OpeningInventoryDialog({
             ) : null}
           </label>
 
-          <footer
-            className="
-              flex justify-end gap-3
-              border-t border-slate-200
-              pt-5
-            "
-          >
+          <footer className="nxf-actions"><span /><div className="nxf-buttons">
             <button
               type="button"
               disabled={
                 createMutation.isPending
               }
               onClick={onClose}
-              className="
-                rounded-lg border
-                border-slate-300 bg-white
-                px-4 py-2 text-sm
-                font-semibold text-slate-700
-                hover:bg-slate-50
-                disabled:opacity-50
-              "
+              className="nx-button nx-secondary nxf-secondary-sm"
             >
               Cancel
             </button>
@@ -563,16 +475,7 @@ export default function OpeningInventoryDialog({
                 ||
                 createMutation.isPending
               }
-              className="
-                inline-flex items-center
-                gap-2 rounded-lg
-                bg-blue-600 px-4 py-2
-                text-sm font-semibold
-                text-white
-                hover:bg-blue-700
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-              "
+              className="nx-button"
             >
               {createMutation.isPending ? (
                 <LoaderCircle
@@ -583,9 +486,8 @@ export default function OpeningInventoryDialog({
 
               Create inventory
             </button>
-          </footer>
+          </div></footer>
         </form>
-      </section>
-    </div>
+      </FormSheet>
   );
 }

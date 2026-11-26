@@ -1,936 +1,119 @@
 "use client";
+
+import { useState } from "react";
+import { ArrowDownUp, FileSpreadsheet, X } from "lucide-react";
+import { CompactList, CompactRow, ListScreen, ListState, Pager, useDebounced } from "@/components/list/list-kit";
+import { Badge, type Tone } from "@/components/ui/badge";
+import EmptyState from "@/components/ui/empty-state";
+import FilterSheet from "@/components/ui/filter-sheet";
 import SearchSelect from "@/components/search-select";
+import { notify } from "@/components/nex-feedback";
+import { useAuth } from "@/features/auth/auth-context";
+import { useStockMovementList } from "@/features/inventory/hooks";
+import { movementTypes } from "@/features/inventory/movement-types";
+import type { StockMovementType } from "@/features/inventory/types";
+import { useWarehouseList } from "@/features/warehouses/hooks";
+import { hasPermission } from "@/lib/authorization/permissions";
+import { downloadCsv } from "@/lib/export-csv";
+import { formatDate } from "@/lib/format";
 
-
-import {
-  useMemo,
-  useState,
-} from "react";
-
-import {
-  ArrowDownUp,
-  RefreshCw,
-  Search,
-} from "lucide-react";
-
-import {
-  useAuth,
-} from "@/features/auth/auth-context";
-
-import {
-  useStockMovementList,
-} from "@/features/inventory/hooks";
-
-import type {
-  StockMovementType,
-} from "@/features/inventory/types";
-
-import {
-  useWarehouseList,
-} from "@/features/warehouses/hooks";
-
-import {
-  hasPermission,
-} from "@/lib/authorization/permissions";
-
-const movementTypeOptions: Array<{
-  value: StockMovementType;
-  label: string;
-}> = [
-  {
-    value: "OPENING_STOCK",
-    label: "Opening stock",
-  },
-  {
-    value: "STOCK_IN",
-    label: "Stock in",
-  },
-  {
-    value: "STOCK_OUT",
-    label: "Stock out",
-  },
-  {
-    value: "ADJUSTMENT_IN",
-    label: "Adjustment in",
-  },
-  {
-    value: "ADJUSTMENT_OUT",
-    label: "Adjustment out",
-  },
-  {
-    value: "RESERVATION",
-    label: "Reservation",
-  },
-  {
-    value: "RESERVATION_RELEASE",
-    label: "Reservation release",
-  },
-  {
-    value: "TRANSFER_OUT",
-    label: "Transfer out",
-  },
-  {
-    value: "TRANSFER_IN",
-    label: "Transfer in",
-  },
-  {
-    value: "SALES_RETURN",
-    label: "Sales return",
-  },
-  {
-    value: "PURCHASE_RETURN",
-    label: "Purchase return",
-  },
-];
-
-function formatQuantity(
-  value: string,
-): string {
-  const quantity = Number(value);
-
-  if (!Number.isFinite(quantity)) {
-    return value;
-  }
-
-  return new Intl.NumberFormat(
-    "en-IN",
-    {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    },
-  ).format(quantity);
-}
-
-function formatDate(
-  value: string | null,
-): string {
-  if (!value) {
-    return "—";
-  }
-
-  const date = new Date(value);
-
-  if (
-    Number.isNaN(
-      date.getTime(),
-    )
-  ) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat(
-    "en-IN",
-    {
-      dateStyle: "medium",
-      timeStyle: "short",
-    },
-  ).format(date);
-}
-
-function movementLabel(
-  movementType: StockMovementType,
-): string {
-  return (
-    movementTypeOptions.find(
-      (option) =>
-        option.value === movementType,
-    )?.label
-    ??
-    movementType
-  );
-}
-
-function movementColor(
-  movementType: StockMovementType,
-): string {
-  if (
-    movementType.endsWith("_IN")
-    ||
-    movementType === "OPENING_STOCK"
-    ||
-    movementType === "SALES_RETURN"
-  ) {
-    return (
-      "bg-emerald-50 text-emerald-700 "
-      +
-      "border-emerald-200"
-    );
-  }
-
-  if (
-    movementType.endsWith("_OUT")
-    ||
-    movementType === "PURCHASE_RETURN"
-  ) {
-    return (
-      "bg-red-50 text-red-700 "
-      +
-      "border-red-200"
-    );
-  }
-
-  if (
-    movementType === "RESERVATION"
-    ||
-    movementType
-    ===
-    "RESERVATION_RELEASE"
-  ) {
-    return (
-      "bg-amber-50 text-amber-700 "
-      +
-      "border-amber-200"
-    );
-  }
-
-  return (
-    "bg-blue-50 text-blue-700 "
-    +
-    "border-blue-200"
-  );
-}
+const signed = (value: string, direction: number) => {
+  const n = Math.abs(Number(value));
+  const text = n.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  return direction > 0 ? `+${text}` : direction < 0 ? `−${text}` : text;
+};
 
 export default function StockMovementsPage() {
-  const {
-    authentication,
-  } = useAuth();
+  const { authentication } = useAuth();
+  const canRead = hasPermission(authentication?.role.permissions ?? [], "inventory.read");
+  const [productId, setProductId] = useState(() => (typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("product_id") ?? ""));
+  const [searchInput, setSearchInput] = useState("");
+  const search = useDebounced(searchInput.trim());
+  const [warehouseId, setWarehouseId] = useState("");
+  const [movementType, setMovementType] = useState<StockMovementType | "">("");
+  const [page, setPage] = useState(1);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const [
-    search,
-    setSearch,
-  ] = useState("");
+  const query = useStockMovementList({ page, page_size: 25, product_id: productId || undefined, search: search || undefined, warehouse_id: warehouseId || undefined, movement_type: movementType || undefined, sort: "-created_at" });
+  const warehouses = useWarehouseList({ page: 1, page_size: 100, is_active: true, sort: "name" }).data?.warehouses ?? [];
+  const movements = query.data?.movements ?? [];
 
-  const [
-    warehouseId,
-    setWarehouseId,
-  ] = useState("");
+  if (!authentication) return null;
+  if (!canRead) return <div className="nx-card"><EmptyState icon={ArrowDownUp} title="Stock movements unavailable" description="Your role does not include the inventory.read permission." /></div>;
 
-  const [
-    movementType,
-    setMovementType,
-  ] = useState<
-    StockMovementType | ""
-  >("");
+  const productName = productId ? movements[0]?.product.name : "";
+  const filtered = Boolean(search || warehouseId || movementType || productId);
 
-  const [
-    page,
-    setPage,
-  ] = useState(1);
-
-  const permissions =
-    authentication
-      ?.role
-      .permissions
-    ??
-    [];
-
-  const canRead = hasPermission(
-    permissions,
-    "inventory.read",
-  );
-
-  const listParameters = useMemo(
-    () => ({
-      page,
-      page_size: 20,
-      search:
-        search.trim()
-        ||
-        undefined,
-      warehouse_id:
-        warehouseId
-        ||
-        undefined,
-      movement_type:
-        movementType
-        ||
-        undefined,
-      sort: "-created_at",
-    }),
-    [
-      movementType,
-      page,
-      search,
-      warehouseId,
-    ],
-  );
-
-  const movementQuery =
-    useStockMovementList(
-      listParameters,
-    );
-
-  const warehouseQuery =
-    useWarehouseList({
-      page: 1,
-      page_size: 100,
-      is_active: true,
-      sort: "name",
-    });
-
-  if (!authentication) {
-    return null;
+  function exportCsv() {
+    void downloadCsv(`NexEase-stock-movements-page-${page}`, movements, [
+      { header: "Date", value: (m) => m.created_at?.slice(0, 16).replace("T", " ") },
+      { header: "SKU", value: (m) => m.product.sku },
+      { header: "Item", value: (m) => m.product.name },
+      { header: "Warehouse", value: (m) => m.warehouse.name },
+      { header: "Type", value: (m) => movementTypes[m.movement_type]?.label ?? m.movement_type },
+      { header: "Quantity", value: (m) => signed(m.quantity, movementTypes[m.movement_type]?.direction ?? 0) },
+      { header: "Before", value: (m) => m.quantity_before },
+      { header: "After", value: (m) => m.quantity_after },
+      { header: "Reference", value: (m) => [m.reference.type, m.reference.id].filter(Boolean).join(" ") },
+      { header: "By", value: (m) => m.created_by?.email ?? "" },
+    ]).catch((e: unknown) => notify(e instanceof Error ? e.message : "Export failed.", "error"));
   }
-
-  if (!canRead) {
-    return (
-      <section
-        className="
-          rounded-2xl border
-          border-amber-200 bg-amber-50
-          p-6
-        "
-      >
-        <h1
-          className="
-            text-lg font-semibold
-            text-amber-900
-          "
-        >
-          Stock movement access restricted
-        </h1>
-
-        <p
-          className="
-            mt-2 text-sm text-amber-800
-          "
-        >
-          Your role does not include the
-          inventory.read permission.
-        </p>
-      </section>
-    );
-  }
-
-  const movements =
-    movementQuery.data
-      ?.movements
-    ??
-    [];
-
-  const pagination =
-    movementQuery.data
-      ?.pagination;
-
-  const warehouses =
-    warehouseQuery.data
-      ?.warehouses
-    ??
-    [];
 
   return (
-    <section className="space-y-6">
-      <div
-        className="
-          flex flex-col gap-4
-          sm:flex-row sm:items-center
-          sm:justify-between
-        "
-      >
-        <div>
-          <div
-            className="
-              flex items-center gap-2
-            "
-          >
-            <ArrowDownUp
-              size={25}
-              className="text-blue-600"
-            />
-
-            <h1
-              className="
-                text-2xl font-bold
-                text-slate-900
-              "
-            >
-              Stock movements
-            </h1>
-          </div>
-
-          <p
-            className="
-              mt-1 text-sm text-slate-600
-            "
-          >
-            Complete stock movement history
-            across products and warehouses.
-          </p>
-        </div>
-
-        <button title="Refresh"
-          type="button"
-          disabled={
-            movementQuery.isFetching
-          }
-          onClick={() => {
-            void movementQuery.refetch();
-          }}
-          className="
-            inline-flex items-center
-            justify-center gap-2
-            rounded-lg border
-            border-slate-300 bg-white
-            px-4 py-2 text-sm
-            font-semibold text-slate-700
-            hover:bg-slate-50
-            disabled:cursor-not-allowed
-            disabled:opacity-50
-          "
-        >
-          <RefreshCw
-            size={16}
-            className={
-              movementQuery.isFetching
-                ? "animate-spin"
-                : undefined
-            }
-          />
-
-          <span className="sr-only">Refresh</span>
-        </button>
-      </div>
-
-      <div
-        className="nx-list-filters
-          grid gap-4 rounded-2xl
-          border border-slate-200
-          bg-white p-4 shadow-sm
-          md:grid-cols-3
-        "
-      >
-        <label className="space-y-1.5">
-          <span
-            className="
-              text-sm font-semibold
-              text-slate-700
-            "
-          >
-            Search
-          </span>
-
-          <div className="relative">
-            <Search
-              size={17}
-              className="
-                pointer-events-none
-                absolute left-3 top-1/2
-                -translate-y-1/2
-                text-slate-400
-              "
-            />
-
-            <input
-              type="search"
-              value={search}
-              placeholder="SKU, product or reference"
-              onChange={(event) => {
-                setSearch(
-                  event.target.value,
-                );
-                setPage(1);
-              }}
-              className="
-                h-10 w-full rounded-lg
-                border border-slate-300
-                bg-white pl-9 pr-3
-                text-sm text-slate-900
-                placeholder:text-slate-400
-                outline-none
-                focus:border-blue-500
-                focus:ring-2
-                focus:ring-blue-100
-              "
-            />
-          </div>
-        </label>
-
-        <label className="space-y-1.5">
-          <span
-            className="
-              text-sm font-semibold
-              text-slate-700
-            "
-          >
-            Warehouse
-          </span>
-
-          <SearchSelect
-            value={warehouseId}
-            disabled={
-              warehouseQuery.isPending
-            }
-            onChange={(event) => {
-              setWarehouseId(
-                event.target.value,
-              );
-              setPage(1);
-            }}
-            className="
-              h-10 w-full rounded-lg
-              border border-slate-300
-              bg-white px-3 text-sm
-              text-slate-900 outline-none
-              focus:border-blue-500
-              focus:ring-2
-              focus:ring-blue-100
-              disabled:opacity-50
-            "
-          >
-            <option value="">
-              All warehouses
-            </option>
-
-            {warehouses.map(
-              (warehouse) => (
-                <option
-                  key={warehouse.id}
-                  value={warehouse.id}
-                >
-                  {warehouse.code}
-                  {" — "}
-                  {warehouse.name}
-                </option>
-              ),
-            )}
-          </SearchSelect>
-        </label>
-
-        <label className="space-y-1.5">
-          <span
-            className="
-              text-sm font-semibold
-              text-slate-700
-            "
-          >
-            Movement type
-          </span>
-
-          <SearchSelect
-            value={movementType}
-            onChange={(event) => {
-              setMovementType(
-                event.target.value as (
-                  StockMovementType | ""
-                ),
-              );
-
-              setPage(1);
-            }}
-            className="
-              h-10 w-full rounded-lg
-              border border-slate-300
-              bg-white px-3 text-sm
-              text-slate-900 outline-none
-              focus:border-blue-500
-              focus:ring-2
-              focus:ring-blue-100
-            "
-          >
-            <option value="">
-              All movement types
-            </option>
-
-            {movementTypeOptions.map(
-              (option) => (
-                <option
-                  key={option.value}
-                  value={option.value}
-                >
-                  {option.label}
-                </option>
-              ),
-            )}
-          </SearchSelect>
-        </label>
-      </div>
-
-      <div
-        className="
-          overflow-hidden rounded-2xl
-          border border-slate-200
-          bg-white shadow-sm
-        "
-      >
-        {movementQuery.isPending ? (
-          <div
-            className="
-              flex min-h-72 items-center
-              justify-center text-sm
-              text-slate-500
-            "
-          >
-            Loading stock movements…
-          </div>
-        ) : movementQuery.isError ? (
-          <div
-            className="
-              flex min-h-72 flex-col
-              items-center justify-center
-              gap-3 p-6 text-center
-            "
-          >
-            <p
-              className="
-                text-sm font-medium
-                text-red-700
-              "
-            >
-              {movementQuery.error.message}
-            </p>
-
-            <button
-              type="button"
-              onClick={() => {
-                void movementQuery.refetch();
-              }}
-              className="
-                rounded-lg bg-slate-900
-                px-4 py-2 text-sm
-                font-semibold text-white
-                hover:bg-slate-700
-              "
-            >
-              Try again
-            </button>
-          </div>
-        ) : movements.length === 0 ? (
-          <div
-            className="
-              flex min-h-72 flex-col
-              items-center justify-center
-              p-6 text-center
-            "
-          >
-            <ArrowDownUp
-              size={36}
-              className="text-slate-300"
-            />
-
-            <h2
-              className="
-                mt-3 font-semibold
-                text-slate-900
-              "
-            >
-              No stock movements found
-            </h2>
-
-            <p
-              className="
-                mt-1 max-w-md text-sm
-                text-slate-500
-              "
-            >
-              Change the filters or create an
-              opening inventory, adjustment,
-              or stock transfer.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table role="table"
- className="nx-mobile-records
-                min-w-full divide-y
-                divide-slate-200
-              "
-            >
-              <thead className="bg-slate-50">
-                <tr>
-                  {[
-                    "Date",
-                    "Type",
-                    "Product",
-                    "Warehouse",
-                    "Quantity",
-                    "Stock change",
-                    "Reference",
-                    "Created by",
-                  ].map(
-                    (heading) => (
-                      <th
-                        key={heading}
-                        scope="col"
-                        className="
-                          whitespace-nowrap
-                          px-4 py-3 text-left
-                          text-xs font-semibold
-                          uppercase tracking-wide
-                          text-slate-500
-                        "
-                      >
-                        {heading}
-                      </th>
-                    ),
-                  )}
-                </tr>
-              </thead>
-
-              <tbody
-                className="
-                  divide-y divide-slate-100
-                "
-              >
-                {movements.map(
-                  (movement) => (
-                    <tr
-                      key={movement.id}
-                      className="
-                        hover:bg-slate-50
-                      "
-                    >
-                      <td data-label="Date"
-                        className="
-                          whitespace-nowrap
-                          px-4 py-4 text-sm
-                          text-slate-600
-                        "
-                      >
-                        {
-                          formatDate(
-                            movement.created_at,
-                          )
-                        }
-                      </td>
-
-                      <td data-label="Type"
-                        className="
-                          whitespace-nowrap
-                          px-4 py-4
-                        "
-                      >
-                        <span
-                          className={`
-                            inline-flex rounded-full
-                            border px-2.5 py-1
-                            text-xs font-semibold
-                            ${movementColor(
-                              movement
-                                .movement_type,
-                            )}
-                          `}
-                        >
-                          {
-                            movementLabel(
-                              movement
-                                .movement_type,
-                            )
-                          }
-                        </span>
-                      </td>
-
-                      <td data-label="Product"
-                        className="
-                          px-4 py-4 text-sm
-                          text-slate-700
-                        "
-                      >
-                        <p
-                          className="
-                            font-semibold
-                            text-slate-900
-                          "
-                        >
-                          {movement.product.name}
-                        </p>
-
-                        <p
-                          className="
-                            mt-0.5 text-xs
-                            text-slate-500
-                          "
-                        >
-                          {movement.product.sku}
-                        </p>
-                      </td>
-
-                      <td data-label="Warehouse"
-                        className="
-                          px-4 py-4 text-sm
-                          text-slate-700
-                        "
-                      >
-                        <p>
-                          {movement.warehouse.name}
-                        </p>
-
-                        <p
-                          className="
-                            mt-0.5 text-xs
-                            text-slate-500
-                          "
-                        >
-                          {movement.warehouse.code}
-                        </p>
-                      </td>
-
-                      <td data-label="Quantity"
-                        className="
-                          whitespace-nowrap
-                          px-4 py-4 text-sm
-                          font-bold text-slate-900
-                        "
-                      >
-                        {
-                          formatQuantity(
-                            movement.quantity,
-                          )
-                        }
-                      </td>
-
-                      <td data-label="Stock change"
-                        className="
-                          whitespace-nowrap
-                          px-4 py-4 text-sm
-                          text-slate-700
-                        "
-                      >
-                        {
-                          formatQuantity(
-                            movement
-                              .quantity_before,
-                          )
-                        }
-                        {" → "}
-                        {
-                          formatQuantity(
-                            movement
-                              .quantity_after,
-                          )
-                        }
-                      </td>
-
-                      <td data-label="Reference"
-                        className="
-                          px-4 py-4 text-sm
-                          text-slate-600
-                        "
-                      >
-                        <p>
-                          {
-                            movement.reference.type
-                            ??
-                            "—"
-                          }
-                        </p>
-
-                        {movement.reference.id ? (
-                          <p
-                            className="
-                              mt-0.5 max-w-40
-                              truncate text-xs
-                              text-slate-500
-                            "
-                            title={
-                              movement.reference.id
-                            }
-                          >
-                            {movement.reference.id}
-                          </p>
-                        ) : null}
-                      </td>
-
-                      <td data-label="Created by"
-                        className="
-                          px-4 py-4 text-sm
-                          text-slate-600
-                        "
-                      >
-                        {
-                          movement.created_by
-                            ?.email
-                          ??
-                          "System"
-                        }
-                      </td>
-                    </tr>
-                  ),
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {pagination ? (
-          <div
-            className="
-              flex flex-col gap-3
-              border-t border-slate-200
-              px-4 py-3
-              sm:flex-row sm:items-center
-              sm:justify-between
-            "
-          >
-            <p
-              className="
-                text-sm text-slate-600
-              "
-            >
-              Page {pagination.page} of{" "}
-              {pagination.total_pages || 1}
-              {" · "}
-              {pagination.total_items} movements
-            </p>
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled={
-                  !pagination.has_previous
-                  ||
-                  movementQuery.isFetching
-                }
-                onClick={() => {
-                  setPage(
-                    (current) =>
-                      Math.max(
-                        1,
-                        current - 1,
-                      ),
-                  );
-                }}
-                className="
-                  rounded-lg border
-                  border-slate-300 bg-white
-                  px-3 py-1.5 text-sm
-                  font-semibold text-slate-700
-                  hover:bg-slate-50
-                  disabled:cursor-not-allowed
-                  disabled:opacity-40
-                "
-              >
-                Previous
-              </button>
-
-              <button
-                type="button"
-                disabled={
-                  !pagination.has_next
-                  ||
-                  movementQuery.isFetching
-                }
-                onClick={() => {
-                  setPage(
-                    (current) =>
-                      current + 1,
-                  );
-                }}
-                className="
-                  rounded-lg border
-                  border-slate-300 bg-white
-                  px-3 py-1.5 text-sm
-                  font-semibold text-slate-700
-                  hover:bg-slate-50
-                  disabled:cursor-not-allowed
-                  disabled:opacity-40
-                "
-              >
-                Next
-              </button>
-            </div>
+    <>
+      <ListScreen
+        title="Stock movements"
+        subtitle="Every change to stock, newest first."
+        actions={[{ icon: FileSpreadsheet, label: "Export this page to CSV", onClick: exportCsv, disabled: !movements.length }]}
+        onRefresh={() => void query.refetch()}
+        refreshing={query.isFetching}
+        search={{ value: searchInput, onChange: (v) => { setSearchInput(v); setPage(1); }, placeholder: "Search item, SKU, reference or note" }}
+        onOpenFilters={() => setFiltersOpen(true)}
+        filtersActive={Boolean(warehouseId || movementType)}
+        above={productId ? (
+          <div className="flex items-center gap-2 text-sm">
+            <Badge tone="info">History{productName ? `: ${productName}` : " for one item"}</Badge>
+            <button type="button" className="nxl-icon" data-size="sm" aria-label="Show all items" title="Show all items" onClick={() => { setProductId(""); setPage(1); window.history.replaceState(null, "", "/stock-movements"); }}><X size={15} /></button>
           </div>
         ) : null}
-      </div>
-    </section>
+        footer={<Pager pagination={query.data?.pagination} noun="movements" onPage={setPage} />}
+      >
+        <ListState loading={query.isPending} error={query.error} onRetry={() => void query.refetch()} isEmpty={!movements.length} emptyIcon={ArrowDownUp}
+          emptyTitle={filtered ? "No movements match" : "No stock movements yet"} emptyDescription={filtered ? "Try different filters." : "Movements appear when stock is added, sold, adjusted or transferred."}>
+          <CompactList label="Stock movements" columns={[{ label: "Item / when" }, { label: "Type" }, { label: "Before → after" }, { label: "Quantity" }]}>
+            {movements.map((m) => {
+              const t = movementTypes[m.movement_type] ?? { label: m.movement_type, tone: "neutral" as Tone, direction: 0 as const };
+              return (
+                <CompactRow
+                  key={m.id}
+                  title={m.product.name}
+                  subtitle={`${m.warehouse.name} · ${formatDate(m.created_at)}${m.reference.type ? ` · ${m.reference.type.replaceAll("_", " ").toLowerCase()}` : ""}`}
+                  meta={[<Badge key="t" tone={t.tone}>{t.label}</Badge>, `${Number(m.quantity_before).toLocaleString("en-IN")} → ${Number(m.quantity_after).toLocaleString("en-IN")}`]}
+                  amount={`${signed(m.quantity, t.direction)} ${m.product.unit}`}
+                  amountTone={t.direction > 0 ? "success" : t.direction < 0 ? "danger" : undefined}
+                  amountHint={<span className="md:hidden">{t.label}</span>}
+                />
+              );
+            })}
+          </CompactList>
+        </ListState>
+      </ListScreen>
+
+      <FilterSheet open={filtersOpen} onClose={() => setFiltersOpen(false)}>
+        <label className="block">Warehouse
+          <SearchSelect className="nx-input" value={warehouseId} onChange={(e) => { setWarehouseId(e.target.value); setPage(1); }}>
+            <option value="">All warehouses</option>
+            {warehouses.map((w) => <option key={w.id} value={w.id}>{w.code} — {w.name}</option>)}
+          </SearchSelect>
+        </label>
+        <label className="block">Type
+          <select className="nx-input" value={movementType} onChange={(e) => { setMovementType(e.target.value as StockMovementType | ""); setPage(1); }}>
+            <option value="">All types</option>
+            {(Object.keys(movementTypes) as StockMovementType[]).map((k) => <option key={k} value={k}>{movementTypes[k].label}</option>)}
+          </select>
+        </label>
+        <button type="button" className="nx-button nx-secondary" onClick={() => { setWarehouseId(""); setMovementType(""); setSearchInput(""); setPage(1); }}>Clear filters</button>
+      </FilterSheet>
+    </>
   );
 }

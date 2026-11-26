@@ -42,6 +42,7 @@ export interface InventoryData {
 }
 
 export interface InventoryListParameters {
+  search?: string;
   page?: number;
   page_size?: number;
   product_id?: string;

@@ -1,831 +1,169 @@
 "use client";
-import {confirmAction} from "@/components/nex-feedback";
-import PageHeader from "@/components/ui/page-header";
-import IconButton from "@/components/ui/icon-button";
-import FilterSheet from "@/components/ui/filter-sheet";
-import SearchSelect from "@/components/search-select";
 
-
-import {
-  useMemo,
-  useState,
-} from "react";
-
-import {
-  Package,
-  Pencil,
-  Plus,
-  Power,
-  PowerOff,
-  RefreshCw,
-  Search,
-  SlidersHorizontal,
-} from "lucide-react";
-
-import {
-  useAuth,
-} from "@/features/auth/auth-context";
-
-import {useQuery} from "@tanstack/react-query";
-import {apiRequest} from "@/lib/api/client";
-import ReorderLevel from "@/features/products/components/reorder-level";
-
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { BellRing, FileSpreadsheet, History, Package, Pencil, Plus, Power, PowerOff } from "lucide-react";
+import { CompactList, CompactRow, ListScreen, ListState, Pager, useDebounced, type ListAction } from "@/components/list/list-kit";
+import { Badge } from "@/components/ui/badge";
+import EmptyState from "@/components/ui/empty-state";
+import { confirmAction, notify } from "@/components/nex-feedback";
+import { useAuth } from "@/features/auth/auth-context";
+import { useInventoryInsights } from "@/features/inventory/insights";
 import ProductDialog from "@/features/products/components/product-dialog";
-
-import {
-  useActivateProduct,
-  useDeactivateProduct,
-  useProductList,
-} from "@/features/products/hooks";
-
-import type {
-  ProductSummary,
-} from "@/features/products/types";
-
-import {
-  hasPermission,
-} from "@/lib/authorization/permissions";
-
-function formatCurrency(
-  value: string,
-): string {
-  const amount = Number(value);
-
-  if (!Number.isFinite(amount)) {
-    return value;
-  }
-
-  return new Intl.NumberFormat(
-    "en-IN",
-    {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    },
-  ).format(amount);
-}
-
-import CategoriesPage from "../settings/categories/page";
+import ReorderLevel from "@/features/products/components/reorder-level";
 import UnitSettings from "@/features/products/components/unit-settings";
+import { useActivateProduct, useDeactivateProduct, useProductList } from "@/features/products/hooks";
+import type { ProductSummary } from "@/features/products/types";
+import { apiRequest } from "@/lib/api/client";
+import { hasPermission } from "@/lib/authorization/permissions";
+import { downloadCsv } from "@/lib/export-csv";
+import { formatMoney } from "@/lib/format";
+import CategoriesPage from "../settings/categories/page";
+
+type Section = "Products" | "Services" | "Categories" | "Units";
+type ActiveFilter = "" | "active" | "inactive";
+const sections: Section[] = ["Products", "Services", "Categories", "Units"];
+const chips: Array<{ value: ActiveFilter; label: string }> = [
+  { value: "", label: "All" },
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
+];
 
 export default function ProductsPage() {
-  const [section,setSection]=useState<"Products"|"Services"|"Categories"|"Units">("Products");
-  const [filtersOpen,setFiltersOpen]=useState(false);
-  const [reorderId,setReorderId]=useState<string|null>(null);
-  const {
-    authentication,
-  } = useAuth();
+  const router = useRouter();
+  const { authentication } = useAuth();
+  const permissions = authentication?.role.permissions ?? [];
+  const canRead = hasPermission(permissions, "products.read");
+  const canCreate = hasPermission(permissions, "products.create");
+  const canUpdate = hasPermission(permissions, "products.update");
+  const canSeeStock = hasPermission(permissions, "inventory.read");
 
-  const [
-    search,
-    setSearch,
-  ] = useState("");
+  const [section, setSection] = useState<Section>("Products");
+  const [searchInput, setSearchInput] = useState("");
+  const search = useDebounced(searchInput.trim());
+  const [active, setActive] = useState<ActiveFilter>("");
+  const [page, setPage] = useState(1);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [reorderId, setReorderId] = useState<string | null>(null);
+  const activate = useActivateProduct();
+  const deactivate = useDeactivateProduct();
+  const goods = section !== "Services";
 
-  const [
-    activeFilter,
-    setActiveFilter,
-  ] = useState<
-    "all" | "active" | "inactive"
-  >("all");
+  const query = useProductList({ page, item_type: goods ? "goods" : "service", page_size: 25, search: search || undefined, is_active: active === "" ? undefined : active === "active", sort: "name" });
+  const products = query.data?.products ?? [];
+  const ids = products.map((p) => p.id).join(",");
+  const stock = useQuery({
+    queryKey: ["product-stock-balances", ids],
+    enabled: canRead && canSeeStock && goods && !!ids,
+    refetchInterval: 30_000,
+    queryFn: async () => (await apiRequest<{ quantities: Record<string, string> }>(`/business/stock-balances/?product_ids=${encodeURIComponent(ids)}`)).data,
+  });
+  const insights = useInventoryInsights("", 90, canRead && canSeeStock && goods);
+  const lowIds = useMemo(() => new Set((insights.data?.low_stock ?? []).map((i) => i.product_id)), [insights.data]);
 
-  const [
-    page,
-    setPage,
-  ] = useState(1);
+  if (!authentication) return null;
+  if (!canRead) return <div className="nx-card"><EmptyState icon={Package} title="Items unavailable" description="Your role does not include the products.read permission." /></div>;
 
-  const [
-    productDialogOpen,
-    setProductDialogOpen,
-  ] = useState(false);
-
-  const [
-    editingProductId,
-    setEditingProductId,
-  ] = useState<string | null>(
-    null,
+  const tabs = (
+    <div className="nxf-segment self-start" role="group" aria-label="Item classification">
+      {sections.map((tab) => (
+        <button key={tab} type="button" aria-pressed={tab === section} onClick={() => { setSection(tab); setPage(1); setSearchInput(""); }}>{tab}</button>
+      ))}
+    </div>
   );
 
-  const [
-    actionError,
-    setActionError,
-  ] = useState<string | null>(
-    null,
-  );
-
-  const activateMutation =
-    useActivateProduct();
-
-  const deactivateMutation =
-    useDeactivateProduct();
-
-  const permissions =
-    authentication
-      ?.role
-      .permissions
-    ??
-    [];
-
-  const canRead = hasPermission(
-    permissions,
-    "products.read",
-  );
-
-  const canCreate = hasPermission(
-    permissions,
-    "products.create",
-  );
-
-  const canUpdate = hasPermission(
-    permissions,
-    "products.update",
-  );
-
-  const canDelete = hasPermission(
-    permissions,
-    "products.delete",
-  );
-
-  const listParameters = useMemo(
-    () => ({
-      page,
-      item_type: section==="Services"?"service":"goods",
-      page_size: 25,
-      search:
-        search.trim()
-        ||
-        undefined,
-      is_active:
-        activeFilter === "all"
-          ? undefined
-          : activeFilter === "active",
-      sort: "name",
-    }),
-    [
-      activeFilter, section,
-      page,
-      search,
-    ],
-  );
-
-  const productQuery =
-    useProductList(
-      listParameters,
-    );
-
-  const stockIds=(productQuery.data?.products??[]).map(p=>p.id).join(',');
-  const stockQuery=useQuery({queryKey:['product-stock-balances',stockIds],queryFn:async()=>(await apiRequest<{quantities:Record<string,string>}>(`/business/stock-balances/?product_ids=${encodeURIComponent(stockIds)}`)).data,enabled:canRead&&hasPermission(permissions,'inventory.read')&&!!stockIds,refetchInterval:30000});
-  if (!authentication) {
-    return null;
-  }
-
-  if (!canRead) {
+  if (section === "Categories" || section === "Units") {
     return (
-      <section
-        className="
-          rounded-2xl border
-          border-amber-200 bg-amber-50
-          p-6
-        "
-      >
-        <h1
-          className="
-            text-lg font-semibold
-            text-amber-900
-          "
-        >
-          Product access restricted
-        </h1>
-
-        <p
-          className="
-            mt-2 text-sm text-amber-800
-          "
-        >
-          Your role does not include the
-          products.read permission.
-        </p>
-      </section>
-    );
-  }
-
-  const products =
-    productQuery.data
-      ?.products
-    ??
-    [];
-
-  const pagination =
-    productQuery.data
-      ?.pagination;
-
-  const actionPending =
-    activateMutation.isPending
-    ||
-    deactivateMutation.isPending;
-
-  function openCreateDialog(): void {
-    setEditingProductId(
-      null,
-    );
-
-    setProductDialogOpen(
-      true,
-    );
-  }
-
-  function openEditDialog(
-    productId: string,
-  ): void {
-    setEditingProductId(
-      productId,
-    );
-
-    setProductDialogOpen(
-      true,
-    );
-  }
-
-  async function activate(
-    product: ProductSummary,
-  ): Promise<void> {
-    const confirmed =
-      await confirmAction(
-        (
-          `Activate ${product.name}?`
-          +
-          "\n\nThe product will become "
-          +
-          "available for inventory operations."
-        ),
-      );
-
-    if (!confirmed) {
-      return;
-    }
-
-    setActionError(
-      null,
-    );
-
-    try {
-      await activateMutation.mutateAsync(
-        product.id,
-      );
-    } catch (error) {
-      setActionError(
-        error instanceof Error
-          ? error.message
-          : "Unable to activate product.",
-      );
-    }
-  }
-
-  async function deactivate(
-    product: ProductSummary,
-  ): Promise<void> {
-    const confirmed =
-      await confirmAction(
-        (
-          `Deactivate ${product.name}?`
-          +
-          "\n\nThe product will remain in "
-          +
-          "historical records."
-        ),
-      );
-
-    if (!confirmed) {
-      return;
-    }
-
-    setActionError(
-      null,
-    );
-
-    try {
-      await deactivateMutation.mutateAsync(
-        product.id,
-      );
-    } catch (error) {
-      setActionError(
-        error instanceof Error
-          ? error.message
-          : "Unable to deactivate product.",
-      );
-    }
-  }
-
-  return (
-    <section className="space-y-6">
-      <nav aria-label="Item classification" className="nx-chip-row">{(["Products","Services","Categories","Units"] as const).map(tab=><button key={tab} className="nx-button nx-secondary" aria-pressed={tab===section} onClick={()=>{setSection(tab);setPage(1);setSearch("")}}>{tab}</button>)}</nav>
-      {section==="Categories"?<CategoriesPage/>:section==="Units"?<UnitSettings canCreate={canCreate} expanded/>:<>
-      <PageHeader title={section} actions={<>
-        <IconButton icon={SlidersHorizontal} label="Filter products" onClick={()=>setFiltersOpen(true)}/>
-        <IconButton icon={RefreshCw} label="Refresh products" disabled={productQuery.isFetching} onClick={()=>void productQuery.refetch()}/>
-        {canCreate && <IconButton icon={Plus} label="New product" className="nx-primary-icon" onClick={openCreateDialog}/>}
-      </>}/>
-      <label className="nx-compact-search">
-        <Search size={18} aria-hidden="true"/>
-        <input type="search" aria-label="Search products" placeholder="Search items or barcode" value={search} onChange={event=>{setSearch(event.target.value);setPage(1)}}/>
-      </label>
-      <FilterSheet open={filtersOpen} onClose={()=>setFiltersOpen(false)}>
-        <label className="block space-y-2"><span>Status</span>
-          <SearchSelect value={activeFilter} onChange={event=>{setActiveFilter(event.target.value as "all"|"active"|"inactive");setPage(1)}} className="nx-input w-full">
-            <option value="all">All products</option><option value="active">Active products</option><option value="inactive">Inactive products</option>
-          </SearchSelect>
-        </label>
-      </FilterSheet>
-
-      {actionError ? (
-        <div
-          className="
-            rounded-xl border
-            border-red-200 bg-red-50
-            px-4 py-3 text-sm
-            text-red-700
-          "
-        >
-          {actionError}
-        </div>
-      ) : null}
-
-      <div
-        className="
-          overflow-hidden rounded-2xl
-          border border-slate-200
-          bg-white shadow-sm
-        "
-      >
-        {productQuery.isPending ? (
-          <div
-            className="
-              flex min-h-72 items-center
-              justify-center text-sm
-              text-slate-500
-            "
-          >
-            Loading products…
-          </div>
-        ) : productQuery.isError ? (
-          <div
-            className="
-              flex min-h-72 flex-col
-              items-center justify-center
-              gap-3 p-6 text-center
-            "
-          >
-            <p
-              className="
-                text-sm font-medium
-                text-red-700
-              "
-            >
-              {productQuery.error.message}
-            </p>
-
-            <button
-              type="button"
-              onClick={() => {
-                void productQuery.refetch();
-              }}
-              className="
-                rounded-lg bg-slate-900
-                px-4 py-2 text-sm
-                font-semibold text-white
-                hover:bg-slate-700
-              "
-            >
-              Try again
-            </button>
-          </div>
-        ) : products.length === 0 ? (
-          <div
-            className="
-              flex min-h-72 flex-col
-              items-center justify-center
-              p-6 text-center
-            "
-          >
-            <Package
-              size={36}
-              className="text-slate-300"
-            />
-
-            <h2
-              className="
-                mt-3 font-semibold
-                text-slate-900
-              "
-            >
-              No products found
-            </h2>
-
-            <p
-              className="
-                mt-1 max-w-md text-sm
-                text-slate-500
-              "
-            >
-              Change the filters or create
-              your first catalog product.
-            </p>
-
-            {canCreate ? (
-              <button title="Create product"
-                type="button"
-                onClick={
-                  openCreateDialog
-                }
-                className="
-                  mt-4 inline-flex
-                  items-center gap-2
-                  rounded-lg bg-blue-600
-                  px-4 py-2 text-sm
-                  font-semibold text-white
-                  hover:bg-blue-700
-                "
-              >
-                <Plus size={16} /><span className="sr-only">Create product</span></button>
-            ) : null}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table role="table"
-              className="nx-mobile-records
-                min-w-full divide-y
-                divide-slate-200
-              "
-            >
-              <thead className="bg-slate-50">
-                <tr>
-                  {[
-                    "SKU",
-                    "Product",
-                    "Category",
-                    "Unit",
-                    "Cost price",
-                    "Selling price",
-                    "Stock quantity",
-                    "Status",
-                    "Actions",
-                  ].map(
-                    (heading) => (
-                      <th
-                        key={heading}
-                        scope="col"
-                        className="
-                          whitespace-nowrap
-                          px-4 py-3 text-left
-                          text-xs font-semibold
-                          uppercase tracking-wide
-                          text-slate-500
-                        "
-                      >
-                        {heading}
-                      </th>
-                    ),
-                  )}
-                </tr>
-              </thead>
-
-              <tbody
-                className="
-                  divide-y divide-slate-100
-                "
-              >
-                {products.map(
-                  (product) => (
-                    <tr
-                      key={product.id}
-                      className="
-                        hover:bg-slate-50
-                      "
-                    >
-                      <td data-label="SKU"
-                        className="
-                          whitespace-nowrap
-                          px-4 py-4 text-sm
-                          font-bold text-slate-900
-                        "
-                      >
-                        {product.sku}
-                      </td>
-
-                      <td data-label="Product"
-                        className="
-                          px-4 py-4 text-sm
-                          text-slate-700
-                        "
-                      >
-                        <p
-                          className="
-                            font-semibold
-                            text-slate-900
-                          "
-                        >
-                          {product.name}{product.item_type!=="service"&&hasPermission(authentication?.role.permissions??[],"products.update")&&<button className="ml-2 text-xs text-emerald-700 underline" onClick={()=>setReorderId(product.id)}>Reorder</button>}<span className="block text-xs font-normal text-slate-500">{product.item_type==="service"?"Service":"Goods"} · HSN/SAC: {product.hsn_code||"Not set"}</span>
-                        </p>
-
-                        <p
-                          className="
-                            mt-0.5 text-xs
-                            text-slate-500
-                          "
-                        >
-                          {product.brand
-                            ??
-                            "No brand"}
-                        </p>
-                      </td>
-
-                      <td data-label="Category"
-                        className="
-                          px-4 py-4 text-sm
-                          text-slate-700
-                        "
-                      >
-                        {product.category.name}
-                      </td>
-
-                      <td data-label="Unit"
-                        className="
-                          whitespace-nowrap
-                          px-4 py-4 text-sm
-                          text-slate-600
-                        "
-                      >
-                        {product.unit}
-                      </td>
-
-                      <td data-label="Cost price"
-                        className="
-                          whitespace-nowrap
-                          px-4 py-4 text-sm
-                          text-slate-700
-                        "
-                      >
-                        {
-                          product.cost_price == null ? "Restricted" : formatCurrency(product.cost_price)
-                        }
-                      </td>
-
-                      <td data-label="Selling price"
-                        className="
-                          whitespace-nowrap
-                          px-4 py-4 text-sm
-                          font-semibold
-                          text-slate-900
-                        "
-                      >
-                        {
-                          formatCurrency(
-                            product
-                              .selling_price,
-                          )
-                        }
-                      </td>
-
-                      <td data-label="Stock quantity" className="whitespace-nowrap px-4 py-4 text-sm"><span className={Number(stockQuery.data?.quantities[product.id]??0)<0?'font-semibold text-red-700':''}>{product.item_type==='service'?'—':hasPermission(permissions,'inventory.read')?(stockQuery.data?.quantities[product.id]??(stockQuery.error?'Unavailable':'…')):'Restricted'}</span></td>
-                      <td data-label="Status"
-                        className="
-                          whitespace-nowrap
-                          px-4 py-4
-                        "
-                      >
-                        <span
-                          className={`
-                            inline-flex rounded-full
-                            border px-2.5 py-1
-                            text-xs font-semibold
-                            ${
-                              product.is_active
-                                ? (
-                                  "border-emerald-200 "
-                                  +
-                                  "bg-emerald-50 "
-                                  +
-                                  "text-emerald-700"
-                                )
-                                : (
-                                  "border-slate-200 "
-                                  +
-                                  "bg-slate-100 "
-                                  +
-                                  "text-slate-600"
-                                )
-                            }
-                          `}
-                        >
-                          {
-                            product.is_active
-                              ? "Active"
-                              : "Inactive"
-                          }
-                        </span>
-                      </td>
-
-                      <td data-label="Actions"
-                        className="
-                          whitespace-nowrap
-                          px-4 py-4
-                        "
-                      >
-                        <div
-                          className="
-                            flex items-center gap-2
-                          "
-                        >
-                          {canUpdate
-                          && product.is_active ? (
-                            <button
-                              type="button"
-                              title="Edit product"
-                              aria-label={
-                                `Edit ${product.name}`
-                              }
-                              disabled={
-                                actionPending
-                              }
-                              onClick={() => {
-                                openEditDialog(
-                                  product.id,
-                                );
-                              }}
-                              className="
-                                rounded-lg border
-                                border-slate-300
-                                bg-white p-2
-                                text-slate-600
-                                hover:bg-slate-50
-                                hover:text-blue-700
-                                disabled:opacity-40
-                              "
-                            >
-                              <Pencil size={16} />
-                            </button>
-                          ) : null}
-
-                          {canUpdate
-                          && !product.is_active ? (
-                            <button
-                              type="button"
-                              title="Activate product"
-                              aria-label={
-                                `Activate ${product.name}`
-                              }
-                              disabled={
-                                actionPending
-                              }
-                              onClick={() => {
-                                void activate(
-                                  product,
-                                );
-                              }}
-                              className="
-                                rounded-lg border
-                                border-emerald-200
-                                bg-emerald-50 p-2
-                                text-emerald-700
-                                hover:bg-emerald-100
-                                disabled:opacity-40
-                              "
-                            >
-                              <Power size={16} />
-                            </button>
-                          ) : null}
-
-                          {canDelete
-                          && product.is_active ? (
-                            <button
-                              type="button"
-                              title="Deactivate product"
-                              aria-label={
-                                `Deactivate ${product.name}`
-                              }
-                              disabled={
-                                actionPending
-                              }
-                              onClick={() => {
-                                void deactivate(
-                                  product,
-                                );
-                              }}
-                              className="
-                                rounded-lg border
-                                border-red-200
-                                bg-red-50 p-2
-                                text-red-700
-                                hover:bg-red-100
-                                disabled:opacity-40
-                              "
-                            >
-                              <PowerOff size={16} />
-                            </button>
-                          ) : null}
-                        </div>
-                      </td>
-                    </tr>
-                  ),
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {pagination ? (
-          <div
-            className="
-              flex flex-col gap-3
-              border-t border-slate-200
-              px-4 py-3
-              sm:flex-row sm:items-center
-              sm:justify-between
-            "
-          >
-            <p className="text-sm text-slate-600">
-              Page {pagination.page} of{" "}
-              {pagination.total_pages || 1}
-              {" · "}
-              {pagination.total_items} products
-            </p>
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled={
-                  !pagination.has_previous
-                  ||
-                  productQuery.isFetching
-                }
-                onClick={() => {
-                  setPage(
-                    (current) =>
-                      Math.max(
-                        1,
-                        current - 1,
-                      ),
-                  );
-                }}
-                className="
-                  rounded-lg border
-                  border-slate-300 bg-white
-                  px-3 py-1.5 text-sm
-                  font-semibold text-slate-700
-                  hover:bg-slate-50
-                  disabled:opacity-40
-                "
-              >
-                Previous
-              </button>
-
-              <button
-                type="button"
-                disabled={
-                  !pagination.has_next
-                  ||
-                  productQuery.isFetching
-                }
-                onClick={() => {
-                  setPage(
-                    (current) =>
-                      current + 1,
-                  );
-                }}
-                className="
-                  rounded-lg border
-                  border-slate-300 bg-white
-                  px-3 py-1.5 text-sm
-                  font-semibold text-slate-700
-                  hover:bg-slate-50
-                  disabled:opacity-40
-                "
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        ) : null}
+      <div className="nxl-screen">
+        {tabs}
+        {section === "Categories" ? <CategoriesPage /> : <UnitSettings canCreate={canCreate} expanded />}
       </div>
+    );
+  }
 
-      {reorderId&&<ReorderLevel productId={reorderId} onClose={()=>setReorderId(null)}/>}
-      <ProductDialog defaultType={section==="Services"?"service":"goods"}
-        open={
-          productDialogOpen
-        }
-        productId={
-          editingProductId
-        }
-        onClose={() => {
-          setProductDialogOpen(
-            false,
-          );
+  const openCreate = () => { setEditingId(null); setDialogOpen(true); };
+  const noun = goods ? "product" : "service";
 
-          setEditingProductId(
-            null,
-          );
-        }}
-      />
-    </>}</section>
+  async function toggleActive(p: ProductSummary) {
+    const on = !p.is_active;
+    const ok = await confirmAction(on ? `Activate ${p.name}?\n\nIt becomes available for billing and stock again.` : `Deactivate ${p.name}?\n\nIt stays in past records but can't be billed.`);
+    if (!ok) return;
+    try {
+      await (on ? activate : deactivate).mutateAsync(p.id);
+      notify(`${p.name} ${on ? "activated" : "deactivated"}.`);
+    } catch (e) {
+      notify(e instanceof Error ? e.message : `Unable to ${on ? "activate" : "deactivate"} ${noun}.`, "error");
+    }
+  }
+
+  function rowActions(p: ProductSummary): ListAction[] {
+    const a: ListAction[] = [];
+    if (goods && canUpdate && p.is_active) a.push({ icon: BellRing, label: `Reorder level for ${p.name}`, onClick: () => setReorderId(p.id) });
+    if (goods && canSeeStock) a.push({ icon: History, label: `Stock history ${p.name}`, onClick: () => router.push(`/stock-movements?product_id=${p.id}`) });
+    if (canUpdate && p.is_active) a.push({ icon: Pencil, label: `Edit ${p.name}`, onClick: () => { setEditingId(p.id); setDialogOpen(true); } });
+    if (canUpdate) a.push({ icon: p.is_active ? PowerOff : Power, label: `${p.is_active ? "Deactivate" : "Activate"} ${p.name}`, disabled: activate.isPending || deactivate.isPending, onClick: () => void toggleActive(p) });
+    return a;
+  }
+
+  function exportCsv() {
+    void downloadCsv(`NexEase-${goods ? "products" : "services"}-page-${page}`, products, [
+      { header: "SKU", value: (p) => p.sku },
+      { header: "Name", value: (p) => p.name },
+      { header: "Category", value: (p) => p.category?.name },
+      { header: "HSN/SAC", value: (p) => p.hsn_code },
+      { header: "Unit", value: (p) => p.unit },
+      { header: "Cost price", value: (p) => p.cost_price },
+      { header: "Selling price", value: (p) => p.selling_price },
+      ...(goods ? [{ header: "In stock", value: (p: ProductSummary) => stock.data?.quantities[p.id] ?? "" }] : []),
+      { header: "Barcode", value: (p) => p.barcode },
+      { header: "Status", value: (p) => (p.is_active ? "Active" : "Inactive") },
+    ]).catch((e: unknown) => notify(e instanceof Error ? e.message : "Export failed.", "error"));
+  }
+
+  const filtered = Boolean(search || active);
+  return (
+    <>
+      <ListScreen
+        title={goods ? "Products" : "Services"}
+        primary={canCreate ? { label: `New ${noun}`, icon: Plus, onClick: openCreate } : null}
+        actions={[{ icon: FileSpreadsheet, label: "Export this page to CSV", onClick: exportCsv, disabled: !products.length }]}
+        onRefresh={() => void query.refetch()}
+        refreshing={query.isFetching}
+        search={{ value: searchInput, onChange: (v) => { setSearchInput(v); setPage(1); }, placeholder: goods ? "Search name, SKU, brand or barcode" : "Search services", label: "Search products" }}
+        chips={{ options: chips, value: active, label: "Filter by status", onChange: (v) => { setActive(v); setPage(1); } }}
+        above={tabs}
+        footer={<Pager pagination={query.data?.pagination} noun={goods ? "products" : "services"} onPage={setPage} />}
+      >
+        <ListState loading={query.isPending} error={query.error} onRetry={() => void query.refetch()} isEmpty={!products.length} emptyIcon={Package}
+          emptyTitle={filtered ? `No ${noun}s match` : `No ${noun}s yet`} emptyDescription={filtered ? "Try a different search or filter." : goods ? "Add the items you buy and sell." : "Add the services you bill for."}
+          emptyAction={canCreate && !filtered ? <button type="button" className="nx-button" onClick={openCreate}><Plus size={16} />New {noun}</button> : null}>
+          <CompactList label={goods ? "Products" : "Services"} columns={[{ label: goods ? "Product" : "Service" }, { label: "Category" }, { label: goods ? "In stock" : "HSN/SAC" }, { label: "Selling price" }]}>
+            {products.map((p) => {
+              const inStock = stock.data?.quantities[p.id];
+              const out = goods && inStock !== undefined && Number(inStock) <= 0;
+              return (
+                <CompactRow
+                  key={p.id}
+                  openLabel={canUpdate && p.is_active ? `Open ${p.name}` : undefined}
+                  onOpen={canUpdate && p.is_active ? () => { setEditingId(p.id); setDialogOpen(true); } : undefined}
+                  title={p.name}
+                  subtitle={[p.sku, goods && inStock !== undefined ? `${Number(inStock).toLocaleString("en-IN", { maximumFractionDigits: 2 })} ${p.unit} in stock` : p.unit, p.hsn_code ? `HSN ${p.hsn_code}` : ""].filter(Boolean).join(" · ")}
+                  meta={[p.category?.name ?? "—", goods ? (inStock !== undefined ? `${Number(inStock).toLocaleString("en-IN")} ${p.unit}` : "—") : (p.hsn_code || "—")]}
+                  amount={formatMoney(p.selling_price)}
+                  amountHint={Number(p.cost_price) ? `cost ${formatMoney(p.cost_price)}` : undefined}
+                  badge={!p.is_active ? <Badge tone="neutral">Inactive</Badge> : out ? <Badge tone="danger">Out of stock</Badge> : lowIds.has(p.id) ? <Badge tone="warning">Low stock</Badge> : undefined}
+                  actions={rowActions(p)}
+                />
+              );
+            })}
+          </CompactList>
+        </ListState>
+      </ListScreen>
+
+      <ProductDialog defaultType={goods ? "goods" : "service"} open={dialogOpen} productId={editingId} onClose={() => { setDialogOpen(false); setEditingId(null); }} />
+      {reorderId ? <ReorderLevel productId={reorderId} onClose={() => { setReorderId(null); void insights.refetch(); }} /> : null}
+    </>
   );
 }
