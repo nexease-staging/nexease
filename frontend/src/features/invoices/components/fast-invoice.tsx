@@ -8,6 +8,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {discountedPayload,previewDiscount,discountAmount} from "../discount";
+import {directInvoiceProblem} from "../direct-invoice-rules";
 import DiscountMode from "./discount-mode";
 import { Check, ChevronLeft, Eye, FilePlus2, MessageCircle, Minus, Plus, Trash2 } from "lucide-react";
 
@@ -151,6 +152,8 @@ export default function FastInvoice({
     if (filled.some((l) => num(l.quantity) <= 0)) return "Every item needs a quantity above zero.";
     if (filled.some((l) => num(l.unit_price) < 0 || previewDiscount(l) < 0)) return "Rate and discount cannot be negative.";
     try { filled.forEach(discountAmount); } catch(error) { return (error as Error).message; }
+    const serverRule = directInvoiceProblem(filled, date, due);
+    if (serverRule) return serverRule;
     if (supply === "taxable" && !/^\d{2}$/.test(placeOfSupply.trim())) {
       return "Enter the 2-digit state code for place of supply, e.g. 27.";
     }

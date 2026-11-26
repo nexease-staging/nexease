@@ -2,8 +2,14 @@
 import PasswordInput from "@/components/password-input";
 
 import {useState, type FormEvent} from 'react';
-import Link from 'next/link';
+import {Ban, Download, FileText, Plus, RefreshCw, Send, ShieldCheck, Truck, X} from 'lucide-react';
+import {CompactList, CompactRow, ListScreen, ListState, StatusBadge, useDebounced, type ListAction} from '@/components/list/list-kit';
+import {Badge} from '@/components/ui/badge';
+import {confirmAction, notify} from '@/components/nex-feedback';
+import {challanStatus} from '@/features/sales/status';
+import {formatDate} from '@/lib/format';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
+import {useRouter} from 'next/navigation';
 import {apiBinaryRequest, apiRequest} from '@/lib/api/client';
 import {downloadBlob} from '@/lib/browser/download';
 
@@ -27,39 +33,70 @@ function Picker({kind,value,onSelect,label}:{kind:'customers'|'products';value:s
 }
 
 export default function SalesDocuments({mode}:{mode:keyof typeof paths}) {
-  const irp=mode==='einvoice',path=paths[mode], qc=useQueryClient();
+  const irp=mode==='einvoice',path=paths[mode], qc=useQueryClient(), router=useRouter();
   const [invoiceLink]=useState(()=>typeof window==='undefined'?'':new URLSearchParams(window.location.search).get('invoice')||'');
   const [search,setSearch]=useState(irp?invoiceLink:''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
   const [form,setForm]=useState(false),[cancel,setCancel]=useState<Row>(),[reason,setReason]=useState('2'),[remarks,setRemarks]=useState('');
   const [challanReason,setChallanReason]=useState('job_work');
   const [customer,setCustomer]=useState(''),[lines,setLines]=useState([emptyLine()]);
-  const list=useQuery({queryKey:['sales-documents',mode,search],queryFn:async()=>(await apiRequest<Listing>(path+'?search='+encodeURIComponent(search))).data,retry:false});
+  const query=useDebounced(search.trim());
+  const list=useQuery({queryKey:['sales-documents',mode,query],queryFn:async()=>(await apiRequest<Listing>(path+'?search='+encodeURIComponent(query))).data,retry:false});
   const data=list.data;
-  async function send(body:Record<string,unknown>, url=path){
+  async function send(body:Record<string,unknown>, url=path, done='Saved.'){
     setBusy(true);setMessage('');
-    try{await apiRequest(url,{method:'POST',body:{...body,confirm:true}});setMessage('Saved.');setForm(false);setCancel(undefined);setRemarks('');return true;}
+    try{await apiRequest(url,{method:'POST',body:{...body,confirm:true}});notify(done);setForm(false);setCancel(undefined);setRemarks('');return true;}
     catch(e){setMessage(e instanceof Error?e.message:'Request failed.');return false;}
     finally{await qc.invalidateQueries({queryKey:['sales-documents',mode]});setBusy(false);}
   }
   function submit(e:FormEvent<HTMLFormElement>){
     e.preventDefault();const fields=Object.fromEntries(new FormData(e.currentTarget).entries());
-    if(irp){void send({...fields,action:'configure'});return;}
-    if(confirm('Issue this delivery challan? It records movement details without posting stock or accounting entries.')){
-      void send({...fields,customer_id:customer,items:lines}).then(ok=>{if(ok){setCustomer('');setLines([emptyLine()]);}});
+    if(irp){void send({...fields,action:'configure'},path,'IRP credentials saved.');return;}
+    void confirmAction('Issue this delivery challan? It records movement details without posting stock or accounting entries.').then(yes=>{
+      if(yes)void send({...fields,customer_id:customer,items:lines},path,'Delivery challan issued.').then(ok=>{if(ok){setCustomer('');setLines([emptyLine()]);}});
+    });
+  }
+  const [downloading,setDownloading]=useState('');
+  async function pdf(row:Row,url=path+row.id+'/'){
+    setDownloading(row.id);
+    try{const file=await apiBinaryRequest(url);await downloadBlob(file.blob,file.filename||row.number+'.pdf');}
+    catch(e){notify(e instanceof Error?e.message:'Could not download PDF.','error');}
+    finally{setDownloading('');}
+  }
+  async function irpAction(row:Row,action:string){
+    const question=action==='generate'?`Submit ${row.number} to the ${data?.environment==='live'?'LIVE':'TEST'} IRP?`:action==='recover'?`Recover the IRN for ${row.number}?`:`Check the IRP status for ${row.number}?`;
+    if(await confirmAction(question))void send({id:row.id,action},path,action==='generate'?'Submitted to the IRP.':'IRP status updated.');
+  }
+  async function cancelChallan(row:Row){
+    if(await confirmAction(`Cancel delivery challan ${row.number}?`))void send({},path+row.id+'/','Delivery challan cancelled.');
+  }
+  function rowActions(row:Row):ListAction[]{
+    const a:ListAction[]=[];
+    if(!data)return a;
+    if(irp){
+      if(!row.status&&data.can_issue&&data.configured&&row.invoice_status!=='CANCELLED')a.push({icon:Send,label:`Generate IRN for ${row.number}`,disabled:busy,onClick:()=>void irpAction(row,'generate')});
+      if(row.status==='pending'&&data.can_issue)a.push({icon:RefreshCw,label:`Recover IRN for ${row.number}`,disabled:busy,onClick:()=>void irpAction(row,'recover')});
+      if(row.status==='cancel_pending'&&data.can_cancel)a.push({icon:RefreshCw,label:`Check cancellation for ${row.number}`,disabled:busy,onClick:()=>void irpAction(row,'check-cancellation')});
+      a.push({icon:Download,label:`Download invoice PDF ${row.number}`,busy:downloading===row.id,onClick:()=>void pdf(row,`/business/e-invoices/${row.id}/pdf/`)});
+      if(row.status==='registered'&&data.can_cancel)a.push({icon:Ban,label:`Cancel IRN for ${row.number}`,disabled:busy,onClick:()=>setCancel(row)});
+    }else{
+      a.push({icon:Download,label:`Download PDF ${row.number}`,busy:downloading===row.id,onClick:()=>void pdf(row)});
+      if(row.status==='issued'&&data.can_cancel)a.push({icon:Ban,label:`Cancel ${row.number}`,disabled:busy,onClick:()=>void cancelChallan(row)});
     }
+    return a;
   }
-  async function pdf(row:Row){
-    try{const file=await apiBinaryRequest(path+row.id+'/');await downloadBlob(file.blob,file.filename||row.number+'.pdf');}
-    catch(e){setMessage(e instanceof Error?e.message:'Could not download PDF.');}
-  }
-  function irpAction(row:Row,action:string){
-    if(confirm(action==='generate'?`Submit ${row.number} to the ${data?.environment==='live'?'LIVE':'TEST'} IRP?`:`Check the IRP status for ${row.number}?`))void send({id:row.id,action});
-  }
-  return <div className="mx-auto max-w-6xl space-y-5">
-    <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm text-slate-600">Sales</p><h1 className="text-3xl font-semibold">{irp?'GST e-invoices':'Delivery challans'}</h1></div><Link href="/invoices" className="nx-button nx-secondary">Sales invoices</Link>{irp&&<Link href="/e-way-bills" className="nx-button nx-secondary">E-way bills</Link>}</div>
-    <p className="text-slate-600">{irp?'Register issued domestic B2B tax invoices with the IRP. Registered live invoices include the signed QR code on the sales invoice PDF.':'Issue movement documents for goods and download three labelled copies. Stock, invoicing and e-way bills are handled separately.'}</p>
-    {data&&irp&&<p className="nx-panel">{data.environment==='live'?'LIVE IRP':'TEST IRP · not a legal invoice'} · {data.gstin||'Set your GSTIN in Taxation'} · {data.configured?'Credentials saved':'IRP credentials not connected'} {data.can_configure&&<button className="nx-button ml-2" onClick={()=>setForm(!form)}>{form?'Close':'Connect IRP'}</button>}</p>}
-    {data?.can_create&&!irp&&<button className="nx-button" onClick={()=>setForm(!form)}>{form?'Close':'New delivery challan'}</button>}
+  const irnStatus:Record<string,{label:string;tone:'success'|'warning'|'danger'|'neutral'}>={registered:{label:'IRN registered',tone:'success'},pending:{label:'Pending',tone:'warning'},cancel_pending:{label:'Cancelling',tone:'warning'},cancelled:{label:'IRN cancelled',tone:'danger'}};
+  const title=irp?'GST e-invoices':'Delivery challans';
+  const canOpenForm=irp?!!data?.can_configure:!!data?.can_create;
+  const formLabel=irp?(data?.configured?'Update IRP login':'Connect IRP'):'New challan';
+  return <ListScreen
+    title={title}
+    subtitle={irp?'Register B2B tax invoices with the IRP; the signed QR prints on the invoice PDF.':'Movement documents for goods, in three labelled copies. Stock and invoicing are handled separately.'}
+    primary={canOpenForm?{label:form?'Close form':formLabel,icon:form?X:irp?ShieldCheck:Plus,onClick:()=>setForm(!form)}:null}
+    actions={[{icon:FileText,label:'Sales invoices',onClick:()=>router.push('/invoices')},...(irp?[{icon:Truck,label:'E-way bills',onClick:()=>router.push('/e-way-bills')}]:[])]}
+    onRefresh={()=>void list.refetch()} refreshing={list.isFetching}
+    search={{value:search,onChange:setSearch,placeholder:irp?'Search invoice number':'Search challan number'}}
+    above={<>
+    {data&&irp&&<p className="nx-panel flex flex-wrap items-center gap-2 text-sm"><Badge tone={data.environment==='live'?'success':'warning'}>{data.environment==='live'?'LIVE IRP':'TEST IRP · not a legal invoice'}</Badge><span>{data.gstin||'Set your GSTIN in Taxation'}</span><span className="nx-muted">· {data.configured?'Credentials saved':'IRP credentials not connected'}</span></p>}
     {form&&<form onSubmit={submit} className="nx-panel space-y-4">
       {irp?<><h2 className="text-xl font-semibold">Connect this workspace’s GSTIN</h2><p>Use dedicated IRP API credentials for Quicko GSP. The password is encrypted on the server.</p><div className="grid gap-3 sm:grid-cols-2">
         <label>IRP API username<input required className={input} name="username" maxLength={100}/></label><label>IRP API password<PasswordInput required className={input} name="password" type="password" autoComplete="new-password" maxLength={200}/></label>
@@ -80,24 +117,23 @@ export default function SalesDocuments({mode}:{mode:keyof typeof paths}) {
         <button type="button" className="nx-button nx-secondary" disabled={lines.length>=50} onClick={()=>setLines(v=>[...v,emptyLine()])}>Add goods line</button></>}
       <button className="nx-button ml-2" disabled={busy}>{irp?'Save IRP credentials':'Issue challan'}</button>
     </form>}
-    {cancel&&<form className="nx-panel flex flex-wrap items-end gap-3" onSubmit={e=>{e.preventDefault();if(confirm(`Cancel the IRN for ${cancel.number}?`))void send({id:cancel.id,action:'cancel',reason,remarks});}}>
+    {cancel&&<form className="nx-panel flex flex-wrap items-end gap-3" onSubmit={e=>{e.preventDefault();void confirmAction(`Cancel the IRN for ${cancel.number}? This cannot be undone.`).then(yes=>{if(yes)void send({id:cancel.id,action:'cancel',reason,remarks},path,'IRN cancellation submitted.');});}}>
       <label>IRP cancellation reason<select className={input} value={reason} onChange={e=>setReason(e.target.value)}>{['Duplicate','Data entry mistake','Order cancelled','Other'].map((v,i)=><option key={v} value={i+1}>{v}</option>)}</select></label>
       <label>Remarks<input required className={input} minLength={3} maxLength={100} value={remarks} onChange={e=>setRemarks(e.target.value)}/></label><button className="nx-button" disabled={busy}>Confirm IRP cancellation</button><button type="button" className="nx-button nx-secondary" onClick={()=>setCancel(undefined)}>Back</button>
     </form>}
-    {message&&<p role="status" className="nx-panel">{message}</p>}
-    <label>Search documents<input className={input} value={search} onChange={e=>setSearch(e.target.value)} placeholder="Document number"/></label>
-    {list.isLoading&&<p role="status">Loading…</p>}
-    {list.isError&&<p role="alert">{list.error.message}</p>}
-    {data&&<div className="overflow-x-auto nx-panel"><table className="nx-mobile-records nx-financial-records w-full text-left text-sm"><thead><tr>{['Number / date','Customer','Status','Actions'].map(x=><th key={x} className="p-2">{x}</th>)}</tr></thead><tbody>
-      {data.records.map(row=><tr className="border-t" key={row.id}><td data-label="Number / date" className="p-2">{row.number}<br/>{row.date}{row.invoice_number&&<><br/>Invoice: {row.invoice_number}</>}</td><td data-label="Customer" className="p-2">{row.customer||row.customer_name}</td><td data-label="Status" className="p-2">{row.status?.replaceAll('_',' ')||'Not submitted'}{row.irn&&<div className="max-w-56 break-all">IRN: {row.irn}<br/>Ack: {row.ack_no} {row.ack_date}</div>}</td>
-      <td data-label="Actions" className="p-2"><div className="flex flex-wrap gap-2">
-        {irp?<>{!row.status&&data.can_issue&&data.configured&&row.invoice_status!=='CANCELLED'&&<button className="nx-button" disabled={busy} onClick={()=>irpAction(row,'generate')}>Generate IRN</button>}
-        {row.status==='pending'&&data.can_issue&&<button className="nx-button" disabled={busy} onClick={()=>irpAction(row,'recover')}>Recover IRN</button>}
-        {row.status==='registered'&&data.can_cancel&&<button className="nx-button nx-secondary" disabled={busy} onClick={()=>setCancel(row)}>Cancel IRN</button>}
-        {row.status==='cancel_pending'&&data.can_cancel&&<button className="nx-button" disabled={busy} onClick={()=>irpAction(row,'check-cancellation')}>Check cancellation</button>}
-        <button className="nx-button nx-secondary" onClick={()=>void apiBinaryRequest(`/business/e-invoices/${row.id}/pdf/`).then(f=>downloadBlob(f.blob,f.filename||row.number+'.pdf')).catch(e=>setMessage(e.message))}>Invoice PDF</button></>:
-        <><button className="nx-button" onClick={()=>void pdf(row)}>Download PDF</button>{row.status==='issued'&&data.can_cancel&&<button className="nx-button nx-secondary" disabled={busy} onClick={()=>{if(confirm(`Cancel ${row.number}?`))void send({},path+row.id+'/');}}>Cancel</button>}</>}
-      </div></td></tr>)}
-    </tbody></table>{!data.records.length&&<p className="p-3">No matching documents.</p>}</div>}
-  </div>;
+    {message&&<p role="alert" className="nx-panel" style={{color:'var(--nx-danger-fg)'}}>{message}</p>}
+    </>}>
+    <ListState loading={list.isLoading} error={list.error} onRetry={()=>void list.refetch()} isEmpty={!data?.records.length}
+      emptyIcon={irp?ShieldCheck:Truck} emptyTitle={query?'No matching documents':irp?'No invoices to register yet':'No delivery challans yet'}
+      emptyDescription={query?'Try a different number.':irp?'Issued domestic B2B invoices appear here for IRN generation.':'Issue a challan when goods move without a sale, such as job work.'}>
+      <CompactList label={title} columns={[{label:irp?'Customer / invoice':'Consignee / challan'},{label:irp?'IRN':'Linked invoice'},{label:'Status'}]}>
+        {(data?.records??[]).map(row=><CompactRow key={row.id}
+          title={row.customer||row.customer_name||'—'}
+          subtitle={`${row.number} · ${formatDate(row.date)}`}
+          meta={[irp?(row.irn?<span key="irn" title={row.irn}>{row.irn.slice(0,16)}… · Ack {row.ack_no}</span>:'—'):(row.invoice_number||'—')]}
+          badge={irp?<Badge tone={irnStatus[row.status??'']?.tone??'neutral'}>{irnStatus[row.status??'']?.label??'Not submitted'}</Badge>:<StatusBadge status={row.status??'issued'} map={challanStatus}/>}
+          actions={rowActions(row)}/>)}
+      </CompactList>
+    </ListState>
+  </ListScreen>;
 }
