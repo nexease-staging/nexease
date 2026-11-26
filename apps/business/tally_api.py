@@ -569,19 +569,14 @@ def _bill_outstanding(vouchers, ledger):
     return sorted(out, key=lambda b: b["date"])
 
 
-@api_login_required
-@require_http_methods(["GET"])
-def party_detail(request, guid):
-    org_id, company_name, err = _guard(request)
-    if err:
-        return err
+def ledger_statement(org_id, company_name, guid, start, end):
+    """One Tally ledger: details, running statement for [start, end] and its open bills. None if unknown."""
     led = ts.db().tally_objects.find_one({"org_id": org_id, "company": company_name, "kind": "ledger", "guid": guid})
     if not led:
-        return R.not_found(message="Ledger not found.", request=request)
+        return None
     name = led["name"]
     d = led.get("data") or {}
     tmap, _ = _type_map(org_id, company_name)
-    start, end = _range(request, default_days=365)
     vouchers = list(ts.db().tally_objects.find(_vq(org_id, company_name, {"data.entries.ledger": name})).sort([("data.date", 1), ("alter_id", 1)]))
     balance = dec(d.get("opening"))
     rows = []
@@ -601,11 +596,24 @@ def party_detail(request, guid):
         particulars = others[0]["ledger"] if others else ""
         rows.append({**_vrow(o, tmap), "particulars": particulars, "debit": f2(amt if amt > 0 else 0), "credit": f2(-amt if amt < 0 else 0), "balance": f2(balance)})
     opening_in_range = balance if opening_in_range is None else opening_in_range
-    groups = _group_map(org_id, company_name)
-    code = tx.primary_group(d.get("parent", ""), groups)
-    data = {"guid": guid, "name": name, "group": code, "parent": d.get("parent", ""), "gstin": d.get("gstin", ""), "phone": d.get("phone", ""), "email": d.get("email", ""),
+    code = tx.primary_group(d.get("parent", ""), _group_map(org_id, company_name))
+    return {"guid": guid, "name": name, "group": code, "parent": d.get("parent", ""), "gstin": d.get("gstin", ""), "phone": d.get("phone", ""), "email": d.get("email", ""),
             "address": d.get("address", ""), "state": d.get("state", ""), "credit_days": d.get("credit_days", ""), "closing": f2(d.get("closing")),
-            "opening": f2(opening_in_range), "from": start, "to": end, "rows": rows, "bills": _bill_outstanding(vouchers, name)}
+            "opening": f2(opening_in_range), "period_closing": f2(balance if rows else opening_in_range), "from": start, "to": end, "rows": rows,
+            "bills": _bill_outstanding(vouchers, name), "company": company_name}
+
+
+@api_login_required
+@require_http_methods(["GET"])
+def party_detail(request, guid):
+    org_id, company_name, err = _guard(request)
+    if err:
+        return err
+    start, end = _range(request, default_days=365)
+    data = ledger_statement(org_id, company_name, guid, start, end)
+    if not data:
+        return R.not_found(message="Ledger not found.", request=request)
+    rows, name = data["rows"], data["name"]
     if request.GET.get("export") == "xlsx":
         return workbook_response({"Statement": [["Date", "Type", "Number", "Particulars", "Debit", "Credit", "Balance"], ["", "", "", "Opening balance", "", "", data["opening"]]]
                                   + [[r["date"], r["type"], r["number"], r["particulars"] or r["narration"], r["debit"], r["credit"], r["balance"]] for r in rows],

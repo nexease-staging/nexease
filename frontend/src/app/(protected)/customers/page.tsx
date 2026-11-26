@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FileSpreadsheet, MessageCircle, Pencil, Phone, Plus, Power, PowerOff, Users } from "lucide-react";
+import { FileSpreadsheet, FileText, MessageCircle, Pencil, Phone, Plus, Power, PowerOff, Users } from "lucide-react";
 import { CompactList, CompactRow, ListScreen, ListState, Pager, useDebounced, type ListAction } from "@/components/list/list-kit";
 import { Badge } from "@/components/ui/badge";
 import EmptyState from "@/components/ui/empty-state";
@@ -13,6 +13,7 @@ import type { CustomerSummary } from "@/features/customers/types";
 import { hasPermission } from "@/lib/authorization/permissions";
 import { downloadCsv } from "@/lib/export-csv";
 import { whatsappNumber } from "@/lib/phone";
+import { openShare } from "@/features/share/api";
 
 type ActiveFilter = "" | "active" | "inactive";
 const chips: Array<{ value: ActiveFilter; label: string }> = [
@@ -71,6 +72,7 @@ export default function CustomersPage() {
     const wa = whatsappNumber(phone);
     if (phone) actions.push({ icon: Phone, label: `Call ${c.name}`, onClick: () => { window.location.href = `tel:${phone.replace(/[^\d+]/g, "")}`; } });
     if (wa) actions.push({ icon: MessageCircle, label: `WhatsApp ${c.name}`, onClick: () => window.open(`https://wa.me/${wa}`, "_blank", "noopener,noreferrer") });
+    actions.push({ icon: FileText, label: `Share statement of ${c.name}`, onClick: () => openShare({ kind: "statement", id: c.id, side: "customer", title: c.name }) });
     if (canUpdate && c.is_active) actions.push({ icon: Pencil, label: `Edit ${c.name}`, disabled: pending, onClick: () => openEdit(c.id) });
     if (canUpdate) actions.push({ icon: c.is_active ? PowerOff : Power, label: `${c.is_active ? "Deactivate" : "Activate"} ${c.name}`, disabled: pending, onClick: () => void toggleActive(c) });
     return actions;
