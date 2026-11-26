@@ -11,6 +11,7 @@ from . import workforce
 from . import billing
 from .purchase_entry import quick_purchase
 from .taxation import gst_report
+from . import gst_compliance
 from .direct_entry import direct_invoice
 from . import inventory_insights
 from . import payments_hub
@@ -45,6 +46,13 @@ urlpatterns[:0] = [
     path("sales-reports/", sales_report),
     path("e-way-bills/", eway_bills),
     path("e-invoices/", einvoices),
+    # GST compliance: IMS inbox, GSTR-2B reconciliation, GSTR-1 / GSTR-3B
+    path("gst/overview/", gst_compliance.overview),
+    path("gst/ims/", gst_compliance.ims),
+    path("gst/ims/action/", gst_compliance.ims_action),
+    path("gst/ims/link/", gst_compliance.link_bill),
+    path("gst/ims/template/", gst_compliance.template),
+    path("gst/returns/<str:form>/", gst_compliance.returns),
     path("e-invoices/<str:invoice_id>/pdf/", einvoice_pdf),
     path("delivery-challans/", challans),
     path("delivery-challans/<str:doc_id>/", challans),
