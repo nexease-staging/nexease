@@ -28,6 +28,7 @@ import { formatCompactMoney, formatDate, formatMoney, isInvoiceOverdue } from "@
 const tabs = statusChips(invoiceStatus);
 
 export default function InvoicesView() {
+  const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -45,7 +46,7 @@ export default function InvoicesView() {
   const [status, setStatus] = useState<InvoiceStatus | "">("");
   const [customerId, setCustomerId] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
-  const [detailId, setDetailId] = useState<string | null>(() => (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("view")));
+  const [detailId, setDetailId] = useState<string | null>(() => (searchParams.get("view")));
   const [paying, setPaying] = useState<InvoiceSummary | null>(null);
   const docs = useDocumentRowActions();
 

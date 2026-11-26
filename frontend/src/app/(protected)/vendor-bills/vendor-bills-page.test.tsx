@@ -10,6 +10,7 @@ vi.mock("@/features/documents/components/document-row-actions", () => ({ useDocu
 vi.mock("@/features/vendor-bills/components/vendor-bill-detail-dialog", () => ({ default: () => null }));
 vi.mock("@/features/vendor-bills/components/vendor-bill-dialog", () => ({ default: () => null }));
 vi.mock("@/features/vendor-bills/components/vendor-bill-payment-dialog", () => ({ default: ({ open, vendorBill }: { open: boolean; vendorBill: { bill_number: string } | null }) => (open ? <div role="dialog">Paying {vendorBill?.bill_number}</div> : null) }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }), useSearchParams: () => new URLSearchParams() }));
 vi.mock("@/features/vendor-bills/hooks", () => ({ useVendorBillList: vi.fn(), useVendorBill: vi.fn() }));
 
 const supplier = { id: "s1", code: "SUP-1", name: "Om Cement Depot", email: null, phone: null, gstin: null, city: null, state: null, country: null, is_active: true };

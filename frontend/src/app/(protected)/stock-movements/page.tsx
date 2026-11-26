@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { ArrowDownUp, FileSpreadsheet, X } from "lucide-react";
 import { CompactList, CompactRow, ListScreen, ListState, Pager, useDebounced } from "@/components/list/list-kit";
 import { Badge, type Tone } from "@/components/ui/badge";
@@ -23,10 +24,11 @@ const signed = (value: string, direction: number) => {
   return direction > 0 ? `+${text}` : direction < 0 ? `−${text}` : text;
 };
 
-export default function StockMovementsPage() {
+function StockMovementsPageContent() {
+  const searchParams = useSearchParams();
   const { authentication } = useAuth();
   const canRead = hasPermission(authentication?.role.permissions ?? [], "inventory.read");
-  const [productId, setProductId] = useState(() => (typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("product_id") ?? ""));
+  const [productId, setProductId] = useState(() => (searchParams.get("product_id") ?? ""));
   const [searchInput, setSearchInput] = useState("");
   const search = useDebounced(searchInput.trim());
   const [warehouseId, setWarehouseId] = useState("");
@@ -115,5 +117,14 @@ export default function StockMovementsPage() {
         <button type="button" className="nx-button nx-secondary" onClick={() => { setWarehouseId(""); setMovementType(""); setSearchInput(""); setPage(1); }}>Clear filters</button>
       </FilterSheet>
     </>
+  );
+}
+
+// useSearchParams needs a Suspense boundary for the static export used by the mobile build.
+export default function StockMovementsPage() {
+  return (
+    <Suspense fallback={null}>
+      <StockMovementsPageContent />
+    </Suspense>
   );
 }

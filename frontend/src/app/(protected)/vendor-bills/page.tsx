@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { AlertTriangle, Banknote, FileSpreadsheet, Plus, ReceiptText, Zap } from "lucide-react";
 import { CompactList, CompactRow, ListScreen, ListState, Pager, StatusBadge, useDebounced } from "@/components/list/list-kit";
 import { Badge } from "@/components/ui/badge";
@@ -47,7 +48,8 @@ function PayBill({ billId, onClose }: { billId: string; onClose: () => void }) {
   return <VendorBillPaymentDialog open={Boolean(bill.data)} vendorBill={bill.data ?? null} onClose={onClose} onRecorded={onClose} />;
 }
 
-export default function VendorBillsPage() {
+function VendorBillsPageContent() {
+  const searchParams = useSearchParams();
   const { authentication } = useAuth();
   const permissions = authentication?.role.permissions ?? [];
   const canRead = hasPermission(permissions, "bills.read");
@@ -63,7 +65,7 @@ export default function VendorBillsPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
-  const [detailId, setDetailId] = useState<string | null>(() => (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("view")));
+  const [detailId, setDetailId] = useState<string | null>(() => (searchParams.get("view")));
   const [payingId, setPayingId] = useState<string | null>(null);
   const docs = useDocumentRowActions();
 
@@ -174,5 +176,14 @@ export default function VendorBillsPage() {
       <VendorBillDialog open={createOpen} onClose={() => setCreateOpen(false)} onCreated={(id) => { setCreateOpen(false); setDetailId(id); }} />
       <VendorBillDetailDialog open={detailId !== null} billId={detailId ?? ""} onClose={() => setDetailId(null)} />
     </>
+  );
+}
+
+// useSearchParams needs a Suspense boundary for the static export used by the mobile build.
+export default function VendorBillsPage() {
+  return (
+    <Suspense fallback={null}>
+      <VendorBillsPageContent />
+    </Suspense>
   );
 }

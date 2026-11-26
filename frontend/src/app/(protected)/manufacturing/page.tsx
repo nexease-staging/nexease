@@ -1,5 +1,6 @@
 "use client";
-import { useRef, useState } from "react";
+import { useRef, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { exportWorkbook } from "@/features/business/workspace";
 import Link from "next/link";
@@ -158,7 +159,8 @@ function useOptions(path: string, key: string, enabled: boolean) {
         .data[key],
   });
 }
-export default function Manufacturing() {
+function ManufacturingContent() {
+  const searchParams = useSearchParams();
   const cache = useQueryClient(),
     { authentication } = useAuth();
   const can = (p: string) =>
@@ -169,7 +171,7 @@ export default function Manufacturing() {
       sales_order:
         typeof window === "undefined"
           ? ""
-          : new URLSearchParams(window.location.search).get("sales_order") ||
+          : searchParams.get("sales_order") ||
             "",
       search: "",
       status: "",
@@ -799,5 +801,14 @@ export default function Manufacturing() {
         </>
       )}
     </section>
+  );
+}
+
+// useSearchParams needs a Suspense boundary for the static export used by the mobile build.
+export default function Manufacturing() {
+  return (
+    <Suspense fallback={null}>
+      <ManufacturingContent />
+    </Suspense>
   );
 }

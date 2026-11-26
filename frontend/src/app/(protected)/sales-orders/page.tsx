@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { FileSpreadsheet, Plus, ShoppingCart } from "lucide-react";
@@ -26,7 +27,8 @@ import { formatDate, formatMoney } from "@/lib/format";
 
 const tabs = statusChips(salesOrderStatus);
 
-export default function SalesOrdersPage() {
+function SalesOrdersPageContent() {
+  const searchParams = useSearchParams();
   const { authentication } = useAuth();
   const permissions = authentication?.role.permissions ?? [];
   const canRead = hasPermission(permissions, "sales_orders.read");
@@ -42,7 +44,7 @@ export default function SalesOrdersPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [detailId, setDetailId] = useState<string | null>(() => (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("view")));
+  const [detailId, setDetailId] = useState<string | null>(() => (searchParams.get("view")));
   const [fulfillmentId, setFulfillmentId] = useState<string | null>(null);
   const docs = useDocumentRowActions();
 
@@ -166,5 +168,14 @@ export default function SalesOrdersPage() {
       />
       <SalesOrderFulfillmentDialog open={Boolean(fulfillmentId)} salesOrderId={fulfillmentId} onClose={() => setFulfillmentId(null)} />
     </>
+  );
+}
+
+// useSearchParams needs a Suspense boundary for the static export used by the mobile build.
+export default function SalesOrdersPage() {
+  return (
+    <Suspense fallback={null}>
+      <SalesOrdersPageContent />
+    </Suspense>
   );
 }

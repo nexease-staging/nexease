@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { ClipboardList, FileSpreadsheet, Plus, Zap } from "lucide-react";
 import { CompactList, CompactRow, ListScreen, ListState, Pager, StatusBadge, useDebounced } from "@/components/list/list-kit";
 import EmptyState from "@/components/ui/empty-state";
@@ -31,7 +32,8 @@ const sorts = [
   ["po_number", "PO number"],
 ] as const;
 
-export default function PurchaseOrdersPage() {
+function PurchaseOrdersPageContent() {
+  const searchParams = useSearchParams();
   const { authentication } = useAuth();
   const permissions = authentication?.role.permissions ?? [];
   const canRead = hasPermission(permissions, "purchase_orders.read");
@@ -47,7 +49,7 @@ export default function PurchaseOrdersPage() {
   const [quickOpen, setQuickOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [detailId, setDetailId] = useState<string | null>(() => (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("view")));
+  const [detailId, setDetailId] = useState<string | null>(() => (searchParams.get("view")));
   const docs = useDocumentRowActions();
 
   const query = usePurchaseOrderList({ page, page_size: 25, supplier_id: supplierId || undefined, status: status || undefined, search: search || undefined, sort });
@@ -154,5 +156,14 @@ export default function PurchaseOrdersPage() {
         onEdit={(po) => { setDetailId(null); setEditingId(po.id); setFormOpen(true); }}
       />
     </>
+  );
+}
+
+// useSearchParams needs a Suspense boundary for the static export used by the mobile build.
+export default function PurchaseOrdersPage() {
+  return (
+    <Suspense fallback={null}>
+      <PurchaseOrdersPageContent />
+    </Suspense>
   );
 }
