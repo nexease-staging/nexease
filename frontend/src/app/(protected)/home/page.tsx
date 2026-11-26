@@ -1,2 +1,5 @@
-import {EasyHome} from "@/components/mobile/easy-workspace";
-export default EasyHome;
+import MobileHome from "@/features/mobile/mobile-home";
+
+export default function HomePage() {
+  return <MobileHome />;
+}

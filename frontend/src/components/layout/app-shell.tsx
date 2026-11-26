@@ -9,6 +9,7 @@ import {EasyNav} from "@/components/mobile/easy-workspace";
 import NexFeedback from "@/components/nex-feedback";
 import PlanAccessGate from "@/features/saas/plan-access-gate";
 import Assistant from "@/features/saas/assistant";
+import QuickActionHost from "@/features/mobile/quick-actions";
 
 import CommandPalette from "@/components/layout/command-palette";
 import RequireAuth from "@/features/auth/components/require-auth";
@@ -76,7 +77,7 @@ export default function AppShell({
           </main><div className="md:hidden"><EasyNav/></div>
         </div>
       </div>
-      <PullToRefresh/><Assistant/><NexFeedback/><CommandPalette/>
+      <PullToRefresh/><QuickActionHost/><Assistant/><NexFeedback/><CommandPalette/>
     </RequireAuth>
   );
 }

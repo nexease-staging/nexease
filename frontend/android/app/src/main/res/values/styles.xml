@@ -18,5 +18,7 @@
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
+        <!-- Android 12+ shows the system splash first; match its colour to the splash image. -->
+        <item name="windowSplashScreenBackground">#0F5242</item>
     </style>
 </resources>
