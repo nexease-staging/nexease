@@ -10,17 +10,17 @@ from mongoengine.errors import ValidationError
 from .models import Plan,Membership
 DEFAULTS={
  'free':('Free',0,dict(users=1,invoices=30,bills=30,products=100,warehouses=1,employees=0,ai=0,scan_pages=0,gst_lookups=0,einvoices=0),[]),
- 'basic':('NexEase',749,dict(users=3,invoices=300,bills=100,products=500,warehouses=1,employees=0,ai=0,scan_pages=0,gst_lookups=0,einvoices=0),[]),
- 'plus':('NexEase Plus',999,dict(users=10,invoices=1000,bills=500,products=5000,warehouses=3,employees=25,ai=0,scan_pages=0,gst_lookups=0,einvoices=0),['finance','advanced_reports','gst','workforce']),
- 'pro':('NexEase Pro',1299,dict(users=25,invoices=3000,bills=2000,products=20000,warehouses=10,employees=50,ai=300,scan_pages=100,gst_lookups=0,einvoices=100),['finance','advanced_reports','gst','workforce','ai','einvoice'])}
-ANNUAL_PRICES={'free':0,'basic':7499,'plus':9999,'pro':12999}
+ 'basic':('NexEase',199,dict(users=3,invoices=300,bills=100,products=500,warehouses=1,employees=0,ai=0,scan_pages=0,gst_lookups=0,einvoices=0),[]),
+ 'plus':('NexEase Plus',349,dict(users=10,invoices=1000,bills=500,products=5000,warehouses=3,employees=25,ai=0,scan_pages=0,gst_lookups=0,einvoices=0),['finance','advanced_reports','gst','workforce']),
+ 'pro':('NexEase Pro',599,dict(users=25,invoices=3000,bills=2000,products=20000,warehouses=10,employees=50,ai=300,scan_pages=100,gst_lookups=0,einvoices=100),['finance','advanced_reports','gst','workforce','ai','einvoice'])}
+ANNUAL_PRICES={'free':0,'basic':1999,'plus':3499,'pro':5999}
 
 def enabled():return os.getenv('SAAS_ENFORCEMENT','true').lower()=='true'
 def seed():
  for code,(name,price,limits,features) in DEFAULTS.items():
   Plan.objects(code=code).update_one(upsert=True,set_on_insert__name=name,set_on_insert__price_paise=price*100,set_on_insert__limits=limits,set_on_insert__features=features)
  # One-time, idempotent catalogue upgrade for installations still showing old prices.
- revision='launch-749-999-1299-annual-einvoice-v3'
+ revision='launch-199-349-599-annual-v4'
  if not get_db().saas_catalog_revisions.find_one({'_id':revision}):
   for code,(_,price,_,features) in DEFAULTS.items():
    Plan.objects(code=code,price_paise__ne=price*100).update_one(set__price_paise=price*100,set__published=False,set__razorpay_plan_id='',inc__revision=1)
