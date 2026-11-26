@@ -1,8 +1,10 @@
 "use client";
+import { useSearchParams } from "next/navigation";
 import SearchSelect from "@/components/search-select";
 
 
 import {
+  Suspense,
   useState,
 } from "react";
 import ReportExportActions from "@/features/documents/components/report-export-actions";
@@ -104,7 +106,9 @@ function getErrorMessage(
   );
 }
 
-export default function GeneralLedgerPage() {
+/** Opened with ?account=<id> (e.g. from a statement line), the ledger for that account loads straight away. */
+function GeneralLedger() {
+  const linkedAccount = useSearchParams().get("account") ?? "";
   const [
     accountSearch,
     setAccountSearch,
@@ -113,7 +117,7 @@ export default function GeneralLedgerPage() {
   const [
     accountId,
     setAccountId,
-  ] = useState("");
+  ] = useState(linkedAccount);
 
   const [
     startDate,
@@ -131,7 +135,7 @@ export default function GeneralLedgerPage() {
   ] = useState<
     GeneralLedgerParameters
   >({
-    account_id: "",
+    account_id: linkedAccount,
   });
 
   const accountQuery =
@@ -784,5 +788,13 @@ export default function GeneralLedgerPage() {
         </>
       ) : null}
     </div>
+  );
+}
+
+export default function GeneralLedgerPage() {
+  return (
+    <Suspense fallback={null}>
+      <GeneralLedger />
+    </Suspense>
   );
 }

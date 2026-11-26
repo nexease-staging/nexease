@@ -1,5 +1,5 @@
-import Statement from "@/features/accounting/components/statement";
+import StatementView from "@/features/finance/statement-view";
 
-export default function Page() {
-  return <Statement kind="profitability"/>;
+export default function ProfitAndLossPage() {
+  return <StatementView kind="profit-and-loss" />;
 }

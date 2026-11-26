@@ -17,6 +17,7 @@ from . import inventory_insights
 from . import payments_hub
 from . import mobile_home
 from . import report_engine
+from . import finance_hub
 from . import workforce_approvals
 from .setup_status import setup_status
 from django.urls import path
@@ -38,6 +39,8 @@ urlpatterns[:0] = [
     path("sales/insights/", insights, {"section": "sales"}),
     path("purchase/insights/", insights, {"section": "purchase"}),
     path("collections/insights/", insights, {"section": "collections"}),
+    path("finance/overview/", finance_hub.overview),
+    path("finance/statements/<str:kind>/", finance_hub.statement),
     path("manufacturing/insights/", insights, {"section": "production"}),
     path("manufacturing/", manufacturing_orders),
     path("manufacturing/<str:order_id>/", manufacturing_orders),
