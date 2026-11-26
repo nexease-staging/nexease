@@ -242,6 +242,8 @@ export const navigationSections:
             icon: Scale,
             permission: "accounting_reports.read",
           },
+          { label: "Tally sync", href: "/tally", icon: ArrowDownUp, permission: "accounting_reports.read" },
+          { label: "Tally day book", href: "/tally?tab=daybook", icon: BookOpen, permission: "accounting_reports.read" },
           {
             label: "Cash Flow",
             href: "/cash-flow",

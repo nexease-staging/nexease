@@ -1,0 +1,47 @@
+name: Tally Connector
+# Builds the Windows NexEase Tally Connector (.exe) and publishes it on the GitHub release
+# "tally-connector", replacing the previous file, so the download link in NexEase → Tally always
+# serves the latest build. Runs when the connector changes, or manually from Actions.
+on:
+  push:
+    branches: [main, feature/tally-connector]
+    paths: ['connector/tally/**', '.github/workflows/tally-connector.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: tally-connector-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check the connector
+        run: |
+          python -m py_compile connector/tally/nexease_tally.py
+          python connector/tally/nexease_tally.py --help
+      - name: Build the .exe
+        working-directory: connector/tally
+        run: |
+          python -m pip install --upgrade pip pyinstaller==6.11.1
+          pyinstaller --noconfirm --onefile --windowed --name NexEase-Tally-Connector --icon icon.ico nexease_tally.py
+          Get-FileHash dist/NexEase-Tally-Connector.exe -Algorithm SHA256 | Select-Object -ExpandProperty Hash | Out-File -Encoding ascii dist/NexEase-Tally-Connector.exe.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NexEase-Tally-Connector
+          path: connector/tally/dist/NexEase-Tally-Connector.exe*
+      - name: Publish on the tally-connector release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          cd connector/tally/dist
+          notes="NexEase Tally Connector for Windows. Install it on the computer where TallyPrime runs, open it, and enter the pairing code from NexEase → Tally. Built from ${GITHUB_SHA::7} on ${GITHUB_REF_NAME}."
+          gh release view tally-connector >/dev/null 2>&1 || gh release create tally-connector --title "NexEase Tally Connector" --notes "$notes" --target "$GITHUB_SHA"
+          gh release edit tally-connector --notes "$notes" --latest=false
+          gh release upload tally-connector NexEase-Tally-Connector.exe NexEase-Tally-Connector.exe.sha256 --clobber

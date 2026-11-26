@@ -18,6 +18,8 @@ from . import payments_hub
 from . import mobile_home
 from . import report_engine
 from . import finance_hub
+from . import tally_api
+from . import tally_signals  # noqa: F401  (keeps updated_at current for Tally sync)
 from . import workforce_approvals
 from .setup_status import setup_status
 from django.urls import path
@@ -60,4 +62,26 @@ urlpatterns[:0] = [
     path("e-invoices/<str:invoice_id>/pdf/", einvoice_pdf),
     path("delivery-challans/", challans),
     path("delivery-challans/<str:doc_id>/", challans),
+    # Tally connector: desktop agent endpoints and the Tally section
+    path("tally/agent/pair/", tally_api.agent_pair),
+    path("tally/agent/poll/", tally_api.agent_poll),
+    path("tally/agent/jobs/<str:job_id>/", tally_api.agent_job),
+    path("tally/status/", tally_api.status),
+    path("tally/pair/", tally_api.pairing),
+    path("tally/devices/<str:device_id>/revoke/", tally_api.revoke_device),
+    path("tally/companies/<str:company_id>/", tally_api.company),
+    path("tally/settings/", tally_api.sync_settings),
+    path("tally/resync/", tally_api.resync),
+    path("tally/jobs/", tally_api.jobs),
+    path("tally/jobs/<str:job_id>/retry/", tally_api.retry_job),
+    path("tally/issues/", tally_api.issues),
+    path("tally/issues/retry/", tally_api.retry_issues),
+    path("tally/overview/", tally_api.overview),
+    path("tally/parties/", tally_api.parties),
+    path("tally/parties/<str:guid>/", tally_api.party_detail),
+    path("tally/stock/", tally_api.stock),
+    path("tally/daybook/", tally_api.daybook),
+    path("tally/vouchers/<str:guid>/", tally_api.voucher),
+    path("tally/registers/", tally_api.registers),
+    path("tally/trial-balance/", tally_api.trial_balance),
 ]
