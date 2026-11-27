@@ -992,6 +992,8 @@ class CreditNote(Document):
         required=True,
     )
 
+    # IRP registration of the credit note (document type CRN): status, irn, ack, document.
+    einvoice = DictField(default=dict)
     issued_at = DateTimeField()
 
     cancelled_at = DateTimeField()

@@ -126,6 +126,7 @@ class Command(BaseCommand):
             get_db().nexease_worker_health.update_one({'_id':'background'},{'$set':{'at':datetime.utcnow()}},upsert=True)
             # Isolate queues: an unavailable provider/queue must not starve others.
             from apps.saas import alerts, partner_mail
+            from apps.business.einvoice import deliver_one as einvoice_deliver_one
             try:
                 if os.getenv('SUBSCRIPTION_ALERTS_ENABLED', 'false').lower() == 'true' and time.monotonic() >= next_alert_scan:
                     alerts.schedule()
@@ -135,6 +136,7 @@ class Command(BaseCommand):
             for queue_name, deliver in (
                 ('quotation', deliver_one),
                 ('subscription', alerts.deliver_one),
+                ('einvoice-auto', einvoice_deliver_one),
                 ('partner', partner_mail.deliver_one),
             ):
                 try:

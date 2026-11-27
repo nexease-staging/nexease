@@ -18,7 +18,7 @@ from apps.saas.entitlements import org_lock
 from .einvoice import GSTIN, money, registration, require_text
 from .views import audit, payload, permitted
 
-REASONS={'job_work':'Job work','non_supply':'Movement other than supply','liquid_gas':'Liquid gas — quantity not known at dispatch','notified':'Other notified movement'}
+REASONS={'job_work':'Job work','job_work_return':'Return after job work','own_use':'Own use / branch transfer (same GSTIN)','purchase_return':'Purchase return to supplier','exhibition':'Exhibition or fair','line_sales':'Line sales','non_supply':'Movement other than supply','liquid_gas':'Liquid gas — quantity not known at dispatch','notified':'Other notified movement'}
 
 
 def render_pdf(doc,org=None):
