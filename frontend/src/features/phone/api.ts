@@ -1,6 +1,21 @@
 import { useSyncExternalStore } from "react";
 import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/api/client";
+import { apiRequest as rawRequest } from "@/lib/api/client";
+
+/** Shown when the app is newer than the server it talks to (the endpoint isn't deployed yet). */
+export const SERVER_UPDATE_MESSAGE = "This screen needs the latest NexEase server update. Your data is safe. Pull down to retry after the update, or use the web app meanwhile.";
+
+/** Phone screens call phone-only endpoints; a 404 there means the server is behind the app, not that data is missing. */
+async function apiRequest<T>(path: string) {
+  try {
+    return await rawRequest<T>(path);
+  } catch (e) {
+    if ((e as { status?: number } | null)?.status === 404 && path.startsWith("/business/mobile/") && !path.startsWith("/business/mobile/document/")) {
+      throw new Error(SERVER_UPDATE_MESSAGE);
+    }
+    throw e;
+  }
+}
 
 export type TxType = "sale" | "purchase" | "expense" | "payment_in" | "payment_out";
 export type TxRow = {

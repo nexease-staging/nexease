@@ -23,6 +23,12 @@ from apps.inventory.services.inventory_service import (
 from apps.inventory.services.stock_movement_service import (
     StockMovementService,
 )
+
+def _stockless(product):
+    """Services and made-to-order items are not reserved or dispatched from finished stock."""
+    from apps.business.recipes import stockless
+    return stockless(product)
+
 class SalesOrderService:
 
     VALID_STATUSES = {
@@ -677,7 +683,7 @@ class SalesOrderService:
                     f"{product.sku}"
                 )
 
-            if product.item_type=='service':continue
+            if _stockless(product):continue
 
             inventory = (
                 InventoryRepository
@@ -899,7 +905,7 @@ class SalesOrderService:
             if quantity_to_release <= 0:
                 continue
 
-            if item.product.item_type=='service':continue
+            if _stockless(item.product):continue
 
             inventory = (
                 InventoryRepository
@@ -1154,7 +1160,7 @@ class SalesOrderService:
                     f"Remaining: {remaining_quantity}."
                 )
 
-            if product.item_type=='service':
+            if _stockless(product):
                 fulfilments.append({'product':product,'order_item':order_item,'inventory':None,'quantity':quantity_to_fulfill})
                 continue
 
@@ -1211,7 +1217,7 @@ class SalesOrderService:
         # ---------------------------------------------
 
         for fulfilment in fulfilments:
-            if fulfilment["product"].item_type=="service":
+            if fulfilment["inventory"] is None:
                 fulfilment["order_item"].fulfilled_quantity += fulfilment["quantity"]
                 continue
 

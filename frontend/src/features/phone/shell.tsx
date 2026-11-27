@@ -5,8 +5,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ArrowDownLeft, ArrowUpRight, BarChart3, Boxes, ChevronDown, CircleHelp, ClipboardList, FileText, Home, Landmark, Menu, Package, PackagePlus, Plus, Receipt, Repeat,
-  Settings, Truck, Undo2, UserPlus, Users, Wallet, X,
-} from "lucide-react";
+  Settings, Truck, Undo2, UserPlus, Users, Wallet, X, Hammer } from "lucide-react";
 import { navigationSections, workforceSections } from "@/config/navigation";
 import { useAuth } from "@/features/auth/auth-context";
 import { runQuick, type QuickAction } from "@/features/mobile/quick-actions";
@@ -66,10 +65,11 @@ const CREATE: [string, Create[]][] = [
     { label: "Journal entry", icon: FileText, href: "/journal-entries?new=1", perm: "journal_entries.create" },
     { label: "Bank transfer", icon: Landmark, href: "/banking", perm: "bank_accounts.read" },
   ]],
-  ["People & stock", [
+  ["People, stock & production", [
     { label: "Customer", icon: UserPlus, quick: "customer", perm: "customers.create" },
     { label: "Supplier", icon: UserPlus, quick: "supplier", perm: "suppliers.create" },
     { label: "Item", icon: PackagePlus, quick: "item", perm: "products.create" },
+    { label: "Production job", icon: Hammer, href: "/manufacturing?new=1", perm: "manufacturing.manage" },
     { label: "Stock transfer", icon: Repeat, href: "/stock-transfers?new=1", perm: "inventory.transfer" },
     { label: "Opening stock", icon: Boxes, href: "/inventory", perm: "inventory.adjust" },
     { label: "Attendance", icon: Users, href: "/workforce", perm: "labour.read" },

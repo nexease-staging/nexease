@@ -94,6 +94,15 @@ describe("phone shell", () => {
     expect(screen.getByRole("dialog", { name: "Create new" })).toBeInTheDocument();
   });
 
+  it("explains a missing phone endpoint as a server update, not missing data", async () => {
+    api.mockImplementation(async (path: string) => {
+      if (path.startsWith("/business/mobile/dashboard/")) throw Object.assign(new Error("Resource not found."), { status: 404 });
+      return { data: {} };
+    });
+    render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><PhoneDashboard /></QueryClientProvider>);
+    expect(await screen.findByText(/needs the latest NexEase server update/)).toBeInTheDocument();
+  });
+
   it("names screens from the navigation", () => {
     expect(screenTitle("/invoices")).toBe("Invoices");
     expect(screenTitle("/parties/")).toBe("Parties");
