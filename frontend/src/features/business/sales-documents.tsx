@@ -20,7 +20,7 @@ type Choice={id:string;name:string;code:string;item_type?:string;billing_address
 const input='nx-input w-full';
 const paths={einvoice:'/business/e-invoices/',challan:'/business/delivery-challans/'};
 const emptyLine=()=>({product_id:'',qty:'1',value:'0',rate:'0'});
-const reasons={job_work:'Job work',non_supply:'Movement other than supply',liquid_gas:'Liquid gas — quantity not known at dispatch',notified:'Other notified movement'};
+const reasons={job_work:'Job work',job_work_return:'Return after job work',own_use:'Own use / branch transfer (same GSTIN)',purchase_return:'Purchase return to supplier',exhibition:'Exhibition or fair',line_sales:'Line sales',non_supply:'Movement other than supply',liquid_gas:'Liquid gas — quantity not known at dispatch',notified:'Other notified movement'};
 
 function Picker({kind,value,onSelect,label}:{kind:'customers'|'products';value:string;onSelect:(x:Choice)=>void;label:string}) {
   const [q,setQ]=useState('');
