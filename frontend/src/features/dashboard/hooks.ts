@@ -1,4 +1,5 @@
 import {
+  keepPreviousData,
   useQuery,
 } from "@tanstack/react-query";
 
@@ -21,6 +22,8 @@ export function useMainDashboard(
   enabled = true,
 ) {
   return useQuery({
+    placeholderData:
+      keepPreviousData,
     queryKey:
       dashboardQueryKeys
         .dashboard(
