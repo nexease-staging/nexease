@@ -1,0 +1,147 @@
+/* NexEase phone UI (v2.1 design): top bar with logo, Home / Dashboard / + / Items / Menu, cards,
+   segmented tabs, bottom sheets. Light green and dark navy themes. Applies below 768px only.
+   Selectors use html:root / html[...]:root so they win over the desktop tokens declared later. */
+.nxp-only{display:none}
+@media (max-width:767px){
+  html:root{--p-ink:#123e35;--p-brand:#116957;--p-accent:#116957;--p-mint:#e5f2ec;--p-bg:#f5f7f8;--p-card:#fff;--p-surface:#fff;--p-line:#e3e9e6;--p-mute:#6b7f78;
+    --p-get:#13805a;--p-give:#c2413b;--p-seg:#e9eeec;--p-redbg:#fbe9e7;--p-overlay:#0b241d66;--p-ring:#11695722;--p-shadow:#0001;
+    /* existing screens pick up the same palette */
+    --nx-primary:#116957;--nx-primary-hover:#0d5546;--nx-primary-soft:#e5f2ec;--nx-surface:#fff;--nx-surface-muted:#f5f7f8;--nx-border:#e3e9e6;--nx-border-strong:#c9d6d0;
+    --nx-text:#123e35;--nx-text-muted:#6b7f78;--background:#f5f7f8;--foreground:#123e35;--color-blue-600:#116957;--color-blue-700:#0d5546}
+  html[data-theme="dark"]:root{--p-ink:#e7f1f8;--p-brand:#0a8f62;--p-accent:#3be9b0;--p-mint:#0d3a40;--p-bg:#031a2e;--p-card:#0a2742;--p-surface:#0c2c4a;--p-line:#1c4163;--p-mute:#8fa9bf;
+    --p-get:#34d399;--p-give:#f87171;--p-seg:#0c2c4a;--p-redbg:#3b1d27;--p-overlay:#000b;--p-ring:#3be9b033;--p-shadow:#0006;
+    --nx-primary:#0a8f62;--nx-primary-hover:#0aa572;--nx-primary-soft:#0d3a40;--nx-surface:#0a2742;--nx-surface-muted:#031a2e;--nx-border:#1c4163;--nx-border-strong:#2f5a80;
+    --nx-text:#e7f1f8;--nx-text-muted:#8fa9bf;--background:#031a2e;--foreground:#e7f1f8;--color-white:#0a2742;--color-slate-50:#031a2e;--color-slate-100:#0c2c4a;--color-slate-200:#1c4163;
+    --color-blue-50:#0d3a40;--color-blue-100:#0d3a40;--color-blue-600:#0a8f62;--color-blue-700:#3be9b0}
+
+  .nxp-only{display:block}
+  .nx-app-shell{background:var(--p-bg)!important;color:var(--p-ink)}
+  .nx-app-header,.nx-module-nav,.nx-workspace-footer,.nxm-add-sale,.easy-nav{display:none!important}
+  body:has(.nxp-top) .nx-page-help{position:fixed!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;overflow:hidden}
+  .nx-workspace-main{padding:4px 16px 24px!important;background:var(--p-bg)}
+
+  /* top bar */
+  .nxp-top{display:flex;align-items:center;gap:12px;padding:calc(10px + env(safe-area-inset-top)) 14px 8px 18px;background:var(--p-bg);color:var(--p-ink)}
+  .nxp-top h1{flex:1;min-width:0;font-size:18px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .nxp-logo{width:38px;height:38px;border-radius:10px;flex:none}
+  .nxp-ic{width:40px;height:40px;flex:none;border-radius:50%;display:grid;place-items:center;color:var(--p-ink)}
+  .nxp-ic:active{background:var(--p-mint)}
+  .nxp-ic.tint{color:var(--p-accent);background:var(--p-mint);width:36px;height:36px;margin-left:10px}
+  .nxp-back{transform:rotate(90deg)}
+  .nxp-bell{display:flex}
+  .nxp-bell button{width:40px;height:40px;border-radius:50%;color:var(--p-ink)}
+
+  /* bottom nav with the centre + */
+  .nxp-nav{display:flex;align-items:center;background:var(--p-surface);border-top:1px solid var(--p-line);padding:6px 8px calc(6px + env(safe-area-inset-bottom))}
+  .nxp-nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;font-size:11px;font-weight:600;color:var(--p-mute)}
+  .nxp-nav a[aria-current="page"]{color:var(--p-accent)}
+  .nxp-plus{flex:0 0 56px;height:56px;margin:-26px 6px 0;border-radius:50%;background:var(--p-brand);color:#fff;display:grid;place-items:center;box-shadow:0 6px 16px var(--p-shadow)}
+  html[data-keyboard=open] .nxp-nav{display:none}
+
+  button[aria-label="Open NexEase AI"]{bottom:calc(84px + env(safe-area-inset-bottom))!important}
+}
+
+/* components (used on the phone screens; harmless elsewhere) */
+.nxp-page{display:flex;flex-direction:column;gap:12px;max-width:640px;margin:0 auto;color:var(--p-ink,#123e35);font-size:15px}
+.nxp-card{display:block;background:var(--p-card,#fff);border:1px solid var(--p-line,#e3e9e6);border-radius:18px;padding:16px}
+.nxp-list{padding:4px 16px}
+.nxp-seg{display:flex;background:var(--p-seg,#e9eeec);border-radius:14px;padding:4px;margin-top:6px}
+.nxp-seg button{flex:1;padding:10px 4px;border-radius:10px;color:var(--p-mute,#6b7f78);font-weight:600;font-size:14px}
+.nxp-seg button.on{background:var(--p-surface,#fff);color:var(--p-ink,#123e35);box-shadow:0 1px 4px var(--p-shadow,#0001)}
+.nxp-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.nxp-quick button{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 2px;font-size:12px;font-weight:600;background:var(--p-card,#fff);border:1px solid var(--p-line,#e3e9e6);border-radius:16px;color:var(--p-ink,#123e35)}
+.nxp-qi{width:36px;height:36px;flex:none;border-radius:11px;background:var(--p-mint,#e5f2ec);color:var(--p-accent,#116957);display:grid;place-items:center}
+.nxp-qi.big{width:60px;height:60px;border-radius:20px;margin:0 auto 14px}
+.nxp-row{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--p-line,#e3e9e6);color:inherit;text-align:left;width:100%}
+.nxp-row:last-child{border-bottom:0}
+.nxp-row[role="button"],.nxp-link{cursor:pointer}
+.nxp-g{flex:1;min-width:0}
+.nxp-g b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nxp-g small,.nxp-mute{display:block;color:var(--p-mute,#6b7f78);font-size:12.5px;margin-top:2px}
+.nxp-amt{text-align:right;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.nxp-amt small{display:block;font-weight:400;font-size:12px;color:var(--p-mute,#6b7f78);margin-top:2px}
+.nxp-chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--p-mint,#e5f2ec);color:var(--p-accent,#116957);margin-right:6px}
+.nxp-chip.red{background:var(--p-redbg,#fbe9e7);color:var(--p-give,#c2413b)}
+.nxp-page .get,.nxp-sheet .get{color:var(--p-get,#13805a)}
+.nxp-page .give,.nxp-sheet .give{color:var(--p-give,#c2413b)}
+.nxp-group{margin:14px 0 4px;font-size:12px;font-weight:700;color:var(--p-mute,#6b7f78);letter-spacing:.04em;text-transform:uppercase}
+.nxp-tools{display:grid;gap:8px;padding:12px 0 6px}
+.nxp-toolrow{display:flex;gap:8px}
+.nxp-search{position:relative;flex:1;display:flex;align-items:center;min-width:0}
+.nxp-search svg{position:absolute;left:14px;color:var(--p-mute,#6b7f78);pointer-events:none}
+.nxp-page input:not([type=checkbox]):not([type=radio]),.nxp-page select,.nxp-sheet input:not([type=checkbox]):not([type=radio]),.nxp-sort{width:100%;min-height:48px;padding:12px 14px;border:1px solid var(--p-line,#e3e9e6);border-radius:12px;background:var(--p-surface,#fff);color:var(--p-ink,#123e35);font-size:15px;outline:none}
+.nxp-search input{padding-left:42px!important}
+.nxp-page input:focus,.nxp-page select:focus,.nxp-sheet input:focus{border-color:var(--p-accent,#116957);box-shadow:0 0 0 3px var(--p-ring,#11695722)}
+.nxp-sort{width:136px!important;flex:none;padding-right:8px!important}
+.nxp-chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:none}
+.nxp-chips button{flex:none;padding:7px 12px;border-radius:20px;border:1px solid var(--p-line,#e3e9e6);font-size:12.5px;font-weight:600;color:var(--p-mute,#6b7f78)}
+.nxp-chips button.on{background:var(--p-mint,#e5f2ec);color:var(--p-accent,#116957);border-color:var(--p-accent,#116957)}
+.nxp-gap{margin-bottom:0}
+.nxp-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;padding:14px;border-radius:14px;background:var(--p-brand,#116957);color:#fff;font-weight:700}
+.nxp-btn.ghost{background:var(--p-mint,#e5f2ec);color:var(--p-accent,#116957)}
+.nxp-btn.danger{background:var(--p-redbg,#fbe9e7);color:var(--p-give,#c2413b)}
+.nxp-btn:disabled{opacity:.6}
+.nxp-scan{width:96px!important;flex:none;min-height:48px}
+.nxp-more{display:block;width:100%;padding:14px;font-weight:700;color:var(--p-accent,#116957)}
+.nxp-empty{text-align:center;padding:48px 20px;color:var(--p-mute,#6b7f78)}
+.nxp-empty p{margin-bottom:18px;line-height:1.5}
+.nxp-empty-sm{padding:28px 12px}
+.nxp-skel{display:grid;gap:10px;padding:12px 0}
+.nxp-skel i{height:56px;border-radius:14px;background:var(--p-seg,#e9eeec);animation:nxp-pulse 1.2s ease-in-out infinite}
+@keyframes nxp-pulse{50%{opacity:.5}}
+.nxp-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.nxp-stat{display:flex;flex-direction:column;gap:4px}
+.nxp-stat b{font-size:21px;font-weight:800;font-variant-numeric:tabular-nums}
+.nxp-stat small{font-size:12px}
+.nxp-big{font-size:30px;font-weight:800;margin:4px 0;font-variant-numeric:tabular-nums}
+.nxp-chart{width:100%;margin-top:8px}
+.nxp-axis{stroke:var(--p-line,#e3e9e6);stroke-width:1}
+.nxp-line{fill:none;stroke:var(--p-accent,#116957);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.nxp-line.buy{stroke:var(--p-give,#c2413b);stroke-width:2;stroke-dasharray:5 4;opacity:.7}
+.nxp-dot{fill:var(--p-card,#fff);stroke:var(--p-accent,#116957);stroke-width:2}
+.nxp-tick{font-size:11px;fill:var(--p-mute,#6b7f78)}
+.nxp-legend{display:flex;gap:16px;font-size:12px;color:var(--p-mute,#6b7f78)}
+.nxp-legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--p-accent,#116957)}
+.nxp-legend i.p{background:var(--p-give,#c2413b)}
+.nxp-cardhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0 4px}
+.nxp-card:not(.nxp-list)>.nxp-cardhead{padding-top:0}
+.nxp-cardhead a{color:var(--p-accent,#116957);font-weight:700;font-size:13px}
+.nxp-pair{display:flex;gap:2px}
+.nxp-stack{display:flex;flex-direction:column;gap:14px}
+.nxp-meta{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--p-mute,#6b7f78)}
+.nxp-tot{display:grid;gap:8px;padding:14px 16px;border-radius:16px;background:var(--p-mint,#e5f2ec)}
+.nxp-tot>div{display:flex;justify-content:space-between;gap:10px}
+.nxp-tot b{font-variant-numeric:tabular-nums}
+.nxp-sum{display:grid;gap:6px;padding:10px 0 0;font-size:13.5px;color:var(--p-mute,#6b7f78)}
+.nxp-sum>div{display:flex;justify-content:space-between}
+.nxp-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.nxp-grid3>button,.nxp-grid3>a{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 4px;border-radius:16px;background:var(--p-bg,#f5f7f8);font-size:12.5px;font-weight:600;text-align:center;color:var(--p-ink,#123e35)}
+
+/* sheets */
+.nxp-sheet-bg{position:fixed;inset:0;z-index:90;display:flex;align-items:flex-end;justify-content:center;background:var(--p-overlay,#0b241d66)}
+.nxp-sheet{width:100%;max-width:640px;max-height:88dvh;overflow:auto;padding:18px 16px calc(18px + env(safe-area-inset-bottom));border-radius:24px 24px 0 0;background:var(--p-surface,#fff);color:var(--p-ink,#123e35)}
+.nxp-sheet-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.nxp-sheet-head>b,.nxp-sheet-head>div{flex:1;min-width:0}
+.nxp-sheet-head b{display:block;font-size:17px}
+.nxp-sheet-head small{display:block;color:var(--p-mute,#6b7f78);font-size:12.5px;margin-top:2px}
+.nxp-sheet h3{font-size:13px;margin:16px 0 8px;color:var(--p-mute,#6b7f78);letter-spacing:.04em;text-transform:uppercase}
+.nxp-actions{margin-top:2px}
+
+/* menu */
+.nxp-acc{padding:0;overflow:hidden}
+.nxp-accbtn{display:flex;align-items:center;gap:12px;width:100%;padding:16px;font-weight:700;text-align:left;color:var(--p-ink,#123e35)}
+.nxp-accbtn span{flex:1}
+.nxp-accbtn small{color:var(--p-mute,#6b7f78);font-weight:600;font-size:12px}
+.nxp-chev{transition:transform .15s}
+.nxp-chev.open{transform:rotate(180deg)}
+.nxp-accbody{padding:0 16px 6px;border-top:1px solid var(--p-line,#e3e9e6)}
+.nxp-accbody .nxp-row{padding:13px 0}
+.nxp-version{text-align:center;color:var(--p-mute,#6b7f78);font-size:12.5px;margin:10px 0 6px}
+.nxp-crumb{align-self:flex-start;display:flex;align-items:center;gap:4px;font-weight:700;color:var(--p-accent,#116957);padding:4px 0}
+.nxp-account{display:flex;align-items:center;gap:14px}
+.nxp-account b{display:block}
+.nxp-account small{display:block;color:var(--p-mute,#6b7f78);font-size:12.5px;overflow:hidden;text-overflow:ellipsis}
+.nxp-avatar{display:grid;place-items:center;flex:none;width:48px;height:48px;border-radius:50%;background:var(--p-brand,#116957);color:#fff;font-weight:800}
+@media (prefers-reduced-motion:reduce){.nxp-chev,.nxp-skel i{transition:none;animation:none}}
+.nxp-card:empty{display:none}
+.nxp-group:has(+ .nxp-card:empty){display:none}

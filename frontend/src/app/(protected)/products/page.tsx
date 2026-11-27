@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import PhoneItems from "@/features/phone/items";
+import { usePhone } from "@/features/phone/api";
 import { useQuery } from "@tanstack/react-query";
 import { BellRing, FileSpreadsheet, History, Package, Pencil, Plus, Power, PowerOff } from "lucide-react";
 import { CompactList, CompactRow, ListScreen, ListState, Pager, useDebounced, type ListAction } from "@/components/list/list-kit";
@@ -30,7 +32,11 @@ const chips: Array<{ value: ActiveFilter; label: string }> = [
   { value: "inactive", label: "Inactive" },
 ];
 
-export default function ProductsPage() {
+export default function ProductsRoute() {
+  return usePhone() ? <PhoneItems /> : <ProductsPage />;
+}
+
+function ProductsPage() {
   const router = useRouter();
   const { authentication } = useAuth();
   const permissions = authentication?.role.permissions ?? [];

@@ -1,2 +1,5 @@
-import {EasyTools} from "@/components/mobile/easy-workspace";
-export default EasyTools;
+import PhoneMenu from "@/features/phone/menu";
+
+export default function ToolsPage() {
+  return <PhoneMenu />;
+}

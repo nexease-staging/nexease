@@ -12,7 +12,7 @@
  * Mobile: same rows (party, number · date, amount, status) and a sticky bottom action bar.
  */
 
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, RefreshCw, Search, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import EmptyState from "@/components/ui/empty-state";
 import { Badge, type Tone } from "@/components/ui/badge";
@@ -119,6 +119,18 @@ export function ListScreen<V extends string>({
     ...(onRefresh ? [{ icon: RefreshCw, label: `Refresh ${title.toLowerCase()}`, onClick: onRefresh, busy: refreshing }] : []),
   ];
   const PrimaryIcon = primary?.icon;
+  // "Create new" on the phone links here with ?new=1: open the create form once, then drop the flag.
+  const openNew = useRef(primary?.onClick);
+  useEffect(() => {
+    openNew.current = primary?.onClick;
+  });
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("new") !== "1" || !openNew.current) return;
+    url.searchParams.delete("new");
+    window.history.replaceState(window.history.state, "", url.pathname + (url.search || "") + url.hash);
+    openNew.current();
+  }, []);
   return (
     <div className="nxl-screen">
       <header className="nxl-header">

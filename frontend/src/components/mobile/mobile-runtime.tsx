@@ -52,7 +52,10 @@ export default function MobileRuntime() {
         return;
       }
       if (dismissTopOverlay()) return;
-      if (!['/home','/home/','/dashboard','/dashboard/'].includes(pathname) && canGoBack) router.back();
+      const path = pathname.replace(/\/$/, '') || '/';
+      // Tabs: Back from Dashboard, Items or Menu goes Home; Back on Home closes the app.
+      if (['/overview','/products','/tools','/dashboard'].includes(path) && !window.location.search) router.push('/home');
+      else if (path !== '/home' && canGoBack) router.back();
       else if (window.confirm('Close NexEase?')) void App.exitApp();
     }).then(h => { if (removed) void h.remove(); else handle = h; }).catch(()=>{/* Browser history remains available. */});
     return () => { removed = true; void handle?.remove(); };

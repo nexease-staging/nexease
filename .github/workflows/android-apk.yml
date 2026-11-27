@@ -124,6 +124,7 @@ jobs:
           gh release create "$tag" "apk/$NAME" --target "$GITHUB_SHA" --prerelease \
             --title "NexEase Android $version ($TYPE)" --notes "$notes"
       - name: Update the website download (android-latest)
+        if: github.ref == 'refs/heads/main'
         working-directory: .
         env:
           GH_TOKEN: ${{ github.token }}

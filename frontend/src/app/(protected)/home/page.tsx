@@ -1,5 +1,5 @@
-import MobileHome from "@/features/mobile/mobile-home";
+import PhoneHome from "@/features/phone/home";
 
 export default function HomePage() {
-  return <MobileHome />;
+  return <PhoneHome />;
 }
