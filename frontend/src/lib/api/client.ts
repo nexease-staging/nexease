@@ -267,7 +267,7 @@ export async function apiRequest<T>(
   }
 
   creationReceipt?.complete();
-  if(isUnsafeMethod(method) && !/\/(auth|ai|ocr|lookup|preview|validate|subscription|owner|notifications|share\/log)\//.test(path)) notify(body.message || "Your changes were saved successfully.");
+  if(isUnsafeMethod(method) && !/\/(auth|ai|ocr|lookup|preview|validate|subscription|owner|notifications|share\/log|business\/jobs|business\/recipes)\//.test(path)) notify(body.message || "Your changes were saved successfully.");
   return body;
 }
 
