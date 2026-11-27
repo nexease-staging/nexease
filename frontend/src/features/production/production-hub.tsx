@@ -10,7 +10,6 @@ import {
 import SearchSelect from "@/components/search-select";
 import StatCard from "@/components/ui/stat-card";
 import { Badge, type Tone } from "@/components/ui/badge";
-import { notify } from "@/components/nex-feedback";
 import { useAuth } from "@/features/auth/auth-context";
 import { hasPermission } from "@/lib/authorization/permissions";
 import {
@@ -519,11 +518,9 @@ function JobForm({ job, onClose, onSaved }: { job?: Job; onClose: () => void; on
       if (job) {
         delete body.product_id;
         const saved = await update.mutateAsync({ action: "update", revision: job.revision, ...body });
-        notify("Job updated");
         onSaved(saved.id);
       } else {
         const saved = await create.mutateAsync(body);
-        notify(`${saved.number} opened`);
         onSaved(saved.id);
       }
     } catch { /* toast shown by the API client */ }
@@ -596,7 +593,6 @@ function RecipeForm({ product, onClose }: { product: string | null; onClose: () 
     e.preventDefault();
     try {
       await save.mutateAsync({ product: item, made_to_order: mto, materials: lines.filter((l) => l.product).map(({ product: p, per_unit }) => ({ product: p, per_unit })), labour_per_unit: labour || "0", notes });
-      notify("Recipe saved");
       onClose();
     } catch { /* toast shown */ }
   };
@@ -694,7 +690,7 @@ function StagesSheet({ onClose }: { onClose: () => void }) {
   const move = (i: number, d: number) => setRows(() => { const x = [...list]; const [it] = x.splice(i, 1); x.splice(i + d, 0, it); return x; });
   return (
     <Sheet title="Production stages" sub="The steps every job goes through in your workshop" onClose={onClose}
-      footer={<button type="button" className="nx-button" disabled={save.isPending || !rows} onClick={() => void save.mutateAsync(list.filter((s) => s.label.trim())).then(() => { notify("Stages saved"); onClose(); }).catch(() => undefined)}>Save stages</button>}>
+      footer={<button type="button" className="nx-button" disabled={save.isPending || !rows} onClick={() => void save.mutateAsync(list.filter((s) => s.label.trim())).then(() => onClose()).catch(() => undefined)}>Save stages</button>}>
       <div className="nxpr-stages">
         {list.map((s, i) => (
           <div key={s.key || i} className="nxpr-stage-row">
