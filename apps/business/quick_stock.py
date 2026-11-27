@@ -33,22 +33,32 @@ def _move(invoice, user, warehouse, sign=-1):
         return
     applied = []
     movements = []
+    from .recipes import expand, snapshot
+
+    details = invoice.billing_details
+    org_id = invoice.organization.id
+    if sign < 0:
+        # Made-to-order lines use up their raw materials; a job's invoice uses nothing (the job did).
+        frozen = snapshot(org_id, invoice.items)
+        if details.get("job_id"):
+            frozen = {pid: [] for pid in frozen}
+        details["recipe_snapshot"] = frozen
+    else:
+        frozen = details.get("recipe_snapshot") or {}
     try:
-        for item in invoice.items:
-            if item.item_type != "goods":
-                continue
+        for product, quantity, made_for in expand(org_id, invoice.items, frozen):
             stock = Inventory.objects(
                 organization=invoice.organization,
-                product=item.product,
+                product=product,
                 warehouse=warehouse,
             ).first()
             if not stock:
                 stock = Inventory(
                     organization=invoice.organization,
-                    product=item.product,
+                    product=product,
                     warehouse=warehouse,
                 ).save()
-            delta = Decimal(str(item.quantity)) * sign
+            delta = quantity * sign
             # Atomic increment avoids losing independent receipts/transfers.
             after = Inventory.objects(id=stock.id).modify(
                 new=True, inc__quantity=delta, set__updated_at=datetime.utcnow()
@@ -59,7 +69,7 @@ def _move(invoice, user, warehouse, sign=-1):
                 StockMovement(
                     organization=invoice.organization,
                     inventory=after,
-                    product=item.product,
+                    product=product,
                     warehouse=warehouse,
                     movement_type="STOCK_OUT" if sign < 0 else "STOCK_IN",
                     quantity=abs(delta),
@@ -71,7 +81,7 @@ def _move(invoice, user, warehouse, sign=-1):
                         "QUICK_INVOICE" if sign < 0 else "QUICK_INVOICE_CANCEL"
                     ),
                     reference_id=str(invoice.id),
-                    notes="Quick invoice " + invoice.invoice_number,
+                    notes=("Quick invoice " if not made_for else "Raw material for made-to-order item, invoice ") + invoice.invoice_number,
                     created_by=user,
                 ).save()
             )

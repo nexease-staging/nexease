@@ -231,6 +231,7 @@ def edit(request, invoice_id):
         new.validate()
         journal = None
         stock_changes = []
+        recipe_frozen = None
         stock_movements = []
         saved = False
         stamp = datetime.utcnow()
@@ -287,14 +288,20 @@ def edit(request, invoice_id):
                     raise ValueError("Invoice warehouse is unavailable.")
                 quantities = {}
                 products = {}
+                from .recipes import expand as recipe_expand, snapshot as recipe_snapshot
+
+                frozen = dict(inv.billing_details.get("recipe_snapshot") or {})
+                fresh = recipe_snapshot(org.id, new.items)
+                if inv.billing_details.get("job_id"):
+                    fresh = {pid: [] for pid in fresh}
+                for pid, materials in fresh.items():
+                    frozen.setdefault(pid, materials)
                 for sign, items in [(1, inv.items), (-1, new.items)]:
-                    for item in items:
-                        if item.item_type == "goods":
-                            pid = str(item.product.id)
-                            products[pid] = item.product
-                            quantities[pid] = (
-                                quantities.get(pid, Decimal(0)) + sign * item.quantity
-                            )
+                    for product, qty, _ in recipe_expand(org.id, items, frozen):
+                        pid = str(product.id)
+                        products[pid] = product
+                        quantities[pid] = quantities.get(pid, Decimal(0)) + sign * qty
+                recipe_frozen = frozen
                 for pid, delta in quantities.items():
                     if not delta:
                         continue
@@ -346,6 +353,8 @@ def edit(request, invoice_id):
             ]
             updates = {"set__" + key: getattr(new, key) for key in fields}
             updates["set__updated_at"] = stamp
+            if recipe_frozen is not None:
+                updates["set__billing_details__recipe_snapshot"] = recipe_frozen
             if not Invoice.objects(
                 id=inv.id, organization=org, updated_at=inv.updated_at
             ).update_one(**updates):

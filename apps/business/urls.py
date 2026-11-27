@@ -20,6 +20,7 @@ from . import report_engine
 from . import finance_hub
 from . import tally_api
 from . import share_center
+from . import mobile_app
 from . import tally_signals  # noqa: F401  (keeps updated_at current for Tally sync)
 from . import workforce_approvals
 from .setup_status import setup_status
@@ -32,6 +33,7 @@ urlpatterns=[path("stock-balances/",product_stock_balances),path("invoices/<str:
 
 from .mobile_insights import insights
 from .manufacturing import orders as manufacturing_orders
+from . import jobs, recipes
 from .quotation_actions import quotation_pdf
 from .quotations import quotations
 from .sales_reports import report as sales_report
@@ -85,6 +87,17 @@ urlpatterns[:0] = [
     path("tally/vouchers/<str:guid>/", tally_api.voucher),
     path("tally/registers/", tally_api.registers),
     path("tally/trial-balance/", tally_api.trial_balance),
+    # Production jobs and item recipes (bill of materials, made to order)
+    path("jobs/", jobs.jobs),
+    path("jobs/settings/", jobs.job_settings),
+    path("jobs/<str:job_id>/", jobs.jobs),
+    path("recipes/", recipes.recipes),
+    path("recipes/<str:product_id>/", recipes.recipes),
+    # Phone app screens
+    path("mobile/transactions/", mobile_app.transactions),
+    path("mobile/dashboard/", mobile_app.dashboard),
+    path("mobile/items/", mobile_app.items),
+    path("mobile/document/", mobile_app.document),
     # Share documents and statements on WhatsApp / email
     path("share/prepare/", share_center.prepare),
     path("share/pdf/", share_center.pdf),

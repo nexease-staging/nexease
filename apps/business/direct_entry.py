@@ -3,6 +3,7 @@ from apps.core.services.invoice_creation_request import invoice_creation_request
 from .numbering import incoming
 from .automation import write_lock
 from .quick_stock import warehouse_for,move
+from .recipes import made_to_order_ids
 """Direct draft billing; invoice creation does not imply stock dispatch."""
 from datetime import datetime
 from decimal import Decimal
@@ -88,13 +89,17 @@ def direct_invoice(request):
                 category=Category.objects(organization=org,name__iexact=category_name,is_active=True).first()
                 if not category:category=Category(organization=org,name=category_name).save()
                 product=Product(organization=org,sku=sku,name=name,unit=unit,item_type=n['item_type'],hsn_code=n['hsn_code'],category=category,selling_price=n['unit_price']).save();new_records.append('Product '+sku)
-            if warehouse and product.item_type=="goods":
+            if warehouse and product.item_type=="goods" and not made_to_order_ids(org.id,[product.id]):
                 stock=Inventory.objects(organization=org,warehouse=warehouse,product=product).first();available=stock.quantity-stock.reserved_quantity if stock else Decimal(0)
                 if available<n['quantity']:warnings.append('Insufficient available stock: '+sku)
             invoice_items.append(InvoiceItem(product=product,unit=unit,**n))
         from .billing import clean_details,settings
         details={**settings(org),**clean_details(p['billing_details'],org,invoice_items)} if 'billing_details' in p else {}
         if p.get("sale_mode") in ("cash","credit"):details["sale_mode"]=p["sale_mode"]
+        job=None
+        if p.get("job_id"):
+            from .jobs import job_for_invoice
+            job=job_for_invoice(org,p["job_id"]);details["job_id"]=str(job["_id"]);details["job_number"]=job["number"]
         goods=any(i.item_type=='goods' for i in invoice_items)
         total=sum(x.line_total for x in invoice_items)
         number=incoming(org,'Invoice',number,document_date=when)
@@ -102,6 +107,9 @@ def direct_invoice(request):
         mark_invoice_write(invoice)
         if goods:
             move(invoice,user,warehouse)
+        if job is not None:
+            from .jobs import link_invoice
+            link_invoice(org,job,invoice,user)
         audit(request,'direct_invoice',invoice.id,'create')
         NotificationService.create_notification(organization=org,recipient=user,notification_type='SYSTEM',title='Review direct invoice '+invoice.invoice_number,message=(' '.join(warnings)+' New records: '+', '.join(new_records))[:1000],severity='WARNING',resource_type='invoice',resource_id=str(invoice.id),action_url='/invoices')
         return R.success(data={'id':str(invoice.id),'invoice_number':invoice.invoice_number,'status':'DRAFT','warnings':warnings,'new_records':new_records},request=request)

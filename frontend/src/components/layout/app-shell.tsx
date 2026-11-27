@@ -5,7 +5,7 @@ import {
   type ReactNode,
 } from "react";
 
-import {EasyNav} from "@/components/mobile/easy-workspace";
+import {PhoneTabBar, PhoneTopBar} from "@/features/phone/shell";
 import NexFeedback from "@/components/nex-feedback";
 import PlanAccessGate from "@/features/saas/plan-access-gate";
 import Assistant from "@/features/saas/assistant";
@@ -65,6 +65,7 @@ export default function AppShell({
             min-w-0 flex-1 flex flex-col overflow-hidden
           "
         >
+          <div className="nxp-only"><PhoneTopBar/></div>
           <AppHeader
             onOpenMobile={() => {
               setMobileOpen(true);
@@ -75,7 +76,7 @@ export default function AppShell({
           <main className="nx-workspace-main min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
             <PlanAccessGate>{children}</PlanAccessGate>
             <footer className="nx-workspace-footer"><span>© {new Date().getFullYear()} NexEase</span><a href="https://wa.me/919209753378" target="_blank" rel="noopener noreferrer">WhatsApp support ↗</a></footer>
-          </main><div className="md:hidden"><EasyNav/></div>
+          </main><div className="nxp-only"><PhoneTabBar/></div>
         </div>
       </div>
       <PullToRefresh/><QuickActionHost/><ShareHost/><Assistant/><NexFeedback/><CommandPalette/>
